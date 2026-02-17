@@ -12,42 +12,61 @@ const FRAME_MESSAGES = [
   "💵 Kassa və bank — nə gəldi, nə çıxdı, bir ayda",
 ];
 
+const SIDEBAR_ITEMS = ["Dashboard", "Kontragentlər", "Anbarlar", "Alış", "Satış", "Pul"] as const;
+
+function Sidebar({ activeIndex }: { activeIndex: number }) {
+  return (
+    <>
+      {/* Mobile: horizontal pills */}
+      <div className="md:hidden flex gap-2 overflow-x-auto pb-2 px-3 -mx-1 scrollbar-hide">
+        {SIDEBAR_ITEMS.map((item, i) => (
+          <div key={item} className={`flex-shrink-0 py-2 px-3 rounded-xl text-xs font-medium whitespace-nowrap ${i === activeIndex ? "bg-primary-500 text-white" : "text-slate-600 bg-slate-100"}`}>
+            {item}
+          </div>
+        ))}
+      </div>
+      {/* Desktop: vertical sidebar */}
+      <div className="hidden md:block w-40 lg:w-48 flex-shrink-0 bg-white/80 backdrop-blur border-r border-slate-200/80 p-4">
+        {SIDEBAR_ITEMS.map((item, i) => (
+          <div key={item} className={`flex items-center gap-2.5 py-2.5 px-3 rounded-xl text-sm font-medium ${i === activeIndex ? "bg-primary-500 text-white shadow-lg shadow-primary-500/30" : "text-slate-600 hover:bg-slate-100"}`}>
+            <div className="w-5 h-5 rounded-lg bg-white/20" />
+            {item}
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+
 const FRAMES = [
   {
     id: "dashboard",
     content: (
-      <div className="flex bg-gradient-to-br from-slate-50 to-white pb-8">
-        <div className="w-40 md:w-48 flex-shrink-0 bg-white/80 backdrop-blur border-r border-slate-200/80 p-4">
-          {["Dashboard", "Kontragentlər", "Anbarlar", "Alış", "Satış", "Pul"].map((item, i) => (
-            <div key={item} className={`flex items-center gap-2.5 py-2.5 px-3 rounded-xl text-sm font-medium ${i === 0 ? "bg-primary-500 text-white shadow-lg shadow-primary-500/30" : "text-slate-600 hover:bg-slate-100"}`}>
-              <div className="w-5 h-5 rounded-lg bg-white/20" />
-              {item}
-            </div>
-          ))}
-        </div>
-        <div className="flex-1 min-w-0 p-5">
-          <div className="h-11 bg-gradient-to-r from-primary-600 to-primary-500 rounded-xl mb-5 flex items-center px-5 text-white font-semibold text-sm shadow-lg shadow-primary-500/25">
+      <div className="flex flex-col md:flex-row bg-gradient-to-br from-slate-50 to-white pb-6 md:pb-8">
+        <Sidebar activeIndex={0} />
+        <div className="flex-1 min-w-0 p-4 md:p-5">
+          <div className="h-10 md:h-11 bg-gradient-to-r from-primary-600 to-primary-500 rounded-xl mb-4 md:mb-5 flex items-center px-4 md:px-5 text-white font-semibold text-xs md:text-sm shadow-lg shadow-primary-500/25">
             Əsas Səhifə (Dashboard)
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
+          <div className="grid grid-cols-2 gap-2 sm:gap-4 md:grid-cols-4 mb-4 md:mb-5">
             {[
               { label: "Satış (Cari ay)", value: "₼ 12 450", color: "from-primary-50 to-white", accent: "text-primary-600", trend: "+12%" },
               { label: "Satış (Bu gün)", value: "₼ 3 780", color: "from-emerald-50 to-white", accent: "text-emerald-600", trend: "↑" },
               { label: "Anbar qalığı", value: "₼ 28 920", color: "from-emerald-50 to-white", accent: "text-emerald-700 font-bold", trend: "" },
               { label: "Mənfəət (ay)", value: "₼ 8 640", color: "from-emerald-50 to-white", accent: "text-emerald-700 font-bold", trend: "+24%" },
             ].map((k) => (
-              <div key={k.label} className={`p-5 rounded-2xl border border-slate-200/80 bg-gradient-to-br ${k.color} shadow-lg shadow-slate-200/50`}>
-                <div className="text-xs text-slate-500 uppercase tracking-wider font-medium">{k.label}</div>
-                <div className={`text-2xl md:text-3xl font-extrabold mt-2 ${k.accent}`}>{k.value}</div>
-                {k.trend && <span className="text-xs text-emerald-600 font-semibold">{k.trend}</span>}
+              <div key={k.label} className={`p-3 sm:p-5 rounded-xl md:rounded-2xl border border-slate-200/80 bg-gradient-to-br ${k.color} shadow-md md:shadow-lg shadow-slate-200/50`}>
+                <div className="text-[10px] sm:text-xs text-slate-500 uppercase tracking-wider font-medium truncate">{k.label}</div>
+                <div className={`text-lg sm:text-2xl md:text-3xl font-extrabold mt-1 md:mt-2 truncate ${k.accent}`}>{k.value}</div>
+                {k.trend && <span className="text-[10px] sm:text-xs text-emerald-600 font-semibold">{k.trend}</span>}
               </div>
             ))}
           </div>
-          <div className="h-28 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-inner">
-            <div className="text-sm font-medium text-slate-600 mb-3">Son 6 ay (Satış vs Alış)</div>
-            <div className="flex items-end gap-2 h-14">
+          <div className="h-24 md:h-28 rounded-xl md:rounded-2xl border border-slate-200/80 bg-white p-3 md:p-5 shadow-inner">
+            <div className="text-xs md:text-sm font-medium text-slate-600 mb-2 md:mb-3">Son 6 ay (Satış vs Alış)</div>
+            <div className="flex items-end gap-1 sm:gap-2 h-10 md:h-14">
               {[45, 72, 58, 85, 68, 92].map((h, i) => (
-                <div key={i} className="flex-1 bg-gradient-to-t from-primary-600 to-primary-400 rounded-t-lg min-h-[6px] shadow-md" style={{ height: `${h}%` }} />
+                <div key={i} className="flex-1 bg-gradient-to-t from-primary-600 to-primary-400 rounded-t-md md:rounded-t-lg min-h-[6px] shadow-md" style={{ height: `${h}%` }} />
               ))}
             </div>
           </div>
@@ -58,24 +77,17 @@ const FRAMES = [
   {
     id: "kontragent",
     content: (
-      <div className="flex bg-gradient-to-br from-slate-50 to-white pb-8">
-        <div className="w-40 md:w-48 flex-shrink-0 bg-white/80 backdrop-blur border-r border-slate-200/80 p-4">
-          {["Dashboard", "Kontragentlər", "Anbarlar", "Alış", "Satış", "Pul"].map((item, i) => (
-            <div key={item} className={`flex items-center gap-2.5 py-2.5 px-3 rounded-xl text-sm font-medium ${i === 1 ? "bg-primary-500 text-white shadow-lg shadow-primary-500/30" : "text-slate-600"}`}>
-              <div className="w-5 h-5 rounded-lg bg-white/20" />
-              {item}
-            </div>
-          ))}
-        </div>
-        <div className="flex-1 min-w-0 p-5">
-          <div className="h-11 bg-gradient-to-r from-primary-600 to-primary-500 rounded-xl mb-5 flex items-center px-5 text-white font-semibold text-sm shadow-lg shadow-primary-500/25">Kontragentlər</div>
-          <div className="bg-white rounded-2xl border border-slate-200/80 overflow-hidden shadow-lg">
-            <table className="w-full text-sm">
+      <div className="flex flex-col md:flex-row bg-gradient-to-br from-slate-50 to-white pb-6 md:pb-8">
+        <Sidebar activeIndex={1} />
+        <div className="flex-1 min-w-0 p-4 md:p-5">
+          <div className="h-10 md:h-11 bg-gradient-to-r from-primary-600 to-primary-500 rounded-xl mb-4 md:mb-5 flex items-center px-4 md:px-5 text-white font-semibold text-xs md:text-sm shadow-lg shadow-primary-500/25">Kontragentlər</div>
+          <div className="bg-white rounded-xl md:rounded-2xl border border-slate-200/80 overflow-hidden shadow-lg overflow-x-auto">
+            <table className="w-full text-xs sm:text-sm min-w-[280px]">
               <thead>
                 <tr className="bg-gradient-to-r from-slate-50 to-slate-100">
-                  <th className="text-left py-4 px-5 font-semibold text-slate-700">Müştəri / Təchizatçı</th>
-                  <th className="text-right py-4 px-5 font-semibold text-emerald-600">Borclu</th>
-                  <th className="text-right py-4 px-5 font-semibold text-amber-600">Müəyyən</th>
+                  <th className="text-left py-3 md:py-4 px-3 md:px-5 font-semibold text-slate-700">Müştəri / Təchizatçı</th>
+                  <th className="text-right py-3 md:py-4 px-3 md:px-5 font-semibold text-emerald-600">Borclu</th>
+                  <th className="text-right py-3 md:py-4 px-3 md:px-5 font-semibold text-amber-600">Müəyyən</th>
                 </tr>
               </thead>
               <tbody>
@@ -85,15 +97,15 @@ const FRAMES = [
                   { name: "Trade Plus", borc: "₼ 5 120", mueyyen: "—" },
                 ].map((r) => (
                   <tr key={r.name} className="border-t border-slate-100 hover:bg-primary-50/50">
-                    <td className="py-4 px-5 font-semibold text-slate-800">{r.name}</td>
-                    <td className="py-4 px-5 text-right font-bold text-emerald-600">{r.borc}</td>
-                    <td className="py-4 px-5 text-right font-bold text-amber-600">{r.mueyyen}</td>
+                    <td className="py-3 md:py-4 px-3 md:px-5 font-semibold text-slate-800">{r.name}</td>
+                    <td className="py-3 md:py-4 px-3 md:px-5 text-right font-bold text-emerald-600">{r.borc}</td>
+                    <td className="py-3 md:py-4 px-3 md:px-5 text-right font-bold text-amber-600">{r.mueyyen}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          <div className="mt-4 px-4 py-2 bg-emerald-50 rounded-xl text-sm font-medium text-emerald-700 border border-emerald-200/60">
+          <div className="mt-3 md:mt-4 px-3 md:px-4 py-2 bg-emerald-50 rounded-xl text-xs md:text-sm font-medium text-emerald-700 border border-emerald-200/60">
             Kimə nə qədər borc — bir baxışda
           </div>
         </div>
@@ -103,34 +115,29 @@ const FRAMES = [
   {
     id: "anbar",
     content: (
-      <div className="flex bg-gradient-to-br from-slate-50 to-white pb-8">
-        <div className="w-40 md:w-48 flex-shrink-0 bg-white/80 backdrop-blur border-r border-slate-200/80 p-4">
-          {["Dashboard", "Kontragentlər", "Anbarlar", "Alış", "Satış", "Pul"].map((item, i) => (
-            <div key={item} className={`flex items-center gap-2.5 py-2.5 px-3 rounded-xl text-sm font-medium ${i === 2 ? "bg-primary-500 text-white shadow-lg shadow-primary-500/30" : "text-slate-600"}`}>
-              <div className="w-5 h-5 rounded-lg bg-white/20" />
-              {item}
-            </div>
-          ))}
-        </div>
-        <div className="flex-1 min-w-0 p-5">
-          <div className="h-11 bg-gradient-to-r from-primary-600 to-primary-500 rounded-xl mb-5 flex items-center px-5 text-white font-semibold text-sm shadow-lg shadow-primary-500/25">Anbar qalıqları</div>
-          <div className="grid gap-4">
+      <div className="flex flex-col md:flex-row bg-gradient-to-br from-slate-50 to-white pb-6 md:pb-8">
+        <Sidebar activeIndex={2} />
+        <div className="flex-1 min-w-0 p-4 md:p-5">
+          <div className="h-10 md:h-11 bg-gradient-to-r from-primary-600 to-primary-500 rounded-xl mb-4 md:mb-5 flex items-center px-4 md:px-5 text-white font-semibold text-xs md:text-sm shadow-lg shadow-primary-500/25">Anbar qalıqları</div>
+          <div className="grid gap-3 md:gap-4">
             {[
               { name: "Material A", qty: "1 250", bir: "ədəd", value: "₼ 12 500", bar: 85 },
               { name: "Material B", qty: "890", bir: "kq", value: "₼ 8 900", bar: 60 },
               { name: "Material C", qty: "320", bir: "ədəd", value: "₼ 7 520", bar: 40 },
             ].map((r) => (
-              <div key={r.name} className="flex items-center gap-4 p-4 bg-white rounded-2xl border border-slate-200/80 shadow-md hover:shadow-lg transition-shadow">
-                <span className="font-semibold text-slate-800 min-w-[100px]">{r.name}</span>
-                <div className="flex-1 h-3 bg-slate-100 rounded-full overflow-hidden">
+              <div key={r.name} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 p-3 md:p-4 bg-white rounded-xl md:rounded-2xl border border-slate-200/80 shadow-md hover:shadow-lg transition-shadow">
+                <span className="font-semibold text-slate-800 text-sm md:text-base">{r.name}</span>
+                <div className="flex-1 h-2 sm:h-3 bg-slate-100 rounded-full overflow-hidden min-w-0">
                   <div className="h-full bg-gradient-to-r from-primary-500 to-primary-400 rounded-full" style={{ width: `${r.bar}%` }} />
                 </div>
-                <span className="text-lg font-bold text-primary-600">{r.qty} {r.bir}</span>
-                <span className="font-bold text-emerald-600">{r.value}</span>
+                <div className="flex justify-between sm:justify-end gap-4 sm:gap-2 text-sm md:text-base">
+                  <span className="font-bold text-primary-600">{r.qty} {r.bir}</span>
+                  <span className="font-bold text-emerald-600">{r.value}</span>
+                </div>
               </div>
             ))}
           </div>
-          <div className="mt-4 px-4 py-2 bg-primary-50 rounded-xl text-sm font-medium text-primary-700 border border-primary-200/60">
+          <div className="mt-3 md:mt-4 px-3 md:px-4 py-2 bg-primary-50 rounded-xl text-xs md:text-sm font-medium text-primary-700 border border-primary-200/60">
             Real vaxtda stok — hər an güncel məlumat
           </div>
         </div>
@@ -140,30 +147,23 @@ const FRAMES = [
   {
     id: "təhlükəsizlik",
     content: (
-      <div className="flex bg-gradient-to-br from-slate-50 to-white pb-8">
-        <div className="w-40 md:w-48 flex-shrink-0 bg-white/80 backdrop-blur border-r border-slate-200/80 p-4">
-          {["Dashboard", "Kontragentlər", "Anbarlar", "Alış", "Satış", "Pul"].map((item, i) => (
-            <div key={item} className="flex items-center gap-2.5 py-2.5 px-3 rounded-xl text-sm font-medium text-slate-600">
-              <div className="w-5 h-5 rounded-lg bg-slate-300" />
-              {item}
-            </div>
-          ))}
-        </div>
-        <div className="flex-1 min-w-0 p-5">
-          <div className="h-11 bg-gradient-to-r from-emerald-600 to-emerald-500 rounded-xl mb-5 flex items-center px-5 text-white font-semibold text-sm shadow-lg shadow-emerald-500/25">🛡️ Nəzarət və Təhlükəsizlik</div>
-          <div className="space-y-4">
+      <div className="flex flex-col md:flex-row bg-gradient-to-br from-slate-50 to-white pb-6 md:pb-8">
+        <Sidebar activeIndex={-1} />
+        <div className="flex-1 min-w-0 p-4 md:p-5">
+          <div className="h-10 md:h-11 bg-gradient-to-r from-emerald-600 to-emerald-500 rounded-xl mb-4 md:mb-5 flex items-center px-4 md:px-5 text-white font-semibold text-xs md:text-sm shadow-lg shadow-emerald-500/25">🛡️ Nəzarət və Təhlükəsizlik</div>
+          <div className="space-y-3 md:space-y-4">
             {[
               { icon: "✓", text: "Hər əməliyyat tarixçəsi ilə qeyd olunur — şəffaflıq", color: "from-emerald-50 to-white" },
               { icon: "✓", text: "İstifadəçi rolları və icazələr — nəzarət", color: "from-emerald-50 to-white" },
               { icon: "✓", text: "OWASP ASVS standartlarına uyğun — etibarlılıq", color: "from-emerald-50 to-white" },
             ].map((item) => (
-              <div key={item.text} className={`flex items-center gap-4 p-5 rounded-2xl border border-emerald-200/80 bg-gradient-to-r ${item.color} shadow-sm`}>
-                <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-emerald-500 text-white text-xl font-bold shadow-md">{item.icon}</span>
-                <span className="font-semibold text-slate-700">{item.text}</span>
+              <div key={item.text} className={`flex items-center gap-3 md:gap-4 p-3 md:p-5 rounded-xl md:rounded-2xl border border-emerald-200/80 bg-gradient-to-r ${item.color} shadow-sm`}>
+                <span className="flex-shrink-0 flex items-center justify-center w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-emerald-500 text-white text-lg md:text-xl font-bold shadow-md">{item.icon}</span>
+                <span className="font-semibold text-slate-700 text-sm md:text-base">{item.text}</span>
               </div>
             ))}
           </div>
-          <div className="mt-4 px-4 py-2 bg-emerald-50 rounded-xl text-sm font-bold text-emerald-700 border border-emerald-200/60">
+          <div className="mt-3 md:mt-4 px-3 md:px-4 py-2 bg-emerald-50 rounded-xl text-xs md:text-sm font-bold text-emerald-700 border border-emerald-200/60">
             Məlumatlarınız qorunur — 100% etibarlı
           </div>
         </div>
@@ -173,32 +173,25 @@ const FRAMES = [
   {
     id: "kassa",
     content: (
-      <div className="flex bg-gradient-to-br from-slate-50 to-white pb-8">
-        <div className="w-40 md:w-48 flex-shrink-0 bg-white/80 backdrop-blur border-r border-slate-200/80 p-4">
-          {["Dashboard", "Kontragentlər", "Anbarlar", "Alış", "Satış", "Pul"].map((item, i) => (
-            <div key={item} className={`flex items-center gap-2.5 py-2.5 px-3 rounded-xl text-sm font-medium ${i === 5 ? "bg-primary-500 text-white shadow-lg shadow-primary-500/30" : "text-slate-600"}`}>
-              <div className="w-5 h-5 rounded-lg bg-white/20" />
-              {item}
-            </div>
-          ))}
-        </div>
-        <div className="flex-1 min-w-0 p-5">
-          <div className="h-11 bg-gradient-to-r from-primary-600 to-primary-500 rounded-xl mb-5 flex items-center px-5 text-white font-semibold text-sm shadow-lg shadow-primary-500/25">💵 Kassa və Ödənişlər</div>
-          <div className="grid grid-cols-2 gap-4 mb-4">
+      <div className="flex flex-col md:flex-row bg-gradient-to-br from-slate-50 to-white pb-6 md:pb-8">
+        <Sidebar activeIndex={5} />
+        <div className="flex-1 min-w-0 p-4 md:p-5">
+          <div className="h-10 md:h-11 bg-gradient-to-r from-primary-600 to-primary-500 rounded-xl mb-4 md:mb-5 flex items-center px-4 md:px-5 text-white font-semibold text-xs md:text-sm shadow-lg shadow-primary-500/25">💵 Kassa və Ödənişlər</div>
+          <div className="grid grid-cols-2 gap-2 sm:gap-4 mb-3 md:mb-4">
             {[
               { label: "Kassa balansı", value: "₼ 15 840", color: "from-emerald-50", icon: "💵" },
               { label: "Bank balansı", value: "₼ 42 120", color: "from-emerald-50", icon: "🏦" },
               { label: "Bu gün mədaxil", value: "₼ 3 200", color: "from-white", icon: "↑" },
               { label: "Bu gün məxaric", value: "₼ 1 450", color: "from-white", icon: "↓" },
             ].map((k) => (
-              <div key={k.label} className={`p-5 rounded-2xl border border-slate-200/80 bg-gradient-to-br ${k.color} to-white shadow-md`}>
-                <div className="text-xs text-slate-500 font-medium uppercase tracking-wide">{k.label}</div>
-                <div className="text-2xl font-extrabold text-slate-800 mt-2">{k.value}</div>
+              <div key={k.label} className={`p-3 sm:p-5 rounded-xl md:rounded-2xl border border-slate-200/80 bg-gradient-to-br ${k.color} to-white shadow-md`}>
+                <div className="text-[10px] sm:text-xs text-slate-500 font-medium uppercase tracking-wide truncate">{k.label}</div>
+                <div className="text-base sm:text-xl md:text-2xl font-extrabold text-slate-800 mt-1 md:mt-2 truncate">{k.value}</div>
               </div>
             ))}
           </div>
-          <div className="p-5 bg-gradient-to-r from-primary-50 to-emerald-50 rounded-2xl border border-primary-200/60">
-            <div className="text-sm font-bold text-slate-700">Nə gəldi, nə çıxdı — hər şey aydın və nəzarətdə.</div>
+          <div className="p-3 md:p-5 bg-gradient-to-r from-primary-50 to-emerald-50 rounded-xl md:rounded-2xl border border-primary-200/60">
+            <div className="text-xs md:text-sm font-bold text-slate-700">Nə gəldi, nə çıxdı — hər şey aydın və nəzarətdə.</div>
           </div>
         </div>
       </div>
@@ -219,10 +212,10 @@ export default function HeroErpVisual() {
   return (
     <div className="mt-6 md:mt-8 mx-auto max-w-5xl">
       {/* Attention-grabbing message badge */}
-      <div className="mb-4 flex justify-center">
-        <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-primary-500 to-primary-600 text-white text-sm font-semibold shadow-lg shadow-primary-500/30 animate-pulse-slow">
-          <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
-          {FRAME_MESSAGES[frameIndex]}
+      <div className="mb-3 md:mb-4 flex justify-center px-2">
+        <div className="inline-flex items-center gap-2 px-3 md:px-5 py-2 md:py-2.5 rounded-full bg-gradient-to-r from-primary-500 to-primary-600 text-white text-xs md:text-sm font-semibold shadow-lg shadow-primary-500/30 animate-pulse-slow max-w-full">
+          <span className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-white animate-pulse flex-shrink-0" />
+          <span className="truncate">{FRAME_MESSAGES[frameIndex]}</span>
         </div>
       </div>
 
@@ -253,7 +246,7 @@ export default function HeroErpVisual() {
           </div>
         </div>
 
-        <div className="relative min-h-[420px] md:min-h-[480px]">
+        <div className="relative min-h-[380px] sm:min-h-[420px] md:min-h-[480px]">
           {FRAMES.map((f, i) => (
             <div
               key={f.id}

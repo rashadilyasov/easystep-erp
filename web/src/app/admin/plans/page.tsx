@@ -19,7 +19,14 @@ export default function Plans() {
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState<"create" | "edit" | null>(null);
   const [editing, setEditing] = useState<Plan | null>(null);
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<{
+    name: string;
+    durationMonths: number;
+    price: number;
+    currency: string;
+    maxDevices: number | null;
+    isActive: boolean;
+  }>({
     name: "",
     durationMonths: 12,
     price: 0,
@@ -215,7 +222,7 @@ export default function Plans() {
                   <label className="block text-sm text-slate-600 mb-1">Max cihaz</label>
                   <input
                     type="number"
-                    value={form.maxDevices}
+                    value={form.maxDevices ?? ""}
                     onChange={(e) =>
                       setForm((f) => ({ ...f, maxDevices: parseInt(e.target.value) || null }))
                     }

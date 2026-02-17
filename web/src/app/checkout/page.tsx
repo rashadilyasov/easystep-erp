@@ -1,12 +1,12 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { api } from "@/lib/api";
 import Link from "next/link";
 import Logo from "@/components/Logo";
 
-export default function CheckoutPage() {
+function CheckoutContent() {
   const searchParams = useSearchParams();
   const planId = searchParams.get("planId");
   const [status, setStatus] = useState<"idle" | "redirecting" | "error">("idle");
@@ -65,5 +65,17 @@ export default function CheckoutPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function CheckoutPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin w-10 h-10 border-2 border-primary-500 border-t-transparent rounded-full" />
+      </div>
+    }>
+      <CheckoutContent />
+    </Suspense>
   );
 }

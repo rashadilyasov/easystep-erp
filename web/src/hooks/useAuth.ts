@@ -20,7 +20,7 @@ export function useAuth() {
         }
         if (res.accessToken) {
           localStorage.setItem("accessToken", res.accessToken);
-          localStorage.setItem("refreshToken", res.refreshToken);
+          if (res.refreshToken) localStorage.setItem("refreshToken", res.refreshToken);
           router.push(redirectTo.startsWith("/") ? redirectTo : "/cabinet");
         }
       } catch (e) {
@@ -39,7 +39,7 @@ export function useAuth() {
       try {
         const res = await api.auth.complete2FA(pendingToken, code);
         localStorage.setItem("accessToken", res.accessToken);
-        localStorage.setItem("refreshToken", res.refreshToken);
+        if (res.refreshToken) localStorage.setItem("refreshToken", res.refreshToken);
         router.push(redirectTo.startsWith("/") ? redirectTo : "/admin");
       } catch (e) {
         setError(e instanceof Error ? e.message : "Xəta baş verdi");

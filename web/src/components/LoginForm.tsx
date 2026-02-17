@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 
-export default function LoginForm() {
+function LoginFormInner() {
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect") || "/cabinet";
   const [email, setEmail] = useState("");
@@ -114,5 +114,13 @@ export default function LoginForm() {
         {loading ? "Yüklənir..." : "Daxil ol"}
       </button>
     </form>
+  );
+}
+
+export default function LoginForm() {
+  return (
+    <Suspense fallback={<div className="h-48 bg-slate-100 rounded-xl animate-pulse" />}>
+      <LoginFormInner />
+    </Suspense>
   );
 }

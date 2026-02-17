@@ -15,7 +15,7 @@ export default function AdminSecurity() {
   const load2FAStatus = async () => {
     try {
       const me = await api.me();
-      setTwoFactorEnabled(me.role === "SuperAdmin" ? undefined : false);
+      setTwoFactorEnabled(me.role === "SuperAdmin" ? null : false);
     } catch {
       setTwoFactorEnabled(false);
     }

@@ -1,0 +1,118 @@
+"use client";
+
+import Link from "next/link";
+import { useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { useAuth } from "@/hooks/useAuth";
+
+export default function LoginForm() {
+  const searchParams = useSearchParams();
+  const redirect = searchParams.get("redirect") || "/cabinet";
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [step, setStep] = useState<"credentials" | "2fa">("credentials");
+  const [pendingToken, setPendingToken] = useState("");
+  const [code2FA, setCode2FA] = useState("");
+  const { login, complete2FA, loading, error } = useAuth();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (step === "2fa") {
+      complete2FA(pendingToken, code2FA, redirect.startsWith("/admin") ? redirect : "/cabinet");
+      return;
+    }
+    const result = await login(email, password, redirect);
+    if (result && "requires2FA" in result && result.requires2FA && result.pendingToken) {
+      setPendingToken(result.pendingToken);
+      setStep("2fa");
+      setCode2FA("");
+    }
+  };
+
+  if (step === "2fa") {
+    return (
+      <form className="space-y-4" onSubmit={handleSubmit}>
+        {error && (
+          <div className="p-3 bg-red-50 text-red-700 rounded-xl text-sm">{error}</div>
+        )}
+        <p className="text-slate-600 text-sm">Autentifikator tətbiqindən 6 rəqəmli kodu daxil edin.</p>
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-2">2FA kodu</label>
+          <input
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            maxLength={6}
+            required
+            value={code2FA}
+            onChange={(e) => setCode2FA(e.target.value.replace(/\D/g, ""))}
+            className="w-full px-4 py-3 rounded-xl border border-slate-300 input-focus text-center text-lg tracking-widest"
+            placeholder="000000"
+          />
+        </div>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => setStep("credentials")}
+            className="px-4 py-2 border border-slate-300 rounded-xl hover:bg-slate-50"
+          >
+            Geri
+          </button>
+          <button
+            type="submit"
+            disabled={loading || code2FA.length !== 6}
+            className="flex-1 py-3 btn-primary disabled:opacity-70 disabled:hover:translate-y-0"
+          >
+            {loading ? "Yoxlanılır..." : "Təsdiq"}
+          </button>
+        </div>
+      </form>
+    );
+  }
+
+  return (
+    <form className="space-y-4" onSubmit={handleSubmit}>
+      {error && (
+        <div className="p-3 bg-red-50 text-red-700 rounded-xl text-sm">{error}</div>
+      )}
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-2">E-poçt</label>
+        <input
+          type="email"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="w-full px-4 py-3 rounded-xl border border-slate-300 input-focus"
+          placeholder="email@example.com"
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-2">Şifrə</label>
+        <input
+          type="password"
+          required
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="w-full px-4 py-3 rounded-xl border border-slate-300 input-focus"
+          placeholder="••••••••"
+        />
+      </div>
+      <div className="flex items-center justify-between">
+        <label className="flex items-center gap-2">
+          <input type="checkbox" className="rounded" />
+          <span className="text-sm text-slate-600">Xatırla</span>
+        </label>
+        <Link href="/forgot-password" className="text-sm text-primary-600 hover:underline">
+          Şifrəni unutdum
+        </Link>
+      </div>
+      <button
+        type="submit"
+        disabled={loading}
+        className="w-full py-3 btn-primary disabled:opacity-70 disabled:hover:translate-y-0"
+      >
+        {loading ? "Yüklənir..." : "Daxil ol"}
+      </button>
+    </form>
+  );
+}

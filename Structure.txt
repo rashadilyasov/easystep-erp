@@ -1,0 +1,360 @@
+1) Layihənin adı və məqsədi
+
+Easy Step ERP Customer Portal (Web) + Licensing Service
+
+Hədəf auditoriya: Təchizatçı şirkətləri (alış/satış, anbar, inventarizasiya, ekspeditor hesablaşması, pul uçotu, İR)
+
+Əsas məqsəd:
+
+Müştəri: qeydiyyat → kabinet → paket seçimi → ödəniş → yükləmə
+
+Portal: tarixçə, plan upgrade/downgrade, faktura/çek, auto-renew, bildirişlər
+
+Desktop ERP: online yoxlama ilə aktiv qalma (license/subscription validation)
+
+2) Rollar və səlahiyyətlər (RBAC)
+
+Visitor (qonaq): landing, qiymətlər, demo kontent (məhdud), qeydiyyat.
+
+Customer Admin (tenant owner): şirkət profili, ödənişlər, plan, istifadəçi dəvəti, lisenziya.
+
+Customer User: videodərslər, bilet/support, yükləmə (icazə verilərsə).
+
+Super Admin (EasyStep team): bütün tenantlar, planlar, ödənişlər, refund/cancel, kontent, audit, risk.
+
+3) Müştəri axınları (User Stories)
+3.1 Qeydiyyat və kabinet
+
+E-mail/telefon + şifrə ilə qeydiyyat (email OTP).
+
+Şirkət məlumatları: şirkət adı, VÖEN (opsional), əlaqə şəxs, ölkə, şəhər.
+
+“Terms & Privacy” qəbul.
+
+Giriş: JWT + Refresh token, sessiya idarəetməsi.
+
+3.2 Paket seçimi
+
+Paketlər: 1, 3, 6, 12 ay (adı, qiymət, güzəşt, limitlər).
+
+Add-on (opsional): əlavə istifadəçi, əlavə modul, premium support.
+
+3.3 Ödəniş
+
+Ödəniş provider(lar):
+
+Primary: Payriff (subscription/recurring funksionallığı mövcuddur)
+
+Secondary: Portmanat checkout
+
+Ödəniş “hosted checkout” prinsipilə: kart məlumatı sizin serverə düşməsin (PCI riskini azaltmaq üçün).
+
+Webhook-larla “Payment succeeded/failed/refund/cancel” status yenilənsin.
+
+3.4 Ödənişdən sonra yükləmə
+
+Ödəniş təsdiq → kabinetdə Download Center açılır.
+
+Endirmələr:
+
+Windows installer (.exe/.msi) + checksum (SHA-256)
+
+Release notes
+
+Download link time-limited signed URL (məs: 10 dəqiqə) + rate limit.
+
+3.5 Desktop proqramın “online status” yoxlaması
+
+Desktop ilk açılışda: istifadəçi login → backend-dən License Token alır.
+
+Proqram hər start-da və ya gündə 1 dəfə:
+
+/api/license/validate çağırır
+
+status: Active / PastDue(grace) / Expired / Suspended
+
+Offline siyasəti:
+
+Aktiv abonent üçün: max 7 gün offline grace
+
+grace bitirsə: “Read-only” və ya blok (sizin qərar; default: read-only)
+
+Token imzalanmış (JWT + RS256) + cihaz bağlama (device fingerprint) + revoke list.
+
+4) Veb sayt strukturu (UI/Pages)
+Public (Marketing)
+
+Home (dəyər təklifi)
+
+Features (modul siyahısı)
+
+Pricing (paketlər)
+
+Security (təhlükəsizlik yanaşması)
+
+Contact / Book a demo
+
+Blog (opsional SEO)
+
+Login / Register
+
+Authenticated (Cabinet)
+
+Dashboard (plan status, gün qalıb, xəbərdarlıqlar)
+
+Billing
+
+Plan seçimi / upgrade / downgrade
+
+Auto-renew toggle
+
+Payment history (trx id, tarix, məbləğ, status)
+
+Invoices/Receipts (PDF)
+
+Downloads
+
+Son versiya, əvvəlki versiyalar
+
+Release notes
+
+Licenses & Devices
+
+Aktiv cihazlar siyahısı (max device limit)
+
+“Deactivate device”
+
+Tutorials / Academy
+
+YouTube playlist embed + daxili kurslar
+
+“Yeni başlayanlar” yol xəritəsi
+
+Support
+
+Ticket sistemi + fayl əlavə etmə (log upload)
+
+FAQ / Knowledge base
+
+Company Settings
+
+Şirkət profili, istifadəçilər, rollar, 2FA
+
+Notifications
+
+Email/SMS/Push preference
+
+Admin Panel (Super Admin)
+
+Tenants list, plan assign, manual extend
+
+Payments dashboard, refunds, chargeback notes
+
+Content manager (tutorials, announcements)
+
+Risk & audit logs (login, payment, license events)
+
+Feature flags / experiments
+
+5) Funksional tələblər (Backend API)
+
+Əsas servis bölmələri:
+
+Auth Service
+
+register, verify email, login, refresh, logout
+
+password reset
+
+2FA (TOTP) — premium və ya default açıq
+
+Subscription/Billing Service
+
+plans CRUD (admin)
+
+checkout session yaratmaq (provider-ə yönləndirmək)
+
+webhook handler (provider signature verification)
+
+invoices/receipts
+
+Licensing Service
+
+generate license key (tenant-based)
+
+issue device-bound tokens
+
+validate endpoint
+
+revoke device/token
+
+Download Service
+
+release versions
+
+signed URL generator
+
+download logs
+
+Academy/Content Service
+
+youtube playlist link manager
+
+internal video hosting (opsional)
+
+progress tracking (opsional)
+
+Support Service
+
+tickets, categories, priorities
+
+attachment storage
+
+SLA rules (opsional)
+
+6) Məlumat bazası modeli (yüksək səviyyə)
+
+Tenants (company)
+
+Users (tenant_id, role)
+
+Plans (duration_months, price, limits)
+
+Subscriptions (tenant_id, plan_id, status, start/end, auto_renew)
+
+Payments (provider, trx_id, amount, currency, status, raw_event_ref)
+
+Invoices (pdf_url, number, issued_at)
+
+Devices (tenant_id, user_id, fingerprint, status, last_seen)
+
+LicenseTokens (jti, device_id, issued_at, expires_at, revoked_at)
+
+Releases (version, file_url, sha256, notes)
+
+Tickets + TicketMessages + Attachments
+
+AuditLogs (actor, action, ip, user_agent, metadata)
+
+7) Təhlükəsizlik tələbləri (üst səviyyə)
+
+Minimum baseline:
+
+OWASP ASVS səviyyəsinə uyğun yanaşma (ən azı “standard”).
+
+Parol siyasəti (min 12 simvol), bcrypt/argon2 hash.
+
+MFA (2FA): adminlər üçün məcburi, müştəri üçün opsional (tövsiyə: default açıq).
+
+Rate limiting + bot protection (login/register).
+
+CSRF qorunması (xüsusən cookie sessiya istifadə olunarsa).
+
+Webhook doğrulaması (provider signature).
+
+Həssas məlumat şifrələnməsi (at-rest).
+
+Secrets management (env yox, vault/secret store).
+
+Admin panel üçün IP allowlist (opsional).
+
+Audit loglar dəyişməz (append-only).
+
+Installer və update paketləri kod imzası (code signing) + checksum.
+
+PCI riskini azaltmaq üçün kart məlumatı sizin tərəfə gəlməməlidir; hosted checkout bunu praktik edir. Payriff-in PCI DSS tərəfdən mövqeyi/sertifikatlaşma iddiası var.
+
+8) “Ağıllı” əlavə imkanlar (satış və retention üçün)
+
+Onboarding wizard: ilk login → “Sən hansı sektorsan?” → uyğun qısa yol (hotel/restaurant/cafe).
+
+Health checklist: “ERP setup tamamlandı mı?” (məs: anbar, kassa, istifadəçilər).
+
+Usage analytics (privacy-friendly): aktiv cihaz, son aktivlik, modul istifadəsi (müştəri panelində görünən).
+
+License grace + warning system: bitməyə 7/3/1 gün qalmış email/SMS.
+
+Referral / reseller (opsional): partnyor kodu ilə qeydiyyat.
+
+Changelog & roadmap: müştəri etibarı üçün.
+
+In-app “Support bundle”: desktop logları bir kliklə paketləyib kabinetə yükləsin.
+
+9) Texniki arxitektura (tövsiyə)
+
+Frontend: React (ideal: Next.js)
+Backend: .NET (ASP.NET Core) və ya Node (NestJS)
+DB: PostgreSQL (multi-tenant), Redis (sessions/rate-limit), Object Storage (S3-compatible)
+Infra: Nginx + WAF, CI/CD, monitoring (Prometheus/Grafana), error tracking (Sentry)
+
+Multi-tenant modeli:
+
+MVP üçün: shared DB + tenant_id (sadə, sürətli)
+
+Enterprise üçün: ayrı DB per tenant (sonra)
+
+10) Qəbul meyarları (Acceptance Criteria)
+
+Ödəniş edəndən sonra subscription status dərhal Active olur (webhook ilə).
+
+Kabinetdə download yalnız Active/PastDue(grace) üçün açılır.
+
+Desktop proqram abonent bitəndə 7 gün offline grace-dən sonra read-only/blok rejiminə keçir.
+
+Admin paneldən tenant planı manual uzatmaq olur.
+
+Audit loglarda: login, payment, license validate, device add/remove saxlanır.
+
+Minimum təhlükəsizlik: MFA(admin), rate limit, webhook verify, signed downloads.
+
+11) Prompt:
+
+Project: Easy Step ERP Customer Portal + Licensing
+
+Goal:
+Build a production-grade web portal for easysteperp.com where customers register, buy subscription plans (1/3/6/12 months), pay online, then download the Windows desktop installer. The desktop app must validate subscription status online and enforce expiration with an offline grace period.
+
+Tech constraints:
+- Frontend: Next.js (React) + TypeScript + Tailwind
+- Backend: ASP.NET Core Web API (or NestJS if you prefer, but keep it consistent)
+- DB: PostgreSQL + Prisma/EF Core
+- Auth: JWT + refresh tokens, email verification, password reset, MFA for admins
+- Payment provider abstraction: implement Payriff first (hosted checkout + webhooks), keep interface to add Portmanat later
+- Do NOT handle raw card data on our servers; redirect to provider checkout and rely on webhooks
+- Provide admin panel (role-based) + customer cabinet
+
+Modules:
+1) Public site: Home, Features, Pricing, Security, Contact, Login/Register
+2) Customer cabinet:
+   - Dashboard (plan status, days left)
+   - Billing (plan change, auto-renew toggle, payment history, invoices PDF)
+   - Downloads (signed URLs, version list, checksum)
+   - Licenses & Devices (device list, deactivate device)
+   - Academy (YouTube playlist embed + content manager)
+   - Support tickets (with attachments)
+   - Settings (company profile, users, roles, MFA)
+3) Admin panel:
+   - Tenants, Users, Plans CRUD
+   - Payments & subscriptions monitoring, refunds notes
+   - Content manager, announcements
+   - Audit logs
+
+Licensing:
+- Endpoint to issue device-bound license token after login
+- /api/license/validate used by desktop: returns Active/PastDue/Expired/Suspended
+- Offline grace: 7 days; after that enforce read-only (default) or block (configurable)
+- Token signing RS256, revocation list by jti, device fingerprint binding
+
+Security:
+- Rate limiting on auth endpoints
+- Webhook signature verification
+- Audit logs (append-only)
+- Signed downloads (time-limited)
+- Secrets via env/secret store; never commit secrets
+
+Deliverables:
+- Monorepo structure (web + api)
+- DB schema + migrations
+- REST API documentation (OpenAPI/Swagger)
+- Basic UI in modern professional design
+- Unit tests for payment webhook + license validation

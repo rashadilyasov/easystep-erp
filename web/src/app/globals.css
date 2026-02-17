@@ -1,0 +1,73 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #fafafa;
+  --foreground: #0f172a;
+  --primary: #2563eb;
+  --primary-foreground: #ffffff;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --border: #e2e8f0;
+  --ring: #2563eb;
+}
+
+.dark {
+  --background: #0c1222;
+  --foreground: #f8fafc;
+  --primary: #3b82f6;
+  --primary-foreground: #ffffff;
+  --muted: #172033;
+  --muted-foreground: #94a3b8;
+  --border: #334155;
+  --ring: #3b82f6;
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes growBar {
+  from { transform: scaleY(0); }
+  to { transform: scaleY(1); }
+}
+@keyframes shimmerSlide {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 0.5; }
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-[var(--background)] text-[var(--foreground)] antialiased;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center justify-center px-6 py-3 rounded-xl font-semibold
+           bg-primary-600 text-white shadow-lg shadow-primary-500/25
+           hover:bg-primary-700 hover:shadow-primary-500/30 hover:-translate-y-0.5
+           active:translate-y-0
+           transition-all duration-300 ease-out;
+  }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center px-6 py-3 rounded-xl font-semibold
+           border-2 border-slate-300 text-slate-700
+           hover:border-primary-500 hover:text-primary-600 hover:-translate-y-0.5
+           active:translate-y-0
+           transition-all duration-300 ease-out;
+  }
+  .card-hover {
+    @apply transition-all duration-300 ease-out
+           hover:-translate-y-2 hover:shadow-xl hover:shadow-slate-200/50
+           active:translate-y-0;
+  }
+  .input-focus {
+    @apply transition-all duration-200
+           focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:border-transparent;
+  }
+}

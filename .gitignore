@@ -1,0 +1,48 @@
+# Dependencies
+node_modules/
+.pnp/
+.pnp.js
+
+# Build outputs
+web/.next/
+web/out/
+api/bin/
+api/obj/
+api/**/bin/
+api/**/obj/
+
+# Environment
+.env
+.env.local
+.env*.local
+*.env
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Secrets
+*.pfx
+secrets/
+
+# Test
+coverage/
+.nyc_output/
+TestResults/
+
+# Database
+*.db
+*.db-shm
+*.db-wal

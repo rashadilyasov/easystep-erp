@@ -128,15 +128,15 @@ const FRAMES = [
               { name: "Material B", qty: "890", bir: "kq", value: "₼ 8 900", bar: 60 },
               { name: "Material C", qty: "320", bir: "ədəd", value: "₼ 7 520", bar: 40 },
             ].map((r) => (
-              <div key={r.name} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 p-3 md:p-4 bg-white rounded-xl md:rounded-2xl border border-slate-200/80 shadow-md hover:shadow-lg transition-shadow">
-                <span className="font-semibold text-slate-800 text-sm md:text-base flex-shrink-0">{r.name}</span>
+              <div key={r.name} className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-4 p-2.5 sm:p-4 bg-white rounded-xl md:rounded-2xl border border-slate-200/80 shadow-md hover:shadow-lg transition-shadow min-w-0 overflow-hidden">
+                <div className="flex justify-between items-center gap-2 min-w-0">
+                  <span className="font-semibold text-slate-800 text-xs sm:text-base truncate">{r.name}</span>
+                  <span className="text-[10px] sm:text-base font-bold text-primary-600 flex-shrink-0">{r.qty} {r.bir}</span>
+                </div>
                 <div className="flex-1 min-w-0 h-2 sm:h-3 bg-slate-100 rounded-full overflow-hidden">
                   <div className="h-full bg-gradient-to-r from-primary-500 to-primary-400 rounded-full" style={{ width: `${r.bar}%` }} />
                 </div>
-                <div className="flex justify-between sm:justify-end gap-3 sm:gap-2 text-sm md:text-base flex-shrink-0">
-                  <span className="font-bold text-primary-600 whitespace-nowrap">{r.qty} {r.bir}</span>
-                  <span className="font-bold text-emerald-600 whitespace-nowrap">{r.value}</span>
-                </div>
+                <div className="text-[10px] sm:text-base font-bold text-emerald-600 truncate">{r.value}</div>
               </div>
             ))}
           </div>
@@ -230,20 +230,20 @@ export default function HeroErpVisual() {
         }}
       >
         {/* Premium top bar - kompakt mobil */}
-        <div className="flex items-center flex-nowrap gap-1.5 sm:gap-3 px-2 sm:px-5 py-2 sm:py-3.5 bg-gradient-to-r from-slate-100 to-slate-50 border-b border-slate-200/80">
+        <div className="flex items-center flex-nowrap gap-1 sm:gap-2 sm:gap-3 px-2 sm:px-5 py-2 sm:py-3.5 bg-gradient-to-r from-slate-100 to-slate-50 border-b border-slate-200/80 min-w-0 overflow-hidden">
           <div className="flex gap-1 sm:gap-2 flex-shrink-0">
-            <div className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 rounded-full bg-red-400 shadow-sm" />
-            <div className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 rounded-full bg-amber-400 shadow-sm" />
-            <div className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 rounded-full bg-emerald-400 shadow-sm" />
+            <div className="w-2 h-2 sm:w-3.5 sm:h-3.5 rounded-full bg-red-400 shadow-sm" />
+            <div className="w-2 h-2 sm:w-3.5 sm:h-3.5 rounded-full bg-amber-400 shadow-sm" />
+            <div className="w-2 h-2 sm:w-3.5 sm:h-3.5 rounded-full bg-emerald-400 shadow-sm" />
           </div>
-          <div className="flex-1 min-w-0 mx-1 sm:mx-4 py-1.5 sm:py-2 px-2 sm:px-5 bg-white rounded-lg sm:rounded-xl text-slate-600 text-[11px] sm:text-sm font-medium border border-slate-200/80 shadow-inner truncate">
+          <div className="flex-1 min-w-0 mx-0.5 sm:mx-4 py-1 sm:py-2 px-1.5 sm:px-5 bg-white rounded-md sm:rounded-xl text-slate-600 text-[10px] sm:text-sm font-medium border border-slate-200/80 shadow-inner truncate overflow-hidden">
             Easy Step ERP
           </div>
-          <div className="flex gap-1 sm:gap-1.5 flex-shrink-0">
+          <div className="flex gap-0.5 sm:gap-1.5 flex-shrink-0">
             {FRAMES.map((_, i) => (
               <div
                 key={i}
-                className={`w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full transition-all duration-300 ${i === frameIndex ? "bg-primary-500 scale-125 shadow-md" : "bg-slate-300 hover:bg-slate-400"}`}
+                className={`w-1.5 h-1.5 sm:w-2.5 sm:h-2.5 rounded-full transition-all duration-300 ${i === frameIndex ? "bg-primary-500 scale-125 shadow-md" : "bg-slate-300"}`}
               />
             ))}
           </div>

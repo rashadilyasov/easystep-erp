@@ -18,7 +18,7 @@ export default function Logo({ href = "/", className = "", width = 140, height =
       width={width}
       height={height}
       priority
-      className={className || "h-9 w-auto"}
+      className={className || "h-8 sm:h-9 w-auto object-contain object-left max-w-[120px] sm:max-w-none"}
     />
   );
 

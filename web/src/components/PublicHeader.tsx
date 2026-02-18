@@ -42,8 +42,10 @@ export default function PublicHeader({ active }: { active?: NavItem }) {
 
   return (
     <header className="fixed top-0 w-full z-50 bg-white/90 backdrop-blur-md border-b border-slate-200/80 shadow-sm">
-      <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        <Logo href="/" />
+      <nav className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between gap-2 min-w-0">
+        <div className="min-w-0 flex-shrink">
+          <Logo href="/" />
+        </div>
         <div className="hidden lg:flex items-center gap-6">{navLinks}</div>
         <button
           type="button"

@@ -4,18 +4,18 @@ Vercel-da **Settings** → **Environment Variables** əlavə edin:
 
 | Name | Value |
 |------|-------|
-| `NEXT_PUBLIC_API_URL` | `https://api.easysteperp.com` və ya Railway URL (aşağıya bax) |
+| `API_URL` və ya `NEXT_PUBLIC_API_URL` | Railway URL (aşağıya bax) |
 
 > **Vacib:** Bu olmadan qeydiyyat və login işləməz. Dəyişəndən sonra **Redeploy** edin.
 
-## api.easysteperp.com resolve olmur (DNS xətası)?
+## Nə işləyir?
 
-Kod indi default olaraq **Railway birbaşa URL** istifadə edir: `https://a19hvpgi.up.railway.app`
+API çağrıları Next.js **proxy** ilə gedir. Brauzer yalnız easysteperp.com-a müraciət edir — DNS və CORS problemi yoxdur. Vercel serveri bu müraciətləri Railway API-yə yönləndirir.
 
-Əgər Railway-da domain dəyişibsə: **Railway** → API servisi → **Settings** → **Networking** → public `.up.railway.app` URL-i kopyalayın və Vercel-də `NEXT_PUBLIC_API_URL` kimi qoyun, sonra **Redeploy**.
+**API_URL** — Railway-dan: **Settings** → **Networking** → public URL (`.up.railway.app` və ya `api.easysteperp.com`).
 
 ## API xətası alırsınızsa?
 
-1. Vercel-də `NEXT_PUBLIC_API_URL` — Railway URL və ya `https://api.easysteperp.com`
+1. Vercel-də `API_URL` (və ya `NEXT_PUBLIC_API_URL`) — işləyən Railway URL
 2. Vercel **Redeploy** edin
 3. Railway API **Online** olmalıdır

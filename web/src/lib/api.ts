@@ -1,8 +1,5 @@
-// API base: Vercel env > Railway URL (api.easysteperp.com DNS resolve olmayanda) > custom domain
-const RAILWAY_FALLBACK = "https://a19hvpgi.up.railway.app";
-const API_BASE =
-  (typeof process !== "undefined" && process.env.NEXT_PUBLIC_API_URL) ||
-  RAILWAY_FALLBACK;
+// API - relative path istifadə edirək (Next.js rewrite proxy), DNS və CORS problemi aradan qalxır
+const API_BASE = "";
 
 function getAccessToken(): string | null {
   if (typeof window === "undefined") return null;
@@ -78,7 +75,7 @@ export async function apiFetch<T>(path: string, options: FetchOptions = {}): Pro
     return res.json();
   } catch (e) {
     if (e instanceof Error) throw e;
-    throw new Error("Bağlantı xətası — Railway API-ya çıxışı yoxlayın");
+    throw new Error("Bağlantı xətası — internet bağlantınızı yoxlayın");
   }
 }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
 import { api } from "@/lib/api";
 import Link from "next/link";
@@ -8,6 +8,7 @@ import Logo from "@/components/Logo";
 
 function CheckoutContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const planId = searchParams.get("planId");
   const [status, setStatus] = useState<"idle" | "redirecting" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
@@ -16,7 +17,8 @@ function CheckoutContent() {
     if (!planId) return;
     const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
     if (!token) {
-      window.location.href = `/login?redirect=${encodeURIComponent(`/checkout?planId=${planId}`)}`;
+      const redirect = encodeURIComponent(`/checkout?planId=${planId}`);
+      router.push(`/?auth=login&redirect=${redirect}`);
       return;
     }
 
@@ -31,7 +33,7 @@ function CheckoutContent() {
         setError(e?.message || "Xəta baş verdi");
         setStatus("error");
       });
-  }, [planId]);
+  }, [planId, router]);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 px-4">

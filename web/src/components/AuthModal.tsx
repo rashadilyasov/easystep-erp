@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useAuthModal } from "@/contexts/AuthModalContext";
 import LoginForm from "./LoginForm";
@@ -13,16 +13,30 @@ export default function AuthModal() {
 
   useEffect(() => setMounted(true), []);
 
+  const handleBackdropClick = useCallback(
+    (e: React.MouseEvent) => {
+      if (e.target === e.currentTarget) close();
+    },
+    [close]
+  );
+
+  const handleEscape = useCallback(
+    (e: KeyboardEvent) => {
+      if (e.key === "Escape") close();
+    },
+    [close]
+  );
+
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
+      document.addEventListener("keydown", handleEscape);
     }
     return () => {
       document.body.style.overflow = "";
+      document.removeEventListener("keydown", handleEscape);
     };
-  }, [isOpen]);
+  }, [isOpen, handleEscape]);
 
   if (!mounted || !isOpen || !mode) return null;
 
@@ -30,15 +44,17 @@ export default function AuthModal() {
 
   const content = (
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
-      onClick={(e) => e.target === e.currentTarget && close()}
+      className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md cursor-pointer"
+      onClick={handleBackdropClick}
       role="dialog"
       aria-modal
       aria-labelledby="auth-modal-title"
+      data-auth-modal-backdrop
     >
       <div
-        className="relative w-full max-w-md bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden"
+        className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden cursor-default"
         onClick={(e) => e.stopPropagation()}
+        data-auth-modal-content
       >
         <div className="absolute top-4 right-4">
           <button

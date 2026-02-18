@@ -1,7 +1,6 @@
-import RegisterForm from "@/components/RegisterForm";
-import Logo from "@/components/Logo";
-import AuthPageSwitch from "@/components/AuthPageSwitch";
+import { Suspense } from "react";
 import PublicHeader from "@/components/PublicHeader";
+import AuthPageOpener from "@/components/AuthPageOpener";
 
 export const metadata = {
   title: "Qeydiyyat | Easy Step ERP",
@@ -12,18 +11,9 @@ export default function Register() {
   return (
     <div className="min-h-screen">
       <PublicHeader />
-      <div className="pt-24 flex flex-col items-center justify-center min-h-[calc(100vh-6rem)] bg-slate-50 px-4 py-12">
-      <div className="w-full max-w-md">
-        <div className="flex justify-center mb-8">
-          <Logo href="/" />
-        </div>
-        <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
-          <h1 className="text-2xl font-bold text-slate-900 mb-6">Qeydiyyat</h1>
-          <RegisterForm />
-          <AuthPageSwitch mode="register" />
-        </div>
-      </div>
-    </div>
+      <Suspense fallback={<div className="pt-24 min-h-screen flex items-center justify-center bg-slate-50"><div className="animate-spin w-10 h-10 border-2 border-primary-500 border-t-transparent rounded-full" /></div>}>
+        <AuthPageOpener mode="register" />
+      </Suspense>
     </div>
   );
 }

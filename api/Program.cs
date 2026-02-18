@@ -37,8 +37,8 @@ builder.Services.AddScoped<IEmailService, SmtpEmailService>();
 // Controllers
 builder.Services.AddControllers();
 
-// JWT
-var jwtKey = builder.Configuration["Jwt:Key"] ?? "easystep-erp-secret-key-min-32-chars!!";
+// JWT — Jwt:Key (Jwt__Key) və Jwt_Key formatlarını dəstəkləyir
+var jwtKey = builder.Configuration["Jwt:Key"] ?? builder.Configuration["Jwt_Key"] ?? "easystep-erp-secret-key-min-32-chars!!";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -87,12 +87,26 @@ builder.Services.AddRateLimiter(options =>
     });
 });
 
-// CORS
+// CORS — Cors:Origins (Cors__Origins__0) və Cors_Origins_0 formatlarını dəstəkləyir
+static string[] GetCorsOrigins(IConfiguration config)
+{
+    var arr = config.GetSection("Cors:Origins").Get<string[]>();
+    if (arr is { Length: > 0 }) return arr;
+    var list = new List<string>();
+    for (var i = 0; i < 10; i++)
+    {
+        var v = config["Cors:Origins:" + i] ?? config["Cors_Origins_" + i];
+        if (string.IsNullOrEmpty(v)) break;
+        list.Add(v);
+    }
+    return list.Count > 0 ? list.ToArray() : new[] { "http://localhost:3000" };
+}
+var corsOrigins = GetCorsOrigins(builder.Configuration);
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        policy.WithOrigins(builder.Configuration.GetSection("Cors:Origins").Get<string[]>() ?? new[] { "http://localhost:3000" })
+        policy.WithOrigins(corsOrigins)
             .AllowAnyMethod()
             .AllowAnyHeader();
     });

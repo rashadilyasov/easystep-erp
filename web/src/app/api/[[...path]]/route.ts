@@ -14,7 +14,7 @@ function getApiBase(): string {
     return u;
   }
   if (process.env.VERCEL) return "https://a19hvpgi.up.railway.app";
-  return "http://localhost:5000";
+  return "http://localhost:5000"; // lokaldə api default port
 }
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ path?: string[] }> }) {

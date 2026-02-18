@@ -9,8 +9,10 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Railway: PORT env variable üzrə dinlə (default 8080)
-var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+// Railway: PORT env; lokaldə 5000 (Development), prodda 8080
+var port = Environment.GetEnvironmentVariable("PORT");
+if (string.IsNullOrEmpty(port))
+  port = builder.Environment.IsDevelopment() ? "5000" : "8080";
 builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 
 // DbContext — Development-da SQLite, əks halda PostgreSQL (hosting üçün)

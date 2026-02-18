@@ -2,6 +2,7 @@
 
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import AuthModalTrigger from "@/components/AuthModalTrigger";
 import { Suspense, useState } from "react";
 import { api } from "@/lib/api";
 import Logo from "@/components/Logo";
@@ -52,9 +53,9 @@ function ResetPasswordForm() {
     return (
       <div className="p-6 bg-green-50 border border-green-200 rounded-xl text-green-800 text-center">
         <p className="font-medium">Şifrəniz uğurla dəyişdirildi.</p>
-        <Link href="/login" className="mt-4 inline-block text-primary-600 hover:underline text-sm font-medium">
+        <AuthModalTrigger mode="login" className="mt-4 inline-block text-primary-600 hover:underline text-sm font-medium">
           Daxil ol
-        </Link>
+        </AuthModalTrigger>
       </div>
     );
   }
@@ -94,9 +95,9 @@ function ResetPasswordForm() {
         {status === "loading" ? "Yoxlanılır..." : "Şifrəni dəyişdir"}
       </button>
       <p className="text-center text-slate-600 text-sm">
-        <Link href="/login" className="text-primary-600 font-medium hover:underline">
+        <AuthModalTrigger mode="login" className="text-primary-600 font-medium hover:underline">
           ← Daxil ol səhifəsinə qayıt
-        </Link>
+        </AuthModalTrigger>
       </p>
     </form>
   );

@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
+import AuthModalTrigger from "./AuthModalTrigger";
 import { api } from "@/lib/api";
 
 export default function ForgotPasswordForm() {
@@ -29,9 +29,9 @@ export default function ForgotPasswordForm() {
       <div className="p-6 bg-green-50 border border-green-200 rounded-xl text-green-800 text-center">
         <p className="font-medium">Şifrə sıfırlama linki e-poçtunuza göndərildi.</p>
         <p className="text-sm mt-1">Spam qovluğunu da yoxlayın.</p>
-        <Link href="/login" className="mt-4 inline-block text-primary-600 hover:underline text-sm font-medium">
+        <AuthModalTrigger mode="login" className="mt-4 inline-block text-primary-600 hover:underline text-sm font-medium">
           ← Daxil ol səhifəsinə qayıt
-        </Link>
+        </AuthModalTrigger>
       </div>
     );
   }
@@ -58,9 +58,9 @@ export default function ForgotPasswordForm() {
         {status === "loading" ? "Göndərilir..." : "Göndər"}
       </button>
       <p className="text-center text-slate-600 text-sm">
-        <Link href="/login" className="text-primary-600 font-medium hover:underline">
+        <AuthModalTrigger mode="login" className="text-primary-600 font-medium hover:underline">
           ← Daxil ol səhifəsinə qayıt
-        </Link>
+        </AuthModalTrigger>
       </p>
     </form>
   );

@@ -3,15 +3,26 @@
 import Link from "next/link";
 import { useState } from "react";
 import Logo from "./Logo";
+import { useAuthModal } from "@/contexts/AuthModalContext";
 
 type NavItem = "features" | "pricing" | "contact" | "security" | null;
 
 export default function PublicHeader({ active }: { active?: NavItem }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { openLogin, openRegister } = useAuthModal();
   const linkClass = (item: NavItem) =>
     item === active
       ? "text-primary-600 font-medium"
       : "text-slate-600 hover:text-slate-900 transition-colors duration-200";
+
+  const handleOpenLogin = () => {
+    setMobileOpen(false);
+    openLogin();
+  };
+  const handleOpenRegister = () => {
+    setMobileOpen(false);
+    openRegister();
+  };
 
   const navLinks = (
     <>
@@ -27,16 +38,22 @@ export default function PublicHeader({ active }: { active?: NavItem }) {
       <Link href="/security" className={`py-2 lg:py-0 ${linkClass("security")}`} onClick={() => setMobileOpen(false)}>
         Təhlükəsizlik
       </Link>
-      <Link href="/login" className={`py-2 lg:py-0 ${linkClass(null)}`} onClick={() => setMobileOpen(false)}>
+      <button
+        type="button"
+        className={`py-2 lg:py-0 bg-transparent border-none cursor-pointer font-inherit ${linkClass(null)}`}
+        onClick={handleOpenLogin}
+        data-auth-trigger="login"
+      >
         Daxil ol
-      </Link>
-      <Link
-        href="/register"
+      </button>
+      <button
+        type="button"
         className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-medium transition-all duration-300 hover:shadow-lg hover:shadow-primary-500/25 hover:-translate-y-0.5 active:translate-y-0"
-        onClick={() => setMobileOpen(false)}
+        onClick={handleOpenRegister}
+        data-auth-trigger="register"
       >
         Qeydiyyat
-      </Link>
+      </button>
     </>
   );
 

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Suspense, useState, useEffect } from "react";
 import { api } from "@/lib/api";
 import Logo from "@/components/Logo";
+import AuthModalTrigger from "@/components/AuthModalTrigger";
 
 function VerifyEmailContent() {
   const searchParams = useSearchParams();
@@ -32,9 +33,9 @@ function VerifyEmailContent() {
       <div className="p-6 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-center">
         <p className="font-medium">Etibarsız və ya eksik link.</p>
         <p className="text-sm mt-1">E-poçt təsdiqi üçün e-poçtunuzdakı linkə keçid edin.</p>
-        <Link href="/login" className="mt-4 inline-block text-primary-600 hover:underline text-sm font-medium">
+        <AuthModalTrigger mode="login" className="mt-4 inline-block text-primary-600 hover:underline text-sm font-medium">
           Daxil ol →
-        </Link>
+        </AuthModalTrigger>
       </div>
     );
   }
@@ -52,9 +53,9 @@ function VerifyEmailContent() {
     return (
       <div className="p-6 bg-green-50 border border-green-200 rounded-xl text-green-800 text-center">
         <p className="font-medium">{message}</p>
-        <Link href="/login" className="mt-4 inline-block text-primary-600 hover:underline text-sm font-medium">
+        <AuthModalTrigger mode="login" className="mt-4 inline-block text-primary-600 hover:underline text-sm font-medium">
           Daxil ol
-        </Link>
+        </AuthModalTrigger>
       </div>
     );
   }
@@ -62,9 +63,9 @@ function VerifyEmailContent() {
   return (
     <div className="p-6 bg-red-50 border border-red-200 rounded-xl text-red-800 text-center">
       <p className="font-medium">{message}</p>
-      <Link href="/register" className="mt-4 inline-block text-primary-600 hover:underline text-sm font-medium">
+      <AuthModalTrigger mode="register" className="mt-4 inline-block text-primary-600 hover:underline text-sm font-medium">
         Yenidən qeydiyyatdan keç
-      </Link>
+      </AuthModalTrigger>
       <span className="mx-2">və ya</span>
       <Link href="/contact" className="text-primary-600 hover:underline text-sm font-medium">
         Bizimlə əlaqə

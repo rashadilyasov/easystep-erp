@@ -25,6 +25,22 @@ Bluehost-un özü isə **yalnız domain** üçün istifadə oluna bilər (domain
 
 ---
 
+## Yeni dəyişiklikləri canlı etmək
+
+Daxil ol / Qeydiyyat popup-ları və digər frontend dəyişikliklərini canlı sayta çıxarmaq üçün:
+
+1. Git-da commit və push edin:
+   ```bash
+   cd "d:\Cursor\Easy Step ERP WEB"
+   git add .
+   git commit -m "feat: Login/Register popup modal"
+   git push origin main
+   ```
+2. Vercel avtomatik yeni deploy başladacaq (GitHub ilə bağlıdırsa)
+3. Deploy bitəndən sonra brauzerdə **Ctrl+Shift+R** (hard refresh) və ya **Cache təmizlə** ilə yoxlayın
+
+---
+
 ## Addım-addım yükləmə (Vercel + Railway)
 
 ### HAZIRLIQ

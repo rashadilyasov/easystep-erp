@@ -1,5 +1,8 @@
-// Client: same-origin, Next.js rewrite proxies /api/* to backend
-const API_BASE = "";
+// API base: Vercel env > Railway URL (api.easysteperp.com DNS resolve olmayanda) > custom domain
+const RAILWAY_FALLBACK = "https://a19hvpgi.up.railway.app";
+const API_BASE =
+  (typeof process !== "undefined" && process.env.NEXT_PUBLIC_API_URL) ||
+  RAILWAY_FALLBACK;
 
 function getAccessToken(): string | null {
   if (typeof window === "undefined") return null;
@@ -27,51 +30,56 @@ type FetchOptions = RequestInit & {
 const FETCH_TIMEOUT_MS = 12000;
 
 export async function apiFetch<T>(path: string, options: FetchOptions = {}): Promise<T> {
-  const { params, skipAuth, _retrying, ...init } = options;
-  let url = path.startsWith("http") ? path : `${API_BASE}${path}`;
-  if (params) {
-    const search = new URLSearchParams(params).toString();
-    url += (url.includes("?") ? "&" : "?") + search;
-  }
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    ...(init.headers as Record<string, string>),
-  };
-  if (!skipAuth) {
-    const token = getAccessToken();
-    if (token) headers["Authorization"] = `Bearer ${token}`;
-  }
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-  const res = await fetch(url, { ...init, headers, signal: controller.signal }).finally(() =>
-    clearTimeout(timeoutId)
-  );
-  if (res.status === 401 && !skipAuth && !_retrying) {
-    const refresh = getRefreshToken();
-    if (refresh) {
-      try {
-        const refreshRes = await fetch(`${API_BASE}/api/auth/refresh`, {
-          method: "POST",
-          body: JSON.stringify({ refreshToken: refresh }),
-          headers: { "Content-Type": "application/json" },
-        });
-        const tok = await refreshRes.json() as { accessToken?: string; refreshToken?: string };
-        if (tok.accessToken && tok.refreshToken) {
-          setTokens(tok.accessToken, tok.refreshToken);
-          return apiFetch<T>(path, { ...options, _retrying: true });
+  try {
+    const { params, skipAuth, _retrying, ...init } = options;
+    let url = path.startsWith("http") ? path : `${API_BASE}${path}`;
+    if (params) {
+      const search = new URLSearchParams(params).toString();
+      url += (url.includes("?") ? "&" : "?") + search;
+    }
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      ...(init.headers as Record<string, string>),
+    };
+    if (!skipAuth) {
+      const token = getAccessToken();
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+    }
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+    const res = await fetch(url, { ...init, headers, signal: controller.signal }).finally(() =>
+      clearTimeout(timeoutId)
+    );
+    if (res.status === 401 && !skipAuth && !_retrying) {
+      const refresh = getRefreshToken();
+      if (refresh) {
+        try {
+          const refreshRes = await fetch(`${API_BASE}/api/auth/refresh`, {
+            method: "POST",
+            body: JSON.stringify({ refreshToken: refresh }),
+            headers: { "Content-Type": "application/json" },
+          });
+          const tok = await refreshRes.json() as { accessToken?: string; refreshToken?: string };
+          if (tok.accessToken && tok.refreshToken) {
+            setTokens(tok.accessToken, tok.refreshToken);
+            return apiFetch<T>(path, { ...options, _retrying: true });
+          }
+        } catch {
+          // refresh failed
         }
-      } catch {
-        // refresh failed
       }
     }
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ message: res.statusText }));
+      const body = err as { message?: string; detail?: string; error?: string; title?: string };
+      const msg = body.message || body.detail || body.error || body.title || res.statusText;
+      throw new Error(msg || `API xətası (${res.status})`);
+    }
+    return res.json();
+  } catch (e) {
+    if (e instanceof Error) throw e;
+    throw new Error("Bağlantı xətası — Railway API-ya çıxışı yoxlayın");
   }
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ message: res.statusText }));
-    const body = err as { message?: string; detail?: string; error?: string; title?: string };
-    const msg = body.message || body.detail || body.error || body.title || res.statusText;
-    throw new Error(msg || `API xətası (${res.status})`);
-  }
-  return res.json();
 }
 
 export const api = {

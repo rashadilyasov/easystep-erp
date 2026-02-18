@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const getApiUrl = () => {
   if (process.env.NEXT_PUBLIC_API_URL) return process.env.NEXT_PUBLIC_API_URL;
-  if (process.env.VERCEL) return "https://api.easysteperp.com";
+  if (process.env.VERCEL) return "https://a19hvpgi.up.railway.app";
   return "http://localhost:5000";
 };
 

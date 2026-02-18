@@ -1,11 +1,17 @@
 /** @type {import('next').NextConfig} */
+const getApiUrl = () => {
+  if (process.env.NEXT_PUBLIC_API_URL) return process.env.NEXT_PUBLIC_API_URL;
+  if (process.env.VERCEL) return "https://api.easysteperp.com";
+  return "http://localhost:5000";
+};
+
 const nextConfig = {
   reactStrictMode: true,
   async rewrites() {
     return [
       {
-        source: '/api/:path*',
-        destination: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/:path*`,
+        source: "/api/:path*",
+        destination: `${getApiUrl()}/api/:path*`,
       },
     ];
   },

@@ -19,6 +19,8 @@ public class User
     public bool EmailVerified { get; set; }
     public bool TwoFactorEnabled { get; set; }
     public string? TwoFactorSecret { get; set; }
+    /// <summary>When true, 2FA uses email OTP instead of TOTP.</summary>
+    public bool TwoFactorViaEmail { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? LastLoginAt { get; set; }
 

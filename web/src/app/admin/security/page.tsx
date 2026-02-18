@@ -4,11 +4,12 @@ import { useState } from "react";
 import { api } from "@/lib/api";
 
 export default function AdminSecurity() {
-  const [setup, setSetup] = useState<{ secret: string; qrCodeUrl: string } | null>(null);
+  const [setup, setSetup] = useState<{ secret?: string; qrCodeUrl?: string; viaEmail?: boolean } | null>(null);
   const [verifyCode, setVerifyCode] = useState("");
   const [disablePassword, setDisablePassword] = useState("");
   const [disableCode, setDisableCode] = useState("");
   const [loading, setLoading] = useState(false);
+  const [disableOtpSent, setDisableOtpSent] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [twoFactorEnabled, setTwoFactorEnabled] = useState<boolean | null>(null);
 
@@ -21,12 +22,12 @@ export default function AdminSecurity() {
     }
   };
 
-  const handleSetup = async () => {
+  const handleSetup = async (viaEmail = false) => {
     setLoading(true);
     setMessage(null);
     try {
-      const res = await api.auth.twoFactorSetup();
-      setSetup({ secret: res.secret, qrCodeUrl: res.qrCodeUrl });
+      const res = await api.auth.twoFactorSetup(viaEmail);
+      setSetup({ secret: res.secret, qrCodeUrl: res.qrCodeUrl, viaEmail: res.viaEmail ?? viaEmail });
     } catch (e) {
       setMessage({ type: "error", text: e instanceof Error ? e.message : "Xəta" });
     } finally {
@@ -51,6 +52,20 @@ export default function AdminSecurity() {
     }
   };
 
+  const handleSendDisableOtp = async () => {
+    setLoading(true);
+    setMessage(null);
+    try {
+      await api.auth.twoFactorSendDisableOtp();
+      setMessage({ type: "success", text: "Kod e-poçtunuza göndərildi." });
+      setDisableOtpSent(true);
+    } catch (e) {
+      setMessage({ type: "error", text: e instanceof Error ? e.message : "Xəta" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleDisable = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!disablePassword || !disableCode) return;
@@ -61,6 +76,7 @@ export default function AdminSecurity() {
       setMessage({ type: "success", text: "2FA deaktivləşdirildi" });
       setDisablePassword("");
       setDisableCode("");
+      setDisableOtpSent(false);
     } catch (e) {
       setMessage({ type: "error", text: e instanceof Error ? e.message : "Şifrə və ya kod səhvdir" });
     } finally {
@@ -86,17 +102,58 @@ export default function AdminSecurity() {
         <div className="p-6 bg-white rounded-2xl border border-slate-200">
           <h3 className="font-semibold text-slate-900 mb-2">İki faktorlu autentifikasiya (2FA)</h3>
           <p className="text-slate-600 text-sm mb-4">
-            Google Authenticator və ya başqa TOTP tətbiqi ilə girişi mühafizə edin.
+            Girişi mühafizə edin — Authenticator app və ya e-poçt OTP ilə.
           </p>
 
           {!setup ? (
-            <button
-              onClick={handleSetup}
-              disabled={loading}
-              className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50"
-            >
-              {loading ? "..." : "2FA quraşdır"}
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => handleSetup(false)}
+                disabled={loading}
+                className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50"
+              >
+                {loading ? "..." : "Authenticator app ilə"}
+              </button>
+              <button
+                onClick={() => handleSetup(true)}
+                disabled={loading}
+                className="px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50"
+              >
+                E-poçt OTP ilə
+              </button>
+            </div>
+          ) : setup.viaEmail ? (
+            <div className="space-y-4">
+              <p className="text-sm text-slate-600">Kod e-poçtunuza göndərildi. Kodu daxil edin:</p>
+              <form onSubmit={handleVerify} className="flex gap-2 items-end">
+                <div>
+                  <label className="block text-sm text-slate-600 mb-1">6 rəqəmli kod</label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={6}
+                    value={verifyCode}
+                    onChange={(e) => setVerifyCode(e.target.value.replace(/\D/g, ""))}
+                    className="border border-slate-300 rounded-lg px-3 py-2 w-32"
+                    placeholder="000000"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={loading || verifyCode.length !== 6}
+                  className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50"
+                >
+                  Təsdiq et
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSetup(null)}
+                  className="px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-50"
+                >
+                  Ləğv
+                </button>
+              </form>
+            </div>
           ) : (
             <div className="space-y-4">
               <p className="text-sm text-slate-600">
@@ -105,7 +162,7 @@ export default function AdminSecurity() {
               <div className="flex gap-4 items-start">
                 <div className="bg-white p-2 rounded border border-slate-200">
                   <img
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(setup.qrCodeUrl)}`}
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(setup.qrCodeUrl ?? "")}`}
                     alt="QR Code"
                     width={150}
                     height={150}
@@ -151,7 +208,7 @@ export default function AdminSecurity() {
         <div className="p-6 bg-white rounded-2xl border border-slate-200">
           <h3 className="font-semibold text-slate-900 mb-2">2FA deaktivləşdir</h3>
           <p className="text-slate-600 text-sm mb-4">
-            Şifrə və cari 2FA kodunu daxil edin.
+            Şifrə və 2FA kodunu daxil edin. E-poçt 2FA istifadə edirsinizsə, əvvəlcə &quot;Kod göndər&quot; düyməsinə basın.
           </p>
           <form onSubmit={handleDisable} className="space-y-3 max-w-xs">
             <input
@@ -161,15 +218,25 @@ export default function AdminSecurity() {
               placeholder="Şifrə"
               className="w-full border border-slate-300 rounded-lg px-3 py-2"
             />
-            <input
-              type="text"
-              inputMode="numeric"
-              maxLength={6}
-              value={disableCode}
-              onChange={(e) => setDisableCode(e.target.value.replace(/\D/g, ""))}
-              placeholder="2FA kodu"
-              className="w-full border border-slate-300 rounded-lg px-3 py-2"
-            />
+            <div className="flex gap-2">
+              <input
+                type="text"
+                inputMode="numeric"
+                maxLength={6}
+                value={disableCode}
+                onChange={(e) => setDisableCode(e.target.value.replace(/\D/g, ""))}
+                placeholder="2FA kodu"
+                className="flex-1 border border-slate-300 rounded-lg px-3 py-2"
+              />
+              <button
+                type="button"
+                onClick={handleSendDisableOtp}
+                disabled={loading || disableOtpSent}
+                className="px-3 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50 whitespace-nowrap"
+              >
+                {disableOtpSent ? "Göndərildi" : "Kod göndər"}
+              </button>
+            </div>
             <button
               type="submit"
               disabled={loading}

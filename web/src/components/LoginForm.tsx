@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
+import { api } from "@/lib/api";
 
 function LoginFormInner() {
   const searchParams = useSearchParams();
@@ -13,6 +14,8 @@ function LoginFormInner() {
   const [step, setStep] = useState<"credentials" | "2fa">("credentials");
   const [pendingToken, setPendingToken] = useState("");
   const [code2FA, setCode2FA] = useState("");
+  const [viaEmail, setViaEmail] = useState(false);
+  const [resendError, setResendError] = useState<string | null>(null);
   const { login, complete2FA, loading, error } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -24,18 +27,31 @@ function LoginFormInner() {
     const result = await login(email, password, redirect);
     if (result && "requires2FA" in result && result.requires2FA && result.pendingToken) {
       setPendingToken(result.pendingToken);
+      setViaEmail(result.viaEmail ?? false);
       setStep("2fa");
       setCode2FA("");
+    }
+  };
+
+  const handleResendOtp = async () => {
+    if (!pendingToken) return;
+    setResendError(null);
+    try {
+      await api.auth.twoFactorRequestEmailOtp(pendingToken);
+    } catch (e) {
+      setResendError(e instanceof Error ? e.message : "Xəta");
     }
   };
 
   if (step === "2fa") {
     return (
       <form className="space-y-4" onSubmit={handleSubmit}>
-        {error && (
-          <div className="p-3 bg-red-50 text-red-700 rounded-xl text-sm">{error}</div>
+        {(error || resendError) && (
+          <div className="p-3 bg-red-50 text-red-700 rounded-xl text-sm">{error || resendError}</div>
         )}
-        <p className="text-slate-600 text-sm">Autentifikator tətbiqindən 6 rəqəmli kodu daxil edin.</p>
+        <p className="text-slate-600 text-sm">
+          {viaEmail ? "E-poçtunuza göndərilən 6 rəqəmli kodu daxil edin." : "Autentifikator tətbiqindən 6 rəqəmli kodu daxil edin."}
+        </p>
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-2">2FA kodu</label>
           <input
@@ -50,7 +66,7 @@ function LoginFormInner() {
             placeholder="000000"
           />
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <button
             type="button"
             onClick={() => setStep("credentials")}
@@ -58,10 +74,19 @@ function LoginFormInner() {
           >
             Geri
           </button>
+          {viaEmail && (
+            <button
+              type="button"
+              onClick={handleResendOtp}
+              className="px-4 py-2 border border-slate-300 rounded-xl hover:bg-slate-50"
+            >
+              Kodu yenidən göndər
+            </button>
+          )}
           <button
             type="submit"
             disabled={loading || code2FA.length !== 6}
-            className="flex-1 py-3 btn-primary disabled:opacity-70 disabled:hover:translate-y-0"
+            className="flex-1 py-3 btn-primary disabled:opacity-70 disabled:hover:translate-y-0 min-w-[120px]"
           >
             {loading ? "Yoxlanılır..." : "Təsdiq"}
           </button>

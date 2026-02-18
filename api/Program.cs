@@ -134,8 +134,9 @@ using (var scope = app.Services.CreateScope())
         var expiredRefresh = await db.RefreshTokens.Where(r => r.ExpiresAt < now || r.RevokedAt != null).ExecuteDeleteAsync();
         var expiredReset = await db.PasswordResetTokens.Where(p => p.ExpiresAt < now || p.UsedAt != null).ExecuteDeleteAsync();
         var expiredEmailVerify = await db.EmailVerificationTokens.Where(e => e.ExpiresAt < now || e.UsedAt != null).ExecuteDeleteAsync();
-        if (expiredRefresh > 0 || expiredReset > 0 || expiredEmailVerify > 0)
-            logger.LogInformation("Cleaned {R} refresh, {P} reset, {E} email-verify tokens", expiredRefresh, expiredReset, expiredEmailVerify);
+        var expiredEmailOtp = await db.EmailOtpCodes.Where(e => e.ExpiresAt < now || e.UsedAt != null).ExecuteDeleteAsync();
+        if (expiredRefresh > 0 || expiredReset > 0 || expiredEmailVerify > 0 || expiredEmailOtp > 0)
+            logger.LogInformation("Cleaned tokens: R={R} P={P} EV={E} OTP={O}", expiredRefresh, expiredReset, expiredEmailVerify, expiredEmailOtp);
     }
     catch (Exception ex)
     {

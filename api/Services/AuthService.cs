@@ -319,6 +319,35 @@ public class AuthService
         await _db.SaveChangesAsync(ct);
         return true;
     }
+
+    public async Task<string?> CreateAndStoreEmailOtpAsync(Guid userId, CancellationToken ct = default)
+    {
+        var code = RandomNumberGenerator.GetInt32(100000, 999999).ToString();
+        var hash = HashPasswordResetToken(code);
+        var expiryMins = int.Parse(_config["Auth:EmailOtpExpiryMinutes"] ?? "10");
+        _db.EmailOtpCodes.Add(new EmailOtpCode
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            CodeHash = hash,
+            ExpiresAt = DateTime.UtcNow.AddMinutes(expiryMins),
+            CreatedAt = DateTime.UtcNow,
+        });
+        await _db.SaveChangesAsync(ct);
+        return code;
+    }
+
+    public async Task<bool> ValidateAndConsumeEmailOtpAsync(Guid userId, string code, CancellationToken ct = default)
+    {
+        var hash = HashPasswordResetToken(code);
+        var now = DateTime.UtcNow;
+        var otp = await _db.EmailOtpCodes
+            .FirstOrDefaultAsync(o => o.UserId == userId && o.CodeHash == hash && o.ExpiresAt > now && o.UsedAt == null, ct);
+        if (otp == null) return false;
+        otp.UsedAt = now;
+        await _db.SaveChangesAsync(ct);
+        return true;
+    }
 }
 
 public record RegisterRequest(

@@ -16,7 +16,7 @@ export function useAuth() {
       try {
         const res = await api.auth.login(email, password);
         if (res.requires2FA && res.pendingToken) {
-          return { requires2FA: true, pendingToken: res.pendingToken };
+          return { requires2FA: true, pendingToken: res.pendingToken, viaEmail: res.viaEmail, message: res.message };
         }
         if (res.accessToken) {
           localStorage.setItem("accessToken", res.accessToken);

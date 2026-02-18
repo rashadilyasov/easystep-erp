@@ -75,15 +75,29 @@ public class AuthController : ControllerBase
         if (tenant == null)
             return Unauthorized(new { message = "Hesab tapılmadı" });
 
-        if (user.TwoFactorEnabled && !string.IsNullOrEmpty(user.TwoFactorSecret))
+        if (user.TwoFactorEnabled)
         {
             var pendingToken = _auth.GeneratePending2FAToken(user);
-            return Ok(new
+            if (user.TwoFactorViaEmail)
             {
-                requires2FA = true,
-                pendingToken,
-                message = "2FA kodunu daxil edin",
-            });
+                var code = await _auth.CreateAndStoreEmailOtpAsync(user.Id, ct);
+                if (!string.IsNullOrEmpty(code))
+                {
+                    var html = $@"
+<!DOCTYPE html>
+<html><body style='font-family:Arial,sans-serif'>
+<h2>Daxil olma kodu</h2>
+<p>Salam,</p>
+<p>Easy Step ERP daxil olma kodunuz: <strong>{code}</strong></p>
+<p>Kod 10 dəqiqə ərzində keçərlidir.</p>
+<p>Əgər bu tələb sizdən gəlməyibsə, bu e-poçtu nəzərə almayın.</p>
+<p>— Easy Step ERP<br/>hello@easysteperp.com</p>
+</body></html>";
+                    await _email.SendAsync(user.Email, "Easy Step ERP - Daxil olma kodu", html, ct);
+                }
+                return Ok(new { requires2FA = true, pendingToken, message = "E-poçtunuza göndərilən 6 rəqəmli kodu daxil edin.", viaEmail = true });
+            }
+            return Ok(new { requires2FA = true, pendingToken, message = "2FA kodunu daxil edin (Authenticator app)", viaEmail = false });
         }
 
         await _auth.UpdateLastLoginAsync(user.Id, ct);
@@ -107,7 +121,7 @@ public class AuthController : ControllerBase
 
     [HttpPost("2fa/setup")]
     [Microsoft.AspNetCore.Authorization.Authorize(Policy = "AdminOnly")]
-    public async Task<IActionResult> Setup2FA(CancellationToken ct)
+    public async Task<IActionResult> Setup2FA([FromBody] Setup2FARequest? req, CancellationToken ct)
     {
         var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
         var email = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value ?? "";
@@ -117,12 +131,66 @@ public class AuthController : ControllerBase
         var user = await _auth.GetUserByIdAsync(id, ct);
         if (user == null) return Unauthorized();
 
+        if (req?.ViaEmail == true)
+        {
+            user.TwoFactorSecret = null;
+            user.TwoFactorViaEmail = true;
+            user.TwoFactorEnabled = false;
+            await _auth.SaveChangesAsync(ct);
+            var code = await _auth.CreateAndStoreEmailOtpAsync(user.Id, ct);
+            if (!string.IsNullOrEmpty(code))
+            {
+                var html = $@"
+<!DOCTYPE html>
+<html><body style='font-family:Arial,sans-serif'>
+<h2>2FA təsdiq kodu</h2>
+<p>Salam,</p>
+<p>Easy Step ERP 2FA aktivləşdirmə kodunuz: <strong>{code}</strong></p>
+<p>Kodu quraşdırma səhifəsində daxil edin.</p>
+<p>— Easy Step ERP<br/>hello@easysteperp.com</p>
+</body></html>";
+                await _email.SendAsync(user.Email, "Easy Step ERP - 2FA təsdiq kodu", html, ct);
+            }
+            return Ok(new { viaEmail = true, message = "Kod e-poçtunuza göndərildi. Kodu daxil edin." });
+        }
+
         var (secret, qrCodeUrl) = _auth.GenerateTOTPSecret(email);
         user.TwoFactorSecret = secret;
+        user.TwoFactorViaEmail = false;
         user.TwoFactorEnabled = false;
         await _auth.SaveChangesAsync(ct);
 
-        return Ok(new { secret, qrCodeUrl, message = "QR kodu skan edin və kodu təsdiqləyin" });
+        return Ok(new { secret, qrCodeUrl, viaEmail = false, message = "QR kodu skan edin və kodu təsdiqləyin" });
+    }
+
+    [HttpPost("2fa/request-email-otp")]
+    [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("auth")]
+    public async Task<IActionResult> RequestEmailOtp([FromBody] RequestEmailOtpRequest req, CancellationToken ct)
+    {
+        var user = await _auth.ValidatePending2FATokenAsync(req.PendingToken, ct);
+        if (user == null)
+            return Unauthorized(new { message = "Session vaxtı keçib. Yenidən daxil olun." });
+
+        if (!user.TwoFactorEnabled)
+            return BadRequest(new { message = "2FA aktiv deyil." });
+
+        var code = await _auth.CreateAndStoreEmailOtpAsync(user.Id, ct);
+        if (string.IsNullOrEmpty(code))
+            return StatusCode(500, new { message = "Kod yaradıla bilmədi." });
+
+        var html = $@"
+<!DOCTYPE html>
+<html><body style='font-family:Arial,sans-serif'>
+<h2>Daxil olma kodu</h2>
+<p>Salam,</p>
+<p>Easy Step ERP daxil olma kodunuz: <strong>{code}</strong></p>
+<p>Kod 10 dəqiqə ərzində keçərlidir.</p>
+<p>Əgər bu tələb sizdən gəlməyibsə, bu e-poçtu nəzərə almayın.</p>
+<p>— Easy Step ERP<br/>hello@easysteperp.com</p>
+</body></html>";
+        await _email.SendAsync(user.Email, "Easy Step ERP - Daxil olma kodu", html, ct);
+
+        return Ok(new { message = "Kod e-poçtunuza göndərildi." });
     }
 
     [HttpPost("2fa/verify")]
@@ -134,10 +202,14 @@ public class AuthController : ControllerBase
             return Unauthorized();
 
         var user = await _auth.GetUserByIdAsync(id, ct);
-        if (user == null || string.IsNullOrEmpty(user.TwoFactorSecret))
-            return BadRequest(new { message = "Əvvəlcə 2FA quraşdırması edin" });
+        if (user == null)
+            return Unauthorized();
 
-        if (!_auth.ValidateTOTP(user.TwoFactorSecret, req.Code))
+        var valid = user.TwoFactorViaEmail
+            ? await _auth.ValidateAndConsumeEmailOtpAsync(user.Id, req.Code, ct)
+            : (!string.IsNullOrEmpty(user.TwoFactorSecret) && _auth.ValidateTOTP(user.TwoFactorSecret, req.Code));
+
+        if (!valid)
             return BadRequest(new { message = "Kod səhvdir" });
 
         user.TwoFactorEnabled = true;
@@ -146,12 +218,40 @@ public class AuthController : ControllerBase
         return Ok(new { message = "2FA aktivləşdirildi" });
     }
 
+    [HttpPost("2fa/send-disable-otp")]
+    [Microsoft.AspNetCore.Authorization.Authorize(Policy = "AdminOnly")]
+    public async Task<IActionResult> SendDisableOtp(CancellationToken ct)
+    {
+        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userId) || !Guid.TryParse(userId, out var id))
+            return Unauthorized();
+
+        var user = await _auth.GetUserByIdAsync(id, ct);
+        if (user == null || !user.TwoFactorViaEmail)
+            return BadRequest(new { message = "Bu əməliyyat yalnız e-poçt 2FA üçündür." });
+
+        var code = await _auth.CreateAndStoreEmailOtpAsync(user.Id, ct);
+        if (string.IsNullOrEmpty(code))
+            return StatusCode(500, new { message = "Kod yaradıla bilmədi." });
+
+        var html = $@"
+<!DOCTYPE html>
+<html><body style='font-family:Arial,sans-serif'>
+<h2>2FA söndürmə kodu</h2>
+<p>Salam,</p>
+<p>2FA söndürmək üçün kodunuz: <strong>{code}</strong></p>
+<p>— Easy Step ERP<br/>hello@easysteperp.com</p>
+</body></html>";
+        await _email.SendAsync(user.Email, "Easy Step ERP - 2FA söndürmə kodu", html, ct);
+
+        return Ok(new { message = "Kod e-poçtunuza göndərildi." });
+    }
+
     [HttpPost("2fa/disable")]
     [Microsoft.AspNetCore.Authorization.Authorize(Policy = "AdminOnly")]
     public async Task<IActionResult> Disable2FA([FromBody] Disable2FARequest req, CancellationToken ct)
     {
         var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-        var email = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value ?? "";
         if (string.IsNullOrEmpty(userId) || !Guid.TryParse(userId, out var id))
             return Unauthorized();
 
@@ -161,11 +261,16 @@ public class AuthController : ControllerBase
         if (!_auth.VerifyPassword(req.Password, user.PasswordHash))
             return Unauthorized(new { message = "Şifrə səhvdir" });
 
-        if (string.IsNullOrEmpty(user.TwoFactorSecret) || !_auth.ValidateTOTP(user.TwoFactorSecret, req.Code))
+        var valid = user.TwoFactorViaEmail
+            ? await _auth.ValidateAndConsumeEmailOtpAsync(user.Id, req.Code, ct)
+            : (!string.IsNullOrEmpty(user.TwoFactorSecret) && _auth.ValidateTOTP(user.TwoFactorSecret, req.Code));
+
+        if (!valid)
             return BadRequest(new { message = "2FA kodu səhvdir" });
 
         user.TwoFactorEnabled = false;
         user.TwoFactorSecret = null;
+        user.TwoFactorViaEmail = false;
         await _auth.SaveChangesAsync(ct);
 
         return Ok(new { message = "2FA deaktivləşdirildi" });
@@ -179,7 +284,11 @@ public class AuthController : ControllerBase
         if (user == null)
             return Unauthorized(new { message = "Session vaxtı keçib. Yenidən daxil olun." });
 
-        if (string.IsNullOrEmpty(user.TwoFactorSecret) || !_auth.ValidateTOTP(user.TwoFactorSecret, req.Code))
+        var valid = user.TwoFactorViaEmail
+            ? await _auth.ValidateAndConsumeEmailOtpAsync(user.Id, req.Code, ct)
+            : (!string.IsNullOrEmpty(user.TwoFactorSecret) && _auth.ValidateTOTP(user.TwoFactorSecret, req.Code));
+
+        if (!valid)
             return Unauthorized(new { message = "2FA kodu səhvdir" });
 
         await _auth.UpdateLastLoginAsync(user.Id, ct);
@@ -317,6 +426,10 @@ public record LoginRequest(string Email, string Password);
 public record RefreshRequest(string RefreshToken);
 
 public record Complete2FARequest(string PendingToken, string Code);
+
+public record Setup2FARequest(bool? ViaEmail);
+
+public record RequestEmailOtpRequest(string PendingToken);
 
 public record Verify2FARequest(string Code);
 

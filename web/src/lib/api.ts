@@ -77,7 +77,7 @@ export async function apiFetch<T>(path: string, options: FetchOptions = {}): Pro
 export const api = {
   auth: {
     login: (email: string, password: string) =>
-      apiFetch<{ accessToken?: string; refreshToken?: string; expiresIn?: number; requires2FA?: boolean; pendingToken?: string; message?: string }>(
+      apiFetch<{ accessToken?: string; refreshToken?: string; expiresIn?: number; requires2FA?: boolean; pendingToken?: string; message?: string; viaEmail?: boolean }>(
         "/api/auth/login",
         { method: "POST", body: JSON.stringify({ email, password }), skipAuth: true }
       ),
@@ -87,10 +87,19 @@ export const api = {
         body: JSON.stringify({ pendingToken, code }),
         skipAuth: true,
       }),
-    twoFactorSetup: () =>
-      apiFetch<{ secret: string; qrCodeUrl: string; message: string }>("/api/auth/2fa/setup", {
+    twoFactorSetup: (viaEmail?: boolean) =>
+      apiFetch<{ secret?: string; qrCodeUrl?: string; message: string; viaEmail?: boolean }>("/api/auth/2fa/setup", {
         method: "POST",
+        body: JSON.stringify({ viaEmail: viaEmail ?? false }),
       }),
+    twoFactorRequestEmailOtp: (pendingToken: string) =>
+      apiFetch<{ message: string }>("/api/auth/2fa/request-email-otp", {
+        method: "POST",
+        body: JSON.stringify({ pendingToken }),
+        skipAuth: true,
+      }),
+    twoFactorSendDisableOtp: () =>
+      apiFetch<{ message: string }>("/api/auth/2fa/send-disable-otp", { method: "POST" }),
     twoFactorVerify: (code: string) =>
       apiFetch<{ message: string }>("/api/auth/2fa/verify", {
         method: "POST",

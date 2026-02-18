@@ -17,13 +17,16 @@ const SIDEBAR_ITEMS = ["Dashboard", "Kontragentlər", "Anbarlar", "Alış", "Sat
 function Sidebar({ activeIndex }: { activeIndex: number }) {
   return (
     <>
-      {/* Mobile: horizontal pills - sm:640px-dən kiçik ekranlarda */}
-      <div className="sm:hidden flex gap-2 overflow-x-auto pb-2 px-3 -mx-1 scrollbar-hide">
-        {SIDEBAR_ITEMS.map((item, i) => (
-          <div key={item} className={`flex-shrink-0 py-2 px-3 rounded-xl text-xs font-medium whitespace-nowrap ${i === activeIndex ? "bg-primary-500 text-white" : "text-slate-600 bg-slate-100"}`}>
-            {item}
-          </div>
-        ))}
+      {/* Mobile: horizontal pills - sm:640px-dən kiçik ekranlarda, swipe to scroll */}
+      <div className="sm:hidden relative">
+        <div className="flex gap-2 overflow-x-auto pb-2 px-2 scrollbar-hide snap-x snap-mandatory touch-pan-x">
+          {SIDEBAR_ITEMS.map((item, i) => (
+            <div key={item} className={`flex-shrink-0 py-2 px-2.5 rounded-xl text-xs font-medium whitespace-nowrap snap-start ${i === activeIndex ? "bg-primary-500 text-white" : "text-slate-600 bg-slate-100"}`}>
+              {item}
+            </div>
+          ))}
+        </div>
+        <div className="absolute right-0 top-0 bottom-2 w-8 bg-gradient-to-l from-slate-50 to-transparent pointer-events-none sm:hidden" aria-hidden />
       </div>
       {/* Desktop: vertical sidebar - sm:640px-dən böyük ekranlarda */}
       <div className="hidden sm:block w-32 md:w-40 lg:w-48 flex-shrink-0 bg-white/80 backdrop-blur border-r border-slate-200/80 p-3 md:p-4">
@@ -42,22 +45,22 @@ const FRAMES = [
   {
     id: "dashboard",
     content: (
-      <div className="flex flex-col sm:flex-row bg-gradient-to-br from-slate-50 to-white pb-6 md:pb-8">
+      <div className="flex flex-col sm:flex-row bg-gradient-to-br from-slate-50 to-white pb-8 md:pb-8 min-w-0">
         <Sidebar activeIndex={0} />
-        <div className="flex-1 min-w-0 p-4 md:p-5">
+        <div className="flex-1 min-w-0 p-3 sm:p-4 md:p-5 overflow-hidden">
           <div className="h-10 md:h-11 bg-gradient-to-r from-primary-600 to-primary-500 rounded-xl mb-4 md:mb-5 flex items-center px-4 md:px-5 text-white font-semibold text-xs md:text-sm shadow-lg shadow-primary-500/25">
             Əsas Səhifə (Dashboard)
           </div>
-          <div className="grid grid-cols-2 gap-2 sm:gap-4 md:grid-cols-4 mb-4 md:mb-5">
+          <div className="grid grid-cols-2 gap-2 sm:gap-4 md:grid-cols-4 mb-4 md:mb-5 min-w-0">
             {[
               { label: "Satış (Cari ay)", value: "₼ 12 450", color: "from-primary-50 to-white", accent: "text-primary-600", trend: "+12%" },
               { label: "Satış (Bu gün)", value: "₼ 3 780", color: "from-emerald-50 to-white", accent: "text-emerald-600", trend: "↑" },
               { label: "Anbar qalığı", value: "₼ 28 920", color: "from-emerald-50 to-white", accent: "text-emerald-700 font-bold", trend: "" },
               { label: "Mənfəət (ay)", value: "₼ 8 640", color: "from-emerald-50 to-white", accent: "text-emerald-700 font-bold", trend: "+24%" },
             ].map((k) => (
-              <div key={k.label} className={`p-3 sm:p-5 rounded-xl md:rounded-2xl border border-slate-200/80 bg-gradient-to-br ${k.color} shadow-md md:shadow-lg shadow-slate-200/50`}>
-                <div className="text-[10px] sm:text-xs text-slate-500 uppercase tracking-wider font-medium">{k.label}</div>
-                <div className={`text-lg sm:text-2xl md:text-3xl font-extrabold mt-1 md:mt-2 ${k.accent}`}>{k.value}</div>
+              <div key={k.label} className={`p-3 sm:p-5 rounded-xl md:rounded-2xl border border-slate-200/80 bg-gradient-to-br ${k.color} shadow-md md:shadow-lg shadow-slate-200/50 min-w-0 overflow-hidden`}>
+                <div className="text-[10px] sm:text-xs text-slate-500 uppercase tracking-wider font-medium truncate">{k.label}</div>
+                <div className={`text-base sm:text-xl md:text-2xl font-extrabold mt-1 md:mt-2 truncate ${k.accent}`}>{k.value}</div>
                 {k.trend && <span className="text-[10px] sm:text-xs text-emerald-600 font-semibold">{k.trend}</span>}
               </div>
             ))}
@@ -77,9 +80,9 @@ const FRAMES = [
   {
     id: "kontragent",
     content: (
-      <div className="flex flex-col sm:flex-row bg-gradient-to-br from-slate-50 to-white pb-6 md:pb-8">
+      <div className="flex flex-col sm:flex-row bg-gradient-to-br from-slate-50 to-white pb-8 md:pb-8 min-w-0">
         <Sidebar activeIndex={1} />
-        <div className="flex-1 min-w-0 p-4 md:p-5">
+        <div className="flex-1 min-w-0 p-3 sm:p-4 md:p-5 overflow-hidden">
           <div className="h-10 md:h-11 bg-gradient-to-r from-primary-600 to-primary-500 rounded-xl mb-4 md:mb-5 flex items-center px-4 md:px-5 text-white font-semibold text-xs md:text-sm shadow-lg shadow-primary-500/25">Kontragentlər</div>
           <div className="bg-white rounded-xl md:rounded-2xl border border-slate-200/80 overflow-hidden shadow-lg overflow-x-auto">
             <table className="w-full text-xs sm:text-sm min-w-[280px]">
@@ -115,9 +118,9 @@ const FRAMES = [
   {
     id: "anbar",
     content: (
-      <div className="flex flex-col sm:flex-row bg-gradient-to-br from-slate-50 to-white pb-6 md:pb-8">
+      <div className="flex flex-col sm:flex-row bg-gradient-to-br from-slate-50 to-white pb-8 md:pb-8 min-w-0">
         <Sidebar activeIndex={2} />
-        <div className="flex-1 min-w-0 p-4 md:p-5">
+        <div className="flex-1 min-w-0 p-3 sm:p-4 md:p-5 overflow-hidden">
           <div className="h-10 md:h-11 bg-gradient-to-r from-primary-600 to-primary-500 rounded-xl mb-4 md:mb-5 flex items-center px-4 md:px-5 text-white font-semibold text-xs md:text-sm shadow-lg shadow-primary-500/25">Anbar qalıqları</div>
           <div className="grid gap-3 md:gap-4">
             {[
@@ -147,9 +150,9 @@ const FRAMES = [
   {
     id: "təhlükəsizlik",
     content: (
-      <div className="flex flex-col sm:flex-row bg-gradient-to-br from-slate-50 to-white pb-6 md:pb-8">
+      <div className="flex flex-col sm:flex-row bg-gradient-to-br from-slate-50 to-white pb-8 md:pb-8 min-w-0">
         <Sidebar activeIndex={-1} />
-        <div className="flex-1 min-w-0 p-4 md:p-5">
+        <div className="flex-1 min-w-0 p-3 sm:p-4 md:p-5 overflow-hidden">
           <div className="h-10 md:h-11 bg-gradient-to-r from-emerald-600 to-emerald-500 rounded-xl mb-4 md:mb-5 flex items-center px-4 md:px-5 text-white font-semibold text-xs md:text-sm shadow-lg shadow-emerald-500/25">🛡️ Nəzarət və Təhlükəsizlik</div>
           <div className="space-y-3 md:space-y-4">
             {[
@@ -173,9 +176,9 @@ const FRAMES = [
   {
     id: "kassa",
     content: (
-      <div className="flex flex-col sm:flex-row bg-gradient-to-br from-slate-50 to-white pb-6 md:pb-8">
+      <div className="flex flex-col sm:flex-row bg-gradient-to-br from-slate-50 to-white pb-8 md:pb-8 min-w-0">
         <Sidebar activeIndex={5} />
-        <div className="flex-1 min-w-0 p-4 md:p-5">
+        <div className="flex-1 min-w-0 p-3 sm:p-4 md:p-5 overflow-hidden">
           <div className="h-10 md:h-11 bg-gradient-to-r from-primary-600 to-primary-500 rounded-xl mb-4 md:mb-5 flex items-center px-4 md:px-5 text-white font-semibold text-xs md:text-sm shadow-lg shadow-primary-500/25">💵 Kassa və Ödənişlər</div>
           <div className="grid grid-cols-2 gap-2 sm:gap-4 mb-3 md:mb-4">
             {[
@@ -210,7 +213,7 @@ export default function HeroErpVisual() {
   }, []);
 
   return (
-    <div className="mt-6 md:mt-8 mx-auto max-w-5xl w-full overflow-hidden">
+    <div className="mt-6 md:mt-8 mx-auto max-w-5xl w-full min-w-0 px-1 sm:px-0 overflow-x-hidden">
       {/* Attention-grabbing message badge */}
       <div className="mb-3 md:mb-4 flex justify-center px-2">
         <div className="inline-flex items-center gap-2 px-3 md:px-5 py-2 md:py-2.5 rounded-full bg-gradient-to-r from-primary-500 to-primary-600 text-white text-xs md:text-sm font-semibold shadow-lg shadow-primary-500/30 animate-pulse-slow text-center">
@@ -220,37 +223,37 @@ export default function HeroErpVisual() {
       </div>
 
       <div
-        className="relative overflow-hidden rounded-3xl border-2 border-slate-200/80"
+        className="relative rounded-3xl border-2 border-slate-200/80 overflow-hidden w-full max-w-full"
         style={{
           boxShadow: "0 30px 60px -15px rgba(37, 99, 235, 0.15), 0 0 0 1px rgba(0,0,0,0.04), 0 4px 20px rgba(0,0,0,0.08)",
           background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
         }}
       >
-        {/* Premium top bar */}
-        <div className="flex items-center gap-3 px-5 py-3.5 bg-gradient-to-r from-slate-100 to-slate-50 border-b border-slate-200/80">
-          <div className="flex gap-2">
-            <div className="w-3.5 h-3.5 rounded-full bg-red-400 shadow-sm" />
-            <div className="w-3.5 h-3.5 rounded-full bg-amber-400 shadow-sm" />
-            <div className="w-3.5 h-3.5 rounded-full bg-emerald-400 shadow-sm" />
+        {/* Premium top bar - kompakt mobil */}
+        <div className="flex items-center flex-nowrap gap-1.5 sm:gap-3 px-2 sm:px-5 py-2 sm:py-3.5 bg-gradient-to-r from-slate-100 to-slate-50 border-b border-slate-200/80">
+          <div className="flex gap-1 sm:gap-2 flex-shrink-0">
+            <div className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 rounded-full bg-red-400 shadow-sm" />
+            <div className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 rounded-full bg-amber-400 shadow-sm" />
+            <div className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 rounded-full bg-emerald-400 shadow-sm" />
           </div>
-          <div className="flex-1 mx-4 py-2 px-5 bg-white rounded-xl text-slate-600 text-sm font-medium border border-slate-200/80 shadow-inner">
+          <div className="flex-1 min-w-0 mx-1 sm:mx-4 py-1.5 sm:py-2 px-2 sm:px-5 bg-white rounded-lg sm:rounded-xl text-slate-600 text-[11px] sm:text-sm font-medium border border-slate-200/80 shadow-inner truncate">
             Easy Step ERP
           </div>
-          <div className="flex gap-1.5">
+          <div className="flex gap-1 sm:gap-1.5 flex-shrink-0">
             {FRAMES.map((_, i) => (
               <div
                 key={i}
-                className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${i === frameIndex ? "bg-primary-500 scale-125 shadow-md" : "bg-slate-300 hover:bg-slate-400"}`}
+                className={`w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full transition-all duration-300 ${i === frameIndex ? "bg-primary-500 scale-125 shadow-md" : "bg-slate-300 hover:bg-slate-400"}`}
               />
             ))}
           </div>
         </div>
 
-        <div className="relative min-h-[380px] sm:min-h-[420px] md:min-h-[480px]">
+        <div className="relative min-h-[420px] sm:min-h-[450px] md:min-h-[480px] overflow-y-auto overflow-x-hidden">
           {FRAMES.map((f, i) => (
             <div
               key={f.id}
-              className={`absolute inset-0 transition-all duration-500 ${i === frameIndex ? "opacity-100 z-10 scale-100" : "opacity-0 z-0 scale-[0.98]"}`}
+              className={`absolute inset-0 overflow-y-auto overflow-x-hidden transition-all duration-500 ${i === frameIndex ? "opacity-100 z-10 scale-100" : "opacity-0 z-0 scale-[0.98] pointer-events-none"}`}
             >
               {f.content}
             </div>

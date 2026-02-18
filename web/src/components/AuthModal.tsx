@@ -112,7 +112,11 @@ export default function AuthModal() {
   );
 
   if (typeof document !== "undefined") {
-    return createPortal(content, document.body);
+    try {
+      return createPortal(content, document.body);
+    } catch {
+      return content;
+    }
   }
   return null;
 }

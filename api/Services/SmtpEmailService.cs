@@ -20,7 +20,7 @@ public class SmtpEmailService : IEmailService
         var port = int.Parse(_config["Smtp:Port"] ?? "587");
         var user = _config["Smtp:User"];
         var pass = _config["Smtp:Password"];
-        var from = _config["Smtp:From"] ?? "noreply@easysteperp.com";
+        var from = _config["Smtp:From"] ?? "hello@easysteperp.com";
 
         if (string.IsNullOrEmpty(host) || string.IsNullOrEmpty(user))
         {

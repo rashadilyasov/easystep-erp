@@ -22,6 +22,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<Ticket> Tickets => Set<Ticket>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
+    public DbSet<EmailVerificationToken> EmailVerificationTokens => Set<EmailVerificationToken>();
     public DbSet<SiteContent> SiteContents => Set<SiteContent>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -117,6 +118,14 @@ public class ApplicationDbContext : DbContext
         });
 
         modelBuilder.Entity<PasswordResetToken>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => x.UserId);
+            e.HasIndex(x => x.ExpiresAt);
+            e.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId);
+        });
+
+        modelBuilder.Entity<EmailVerificationToken>(e =>
         {
             e.HasKey(x => x.Id);
             e.HasIndex(x => x.UserId);

@@ -51,9 +51,9 @@ export default function RegisterForm() {
         acceptTerms: form.acceptTerms,
       });
       setSuccess(true);
-      setTimeout(() => router.push("/login"), 2000);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Xəta baş verdi");
+      const msg = e instanceof Error ? e.message : "API xətası";
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -62,7 +62,9 @@ export default function RegisterForm() {
   if (success) {
     return (
       <div className="p-6 bg-green-50 border border-green-200 rounded-xl text-green-800 text-center">
-        Qeydiyyat uğurla tamamlandı. Giriş səhifəsinə yönləndirilirsiniz...
+        <p className="font-medium">Qeydiyyat uğurla tamamlandı.</p>
+        <p className="text-sm mt-1">E-poçtunuzu (hello@easysteperp.com-dan gələn) yoxlayın və təsdiq linkinə keçid edin.</p>
+        <p className="text-sm mt-2">Təsdiq etdikdən sonra daxil ola biləcəksiniz.</p>
       </div>
     );
   }

@@ -129,6 +129,12 @@ export const api = {
         body: JSON.stringify({ token, newPassword }),
         skipAuth: true,
       }),
+    verifyEmail: (token: string) =>
+      apiFetch<{ message: string }>("/api/auth/verify-email", {
+        method: "POST",
+        body: JSON.stringify({ token }),
+        skipAuth: true,
+      }),
   },
   contact: {
     submit: (data: { name: string; email: string; message: string }) =>

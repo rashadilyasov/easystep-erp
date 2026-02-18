@@ -115,10 +115,10 @@ public class AuthService
         return (user, user.Tenant);
     }
 
-    public async Task<bool> RegisterAsync(RegisterRequest req, CancellationToken ct = default)
+    public async Task<(bool Ok, string? VerificationToken)> RegisterAsync(RegisterRequest req, CancellationToken ct = default)
     {
         if (await _db.Users.AnyAsync(u => u.Email == req.Email, ct))
-            return false;
+            return (false, null);
 
         var tenant = new Tenant
         {
@@ -146,6 +146,44 @@ public class AuthService
 
         _db.Tenants.Add(tenant);
         _db.Users.Add(user);
+        await _db.SaveChangesAsync(ct);
+
+        var token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(24)).Replace("+", "-").Replace("/", "_").TrimEnd('=');
+        var expiryHours = int.Parse(_config["Auth:EmailVerificationExpiryHours"] ?? "24");
+        _db.EmailVerificationTokens.Add(new EmailVerificationToken
+        {
+            Id = Guid.NewGuid(),
+            UserId = user.Id,
+            TokenHash = HashPasswordResetToken(token),
+            ExpiresAt = DateTime.UtcNow.AddHours(expiryHours),
+            CreatedAt = DateTime.UtcNow,
+        });
+        await _db.SaveChangesAsync(ct);
+
+        return (true, token);
+    }
+
+    public async Task<Guid?> ValidateAndConsumeEmailVerificationTokenAsync(string token, CancellationToken ct = default)
+    {
+        var hash = HashPasswordResetToken(token);
+        var now = DateTime.UtcNow;
+
+        var evt = await _db.EmailVerificationTokens
+            .FirstOrDefaultAsync(t => t.TokenHash == hash && t.ExpiresAt > now && t.UsedAt == null, ct);
+
+        if (evt == null)
+            return null;
+
+        evt.UsedAt = now;
+        await _db.SaveChangesAsync(ct);
+        return evt.UserId;
+    }
+
+    public async Task<bool> MarkEmailVerifiedAsync(Guid userId, CancellationToken ct = default)
+    {
+        var user = await _db.Users.FindAsync(new object[] { userId }, ct);
+        if (user == null) return false;
+        user.EmailVerified = true;
         await _db.SaveChangesAsync(ct);
         return true;
     }

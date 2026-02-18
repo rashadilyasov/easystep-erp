@@ -27,11 +27,29 @@ public class AuthController : ControllerBase
         if (!req.AcceptTerms)
             return BadRequest(new { message = "Şərtləri qəbul etməlisiniz" });
 
-        var ok = await _auth.RegisterAsync(req, ct);
+        var (ok, token) = await _auth.RegisterAsync(req, ct);
         if (!ok)
             return BadRequest(new { message = "Bu e-poçt artıq qeydiyyatdadır" });
 
-        return Ok(new { message = "Qeydiyyat uğurla tamamlandı" });
+        if (!string.IsNullOrEmpty(token))
+        {
+            var baseUrl = _config["App:BaseUrl"] ?? "https://www.easysteperp.com";
+            var verifyUrl = $"{baseUrl}/verify-email?token={Uri.EscapeDataString(token)}";
+            var html = $@"
+<!DOCTYPE html>
+<html><body style='font-family:Arial,sans-serif'>
+<h2>E-poçtunuzu təsdiqləyin</h2>
+<p>Salam,</p>
+<p>Easy Step ERP hesabınızı aktivləşdirmək üçün aşağıdakı linkə keçid edin:</p>
+<p><a href='{verifyUrl}'>{verifyUrl}</a></p>
+<p>Link 24 saat ərzində keçərlidir.</p>
+<p>Əgər bu qeydiyyat sizdən gəlməyibsə, bu e-poçtu nəzərə almayın.</p>
+<p>— Easy Step ERP<br/>hello@easysteperp.com</p>
+</body></html>";
+            await _email.SendAsync(req.Email, "Easy Step ERP - E-poçt təsdiqi", html, ct);
+        }
+
+        return Ok(new { message = "Qeydiyyat uğurla tamamlandı. E-poçtunuzu yoxlayın və təsdiq linkinə keçid edin." });
     }
 
     [HttpPost("login")]
@@ -43,7 +61,11 @@ public class AuthController : ControllerBase
             return Unauthorized(new { message = "E-poçt və ya şifrə səhvdir" });
 
         var (user, tenant) = r;
-        if (user == null || tenant == null)
+        if (user == null)
+            return Unauthorized(new { message = "Hesab tapılmadı" });
+        if (!user.EmailVerified)
+            return Unauthorized(new { message = "E-poçtunuz təsdiq olunmayıb. E-poçtunuzu yoxlayın və təsdiq linkinə keçid edin." });
+        if (tenant == null)
             return Unauthorized(new { message = "Hesab tapılmadı" });
 
         if (user.TwoFactorEnabled && !string.IsNullOrEmpty(user.TwoFactorSecret))
@@ -258,9 +280,28 @@ public class AuthController : ControllerBase
 
         return Ok(new { message = "Şifrə uğurla dəyişdirildi" });
     }
+
+    [HttpPost("verify-email")]
+    [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("auth")]
+    public async Task<IActionResult> VerifyEmail([FromBody] VerifyEmailRequest req, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(req.Token))
+            return BadRequest(new { message = "Token tələb olunur" });
+
+        var userId = await _auth.ValidateAndConsumeEmailVerificationTokenAsync(req.Token, ct);
+        if (userId == null)
+            return BadRequest(new { message = "Link etibarsız və ya vaxtı keçib. Yenidən qeydiyyatdan keçin və ya bizimlə əlaqə saxlayın." });
+
+        if (!await _auth.MarkEmailVerifiedAsync(userId.Value, ct))
+            return BadRequest(new { message = "Xəta baş verdi" });
+
+        return Ok(new { message = "E-poçtunuz təsdiqləndi. İndi daxil ola bilərsiniz." });
+    }
 }
 
 public record ForgotPasswordRequest(string Email);
+
+public record VerifyEmailRequest(string Token);
 
 public record ResetPasswordRequest(string Token, string NewPassword);
 

@@ -17,16 +17,16 @@ const SIDEBAR_ITEMS = ["Dashboard", "Kontragentlər", "Anbarlar", "Alış", "Sat
 function Sidebar({ activeIndex }: { activeIndex: number }) {
   return (
     <>
-      {/* Mobile: horizontal pills */}
-      <div className="md:hidden flex gap-2 overflow-x-auto pb-2 px-3 -mx-1 scrollbar-hide">
+      {/* Mobile: horizontal pills - sm:640px-dən kiçik ekranlarda */}
+      <div className="sm:hidden flex gap-2 overflow-x-auto pb-2 px-3 -mx-1 scrollbar-hide">
         {SIDEBAR_ITEMS.map((item, i) => (
           <div key={item} className={`flex-shrink-0 py-2 px-3 rounded-xl text-xs font-medium whitespace-nowrap ${i === activeIndex ? "bg-primary-500 text-white" : "text-slate-600 bg-slate-100"}`}>
             {item}
           </div>
         ))}
       </div>
-      {/* Desktop: vertical sidebar */}
-      <div className="hidden md:block w-40 lg:w-48 flex-shrink-0 bg-white/80 backdrop-blur border-r border-slate-200/80 p-4">
+      {/* Desktop: vertical sidebar - sm:640px-dən böyük ekranlarda */}
+      <div className="hidden sm:block w-32 md:w-40 lg:w-48 flex-shrink-0 bg-white/80 backdrop-blur border-r border-slate-200/80 p-3 md:p-4">
         {SIDEBAR_ITEMS.map((item, i) => (
           <div key={item} className={`flex items-center gap-2.5 py-2.5 px-3 rounded-xl text-sm font-medium ${i === activeIndex ? "bg-primary-500 text-white shadow-lg shadow-primary-500/30" : "text-slate-600 hover:bg-slate-100"}`}>
             <div className="w-5 h-5 rounded-lg bg-white/20" />
@@ -42,7 +42,7 @@ const FRAMES = [
   {
     id: "dashboard",
     content: (
-      <div className="flex flex-col md:flex-row bg-gradient-to-br from-slate-50 to-white pb-6 md:pb-8">
+      <div className="flex flex-col sm:flex-row bg-gradient-to-br from-slate-50 to-white pb-6 md:pb-8">
         <Sidebar activeIndex={0} />
         <div className="flex-1 min-w-0 p-4 md:p-5">
           <div className="h-10 md:h-11 bg-gradient-to-r from-primary-600 to-primary-500 rounded-xl mb-4 md:mb-5 flex items-center px-4 md:px-5 text-white font-semibold text-xs md:text-sm shadow-lg shadow-primary-500/25">
@@ -56,8 +56,8 @@ const FRAMES = [
               { label: "Mənfəət (ay)", value: "₼ 8 640", color: "from-emerald-50 to-white", accent: "text-emerald-700 font-bold", trend: "+24%" },
             ].map((k) => (
               <div key={k.label} className={`p-3 sm:p-5 rounded-xl md:rounded-2xl border border-slate-200/80 bg-gradient-to-br ${k.color} shadow-md md:shadow-lg shadow-slate-200/50`}>
-                <div className="text-[10px] sm:text-xs text-slate-500 uppercase tracking-wider font-medium truncate">{k.label}</div>
-                <div className={`text-lg sm:text-2xl md:text-3xl font-extrabold mt-1 md:mt-2 truncate ${k.accent}`}>{k.value}</div>
+                <div className="text-[10px] sm:text-xs text-slate-500 uppercase tracking-wider font-medium">{k.label}</div>
+                <div className={`text-lg sm:text-2xl md:text-3xl font-extrabold mt-1 md:mt-2 ${k.accent}`}>{k.value}</div>
                 {k.trend && <span className="text-[10px] sm:text-xs text-emerald-600 font-semibold">{k.trend}</span>}
               </div>
             ))}
@@ -77,7 +77,7 @@ const FRAMES = [
   {
     id: "kontragent",
     content: (
-      <div className="flex flex-col md:flex-row bg-gradient-to-br from-slate-50 to-white pb-6 md:pb-8">
+      <div className="flex flex-col sm:flex-row bg-gradient-to-br from-slate-50 to-white pb-6 md:pb-8">
         <Sidebar activeIndex={1} />
         <div className="flex-1 min-w-0 p-4 md:p-5">
           <div className="h-10 md:h-11 bg-gradient-to-r from-primary-600 to-primary-500 rounded-xl mb-4 md:mb-5 flex items-center px-4 md:px-5 text-white font-semibold text-xs md:text-sm shadow-lg shadow-primary-500/25">Kontragentlər</div>
@@ -115,7 +115,7 @@ const FRAMES = [
   {
     id: "anbar",
     content: (
-      <div className="flex flex-col md:flex-row bg-gradient-to-br from-slate-50 to-white pb-6 md:pb-8">
+      <div className="flex flex-col sm:flex-row bg-gradient-to-br from-slate-50 to-white pb-6 md:pb-8">
         <Sidebar activeIndex={2} />
         <div className="flex-1 min-w-0 p-4 md:p-5">
           <div className="h-10 md:h-11 bg-gradient-to-r from-primary-600 to-primary-500 rounded-xl mb-4 md:mb-5 flex items-center px-4 md:px-5 text-white font-semibold text-xs md:text-sm shadow-lg shadow-primary-500/25">Anbar qalıqları</div>
@@ -126,13 +126,13 @@ const FRAMES = [
               { name: "Material C", qty: "320", bir: "ədəd", value: "₼ 7 520", bar: 40 },
             ].map((r) => (
               <div key={r.name} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 p-3 md:p-4 bg-white rounded-xl md:rounded-2xl border border-slate-200/80 shadow-md hover:shadow-lg transition-shadow">
-                <span className="font-semibold text-slate-800 text-sm md:text-base">{r.name}</span>
-                <div className="flex-1 h-2 sm:h-3 bg-slate-100 rounded-full overflow-hidden min-w-0">
+                <span className="font-semibold text-slate-800 text-sm md:text-base flex-shrink-0">{r.name}</span>
+                <div className="flex-1 min-w-0 h-2 sm:h-3 bg-slate-100 rounded-full overflow-hidden">
                   <div className="h-full bg-gradient-to-r from-primary-500 to-primary-400 rounded-full" style={{ width: `${r.bar}%` }} />
                 </div>
-                <div className="flex justify-between sm:justify-end gap-4 sm:gap-2 text-sm md:text-base">
-                  <span className="font-bold text-primary-600">{r.qty} {r.bir}</span>
-                  <span className="font-bold text-emerald-600">{r.value}</span>
+                <div className="flex justify-between sm:justify-end gap-3 sm:gap-2 text-sm md:text-base flex-shrink-0">
+                  <span className="font-bold text-primary-600 whitespace-nowrap">{r.qty} {r.bir}</span>
+                  <span className="font-bold text-emerald-600 whitespace-nowrap">{r.value}</span>
                 </div>
               </div>
             ))}
@@ -147,7 +147,7 @@ const FRAMES = [
   {
     id: "təhlükəsizlik",
     content: (
-      <div className="flex flex-col md:flex-row bg-gradient-to-br from-slate-50 to-white pb-6 md:pb-8">
+      <div className="flex flex-col sm:flex-row bg-gradient-to-br from-slate-50 to-white pb-6 md:pb-8">
         <Sidebar activeIndex={-1} />
         <div className="flex-1 min-w-0 p-4 md:p-5">
           <div className="h-10 md:h-11 bg-gradient-to-r from-emerald-600 to-emerald-500 rounded-xl mb-4 md:mb-5 flex items-center px-4 md:px-5 text-white font-semibold text-xs md:text-sm shadow-lg shadow-emerald-500/25">🛡️ Nəzarət və Təhlükəsizlik</div>
@@ -173,7 +173,7 @@ const FRAMES = [
   {
     id: "kassa",
     content: (
-      <div className="flex flex-col md:flex-row bg-gradient-to-br from-slate-50 to-white pb-6 md:pb-8">
+      <div className="flex flex-col sm:flex-row bg-gradient-to-br from-slate-50 to-white pb-6 md:pb-8">
         <Sidebar activeIndex={5} />
         <div className="flex-1 min-w-0 p-4 md:p-5">
           <div className="h-10 md:h-11 bg-gradient-to-r from-primary-600 to-primary-500 rounded-xl mb-4 md:mb-5 flex items-center px-4 md:px-5 text-white font-semibold text-xs md:text-sm shadow-lg shadow-primary-500/25">💵 Kassa və Ödənişlər</div>
@@ -210,12 +210,12 @@ export default function HeroErpVisual() {
   }, []);
 
   return (
-    <div className="mt-6 md:mt-8 mx-auto max-w-5xl">
+    <div className="mt-6 md:mt-8 mx-auto max-w-5xl w-full overflow-hidden">
       {/* Attention-grabbing message badge */}
       <div className="mb-3 md:mb-4 flex justify-center px-2">
-        <div className="inline-flex items-center gap-2 px-3 md:px-5 py-2 md:py-2.5 rounded-full bg-gradient-to-r from-primary-500 to-primary-600 text-white text-xs md:text-sm font-semibold shadow-lg shadow-primary-500/30 animate-pulse-slow max-w-full">
+        <div className="inline-flex items-center gap-2 px-3 md:px-5 py-2 md:py-2.5 rounded-full bg-gradient-to-r from-primary-500 to-primary-600 text-white text-xs md:text-sm font-semibold shadow-lg shadow-primary-500/30 animate-pulse-slow text-center">
           <span className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-white animate-pulse flex-shrink-0" />
-          <span className="truncate">{FRAME_MESSAGES[frameIndex]}</span>
+          <span className="break-words">{FRAME_MESSAGES[frameIndex]}</span>
         </div>
       </div>
 

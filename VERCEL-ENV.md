@@ -1,21 +1,11 @@
 # Vercel Environment Variables
 
-Vercel-da **Settings** → **Environment Variables** əlavə edin:
+**Settings** → **Environment Variables** → **Add**:
 
 | Name | Value |
 |------|-------|
-| `API_URL` və ya `NEXT_PUBLIC_API_URL` | Railway URL (aşağıya bax) |
+| `API_URL` | `https://xxxx.up.railway.app` (Railway-dan alın) |
 
-> **Vacib:** Bu olmadan qeydiyyat və login işləməz. Dəyişəndən sonra **Redeploy** edin.
+> Railway: easystep-erp → **Settings** → **Networking** → public domain.
 
-## Nə işləyir?
-
-API çağrıları Next.js **proxy** ilə gedir. Brauzer yalnız easysteperp.com-a müraciət edir — DNS və CORS problemi yoxdur. Vercel serveri bu müraciətləri Railway API-yə yönləndirir.
-
-**API_URL** — Railway-dan: **Settings** → **Networking** → public URL (`.up.railway.app` və ya `api.easysteperp.com`).
-
-## API xətası alırsınızsa?
-
-1. Vercel-də `API_URL` (və ya `NEXT_PUBLIC_API_URL`) — işləyən Railway URL
-2. Vercel **Redeploy** edin
-3. Railway API **Online** olmalıdır
+**Redeploy** edin: Deployments → ... → Redeploy.

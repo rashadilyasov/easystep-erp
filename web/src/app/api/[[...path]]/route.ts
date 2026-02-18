@@ -4,6 +4,8 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 
+export const dynamic = "force-dynamic";
+
 function getApiBase(): string {
   const url = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL;
   if (url) {
@@ -37,6 +39,10 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 
 export async function HEAD(request: NextRequest, { params }: { params: Promise<{ path?: string[] }> }) {
   return proxy(request, params, "HEAD");
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, { status: 204 });
 }
 
 async function proxy(

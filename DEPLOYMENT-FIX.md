@@ -1,8 +1,8 @@
 # Deploy olub amma Qeydiyyat və Popup işləmir — Həll
 
-## Yeni: Proxy rejimi (DNS və CORS problemi yoxdur)
+## Proxy rejimi (Route Handler)
 
-Frontend indi API çağrılarını **sadə path** ilə edir (`/api/...`). Next.js **rewrite** ilə bunları Railway API-yə proxy edir. Brauzer yalnız easysteperp.com-a müraciət edir — DNS və CORS problemi aradan qalxır.
+Frontend `/api/...` çağrıları Next.js **Route Handler** (app/api/[[...path]]/route.ts) vasitəsilə Railway API-yə proxy olunur. Brauzer yalnız easysteperp.com-a müraciət edir — DNS və CORS problemi yoxdur.
 
 ---
 
@@ -51,7 +51,7 @@ easysteperp.com açın → Header-da **"Daxil ol"** və ya **"Qeydiyyat"** klik 
 
 Əgər popup açılmırsa:
 1. **F12** → **Console** — xəta var?
-2. **F12** → **Elements** — `<body data-build="popup-v5">` görünür? (son versiya)
+2. **F12** → **Elements** — `<body data-build="popup-v6">` görünür? (son versiya)
 
 ---
 
@@ -73,4 +73,4 @@ easysteperp.com açın → Header-da **"Daxil ol"** və ya **"Qeydiyyat"** klik 
 | Vercel Root | `web` |
 | Redeploy edilib? | Deployments → Redeploy |
 | Cache təmiz? | Ctrl+Shift+R |
-| Popup kodu var? | body `data-build="popup-v5"` |
+| Popup kodu var? | body `data-build="popup-v6"` |

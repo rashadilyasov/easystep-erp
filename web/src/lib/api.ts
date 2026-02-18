@@ -1,4 +1,4 @@
-// API - relative path istifadə edirək (Next.js rewrite proxy), DNS və CORS problemi aradan qalxır
+// API - relative path → Next.js Route Handler proxy (app/api/[[...path]]/route.ts)
 const API_BASE = "";
 
 function getAccessToken(): string | null {

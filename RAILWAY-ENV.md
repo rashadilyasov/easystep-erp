@@ -1,4 +1,4 @@
-# Railway Environment Variables
+image.png# Railway Environment Variables
 
 Add these in **Railway** → Your API Service → **Variables**.
 

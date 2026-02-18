@@ -1,7 +1,13 @@
 /** @type {import('next').NextConfig} */
 const getApiUrl = () => {
-  const url = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL;
-  if (url) return url.replace(/\/$/, "");
+  let url = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL;
+  if (url) {
+    url = url.replace(/\/$/, "").trim();
+    if (!url.startsWith("http://") && !url.startsWith("https://")) {
+      url = "https://" + url;
+    }
+    return url;
+  }
   if (process.env.VERCEL) return "https://a19hvpgi.up.railway.app";
   return "http://localhost:5000";
 };

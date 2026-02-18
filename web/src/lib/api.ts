@@ -67,7 +67,9 @@ export async function apiFetch<T>(path: string, options: FetchOptions = {}): Pro
   }
   if (!res.ok) {
     const err = await res.json().catch(() => ({ message: res.statusText }));
-    throw new Error((err as { message?: string }).message || "API xətası");
+    const body = err as { message?: string; detail?: string; error?: string; title?: string };
+    const msg = body.message || body.detail || body.error || body.title || res.statusText;
+    throw new Error(msg || `API xətası (${res.status})`);
   }
   return res.json();
 }

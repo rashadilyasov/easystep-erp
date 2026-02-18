@@ -27,15 +27,17 @@ public class AuthController : ControllerBase
         if (!req.AcceptTerms)
             return BadRequest(new { message = "Şərtləri qəbul etməlisiniz" });
 
-        var (ok, token) = await _auth.RegisterAsync(req, ct);
-        if (!ok)
-            return BadRequest(new { message = "Bu e-poçt artıq qeydiyyatdadır" });
-
-        if (!string.IsNullOrEmpty(token))
+        try
         {
-            var baseUrl = _config["App:BaseUrl"] ?? "https://www.easysteperp.com";
-            var verifyUrl = $"{baseUrl}/verify-email?token={Uri.EscapeDataString(token)}";
-            var html = $@"
+            var (ok, token) = await _auth.RegisterAsync(req, ct);
+            if (!ok)
+                return BadRequest(new { message = "Bu e-poçt artıq qeydiyyatdadır" });
+
+            if (!string.IsNullOrEmpty(token))
+            {
+                var baseUrl = _config["App:BaseUrl"] ?? "https://www.easysteperp.com";
+                var verifyUrl = $"{baseUrl}/verify-email?token={Uri.EscapeDataString(token)}";
+                var html = $@"
 <!DOCTYPE html>
 <html><body style='font-family:Arial,sans-serif'>
 <h2>E-poçtunuzu təsdiqləyin</h2>
@@ -49,7 +51,12 @@ public class AuthController : ControllerBase
             await _email.SendAsync(req.Email, "Easy Step ERP - E-poçt təsdiqi", html, ct);
         }
 
-        return Ok(new { message = "Qeydiyyat uğurla tamamlandı. E-poçtunuzu yoxlayın və təsdiq linkinə keçid edin." });
+            return Ok(new { message = "Qeydiyyat uğurla tamamlandı. E-poçtunuzu yoxlayın və təsdiq linkinə keçid edin." });
+        }
+        catch (Exception)
+        {
+            return StatusCode(500, new { message = "Qeydiyyat zamanı xəta baş verdi. Zəhmət olmasa bir az sonra yenidən cəhd edin." });
+        }
     }
 
     [HttpPost("login")]

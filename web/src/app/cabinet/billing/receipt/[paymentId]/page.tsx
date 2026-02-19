@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { getApiBase } from "@/lib/api";
 
 export default function ReceiptPage() {
   const params = useParams();
@@ -17,7 +18,8 @@ export default function ReceiptPage() {
       setError("Daxil olmalısınız");
       return;
     }
-    fetch(`/api/billing/receipt/${paymentId}`, {
+    const base = getApiBase();
+    fetch(`${base}/api/billing/receipt/${paymentId}`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((r) => {

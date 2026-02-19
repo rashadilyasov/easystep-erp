@@ -1,5 +1,17 @@
-// API - relative path → Next.js Route Handler proxy (app/api/[[...path]]/route.ts)
-const API_BASE = "";
+// API: NEXT_PUBLIC_API_URL varsa birbaşa backend, yoxsa easysteperp.com üçün fallback
+export function getApiBase(): string {
+  if (typeof window === "undefined") return "";
+  const u = process.env.NEXT_PUBLIC_API_URL?.trim();
+  if (u) {
+    const base = u.replace(/\/$/, "");
+    return base.startsWith("http") ? base : `https://${base}`;
+  }
+  // Production fallback — proxy 404 verdikdə birbaşa Railway API
+  if (window.location?.hostname?.includes("easysteperp.com")) {
+    return "https://api.easysteperp.com";
+  }
+  return ""; // localhost — relative /api/* proxy
+}
 
 function getAccessToken(): string | null {
   if (typeof window === "undefined") return null;
@@ -29,7 +41,8 @@ const FETCH_TIMEOUT_MS = 12000;
 export async function apiFetch<T>(path: string, options: FetchOptions = {}): Promise<T> {
   try {
     const { params, skipAuth, _retrying, ...init } = options;
-    let url = path.startsWith("http") ? path : `${API_BASE}${path}`;
+    const base = getApiBase();
+    let url = path.startsWith("http") ? path : `${base}${path}`;
     if (params) {
       const search = new URLSearchParams(params).toString();
       url += (url.includes("?") ? "&" : "?") + search;
@@ -51,7 +64,7 @@ export async function apiFetch<T>(path: string, options: FetchOptions = {}): Pro
       const refresh = getRefreshToken();
       if (refresh) {
         try {
-          const refreshRes = await fetch(`${API_BASE}/api/auth/refresh`, {
+          const refreshRes = await fetch(`${getApiBase()}/api/auth/refresh`, {
             method: "POST",
             body: JSON.stringify({ refreshToken: refresh }),
             headers: { "Content-Type": "application/json" },

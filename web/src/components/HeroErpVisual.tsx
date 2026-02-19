@@ -6,7 +6,7 @@ const FRAME_DURATION_MS = 4500;
 
 const FRAME_MESSAGES = [
   "📊 Bir baxışda bütün rəqəmlər — qərar qəbulu sürətlənir",
-  "💰 Borclu və müəyyən — kimə nə qədər borc var, hamısı aydın",
+  "💰 Borclu və borc — kimə nə qədər borc var, hamısı aydın",
   "📦 Real vaxtda anbar — hər malın harada olduğunu bilin",
   "🛡️ Hər addım qeyd olunur — etibarlı və təhlükəsiz",
   "💵 Kassa və bank — nə gəldi, nə çıxdı, bir ayda",
@@ -45,9 +45,9 @@ const FRAMES = [
   {
     id: "dashboard",
     content: (
-      <div className="flex flex-col sm:flex-row bg-gradient-to-br from-slate-50 to-white pb-8 md:pb-8 min-w-0">
+      <div className="flex flex-col sm:flex-row bg-gradient-to-br from-slate-50 to-white pb-12 md:pb-10 min-w-0">
         <Sidebar activeIndex={0} />
-        <div className="flex-1 min-w-0 p-3 sm:p-4 md:p-5 overflow-hidden">
+        <div className="flex-1 min-w-0 p-3 sm:p-4 md:p-5 overflow-visible">
           <div className="h-10 md:h-11 bg-gradient-to-r from-primary-600 to-primary-500 rounded-xl mb-4 md:mb-5 flex items-center px-4 md:px-5 text-white font-semibold text-xs md:text-sm shadow-lg shadow-primary-500/25">
             Əsas Səhifə (Dashboard)
           </div>
@@ -65,9 +65,9 @@ const FRAMES = [
               </div>
             ))}
           </div>
-          <div className="h-24 md:h-28 rounded-xl md:rounded-2xl border border-slate-200/80 bg-white p-3 md:p-5 shadow-inner">
+          <div className="h-28 md:h-32 rounded-xl md:rounded-2xl border border-slate-200/80 bg-white p-3 md:p-5 shadow-inner">
             <div className="text-xs md:text-sm font-medium text-slate-600 mb-2 md:mb-3">Son 6 ay (Satış vs Alış)</div>
-            <div className="flex items-end gap-1 sm:gap-2 h-10 md:h-14">
+            <div className="flex items-end gap-1 sm:gap-2 h-12 md:h-16">
               {[45, 72, 58, 85, 68, 92].map((h, i) => (
                 <div key={i} className="flex-1 bg-gradient-to-t from-primary-600 to-primary-400 rounded-t-md md:rounded-t-lg min-h-[6px] shadow-md" style={{ height: `${h}%` }} />
               ))}
@@ -90,7 +90,7 @@ const FRAMES = [
                 <tr className="bg-gradient-to-r from-slate-50 to-slate-100">
                   <th className="text-left py-3 md:py-4 px-3 md:px-5 font-semibold text-slate-700">Müştəri / Təchizatçı</th>
                   <th className="text-right py-3 md:py-4 px-3 md:px-5 font-semibold text-emerald-600">Borclu</th>
-                  <th className="text-right py-3 md:py-4 px-3 md:px-5 font-semibold text-amber-600">Müəyyən</th>
+                  <th className="text-right py-3 md:py-4 px-3 md:px-5 font-semibold text-amber-600">Borc</th>
                 </tr>
               </thead>
               <tbody>
@@ -236,7 +236,7 @@ export default function HeroErpVisual() {
             <div className="w-2 h-2 sm:w-3.5 sm:h-3.5 rounded-full bg-amber-400 shadow-sm" />
             <div className="w-2 h-2 sm:w-3.5 sm:h-3.5 rounded-full bg-emerald-400 shadow-sm" />
           </div>
-          <div className="flex-1 min-w-0 mx-0.5 sm:mx-4 py-1 sm:py-2 px-1.5 sm:px-5 bg-white rounded-md sm:rounded-xl text-slate-600 text-[10px] sm:text-sm font-medium border border-slate-200/80 shadow-inner truncate overflow-hidden">
+          <div className="flex-1 min-w-0 mx-0.5 sm:mx-4 py-1 sm:py-2 px-1.5 sm:px-5 bg-white rounded-md sm:rounded-xl text-slate-600 text-[10px] sm:text-sm font-medium border border-slate-200/80 shadow-inner overflow-hidden whitespace-nowrap">
             Easy Step ERP
           </div>
           <div className="flex gap-0.5 sm:gap-1.5 flex-shrink-0">
@@ -249,7 +249,7 @@ export default function HeroErpVisual() {
           </div>
         </div>
 
-        <div className="relative min-h-[420px] sm:min-h-[450px] md:min-h-[480px] overflow-y-auto overflow-x-hidden">
+        <div className="relative min-h-[480px] sm:min-h-[500px] md:min-h-[520px] overflow-y-auto overflow-x-hidden pb-4">
           {FRAMES.map((f, i) => (
             <div
               key={f.id}

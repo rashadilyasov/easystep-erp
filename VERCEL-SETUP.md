@@ -1,19 +1,14 @@
 # Vercel deploy — vacib addımlar
 
-## Problem: Dəyişikliklər dərc olunmur
+## Problem: "Root Directory web does not exist"
 
-### 1. Root Directory yoxlayın
-**Vercel** → **Settings** → **General** → **Root Directory**
+### 1. Root Directory — BOŞ saxlayın
+**Vercel** → **Settings** → **Build and Deployment** → **Root Directory**
 
-**İki variant:**
+- **Root Directory sahəsini tamamilə BOŞ buraxın** (heç nə yazmayın)
+- **Save** edin
 
-**Variant A:** Root Directory = `web` (tövsiyə olunur)
-- Boş buraxmayın
-- `web` yazın və **Save**
-
-**Variant B:** Root Directory = boş (repo root)
-- Root-da `vercel.json` və `package.json` var
-- Build avtomatik `web/` qovluğundan edəcək
+Root-da `vercel.json` və `package.json` var — build avtomatik `web/` qovluğundan işləyəcək.
 
 ### 2. Redeploy — cache olmadan
 **Deployments** → son deploy → **⋮** (3 nöqtə) → **Redeploy**

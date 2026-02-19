@@ -62,9 +62,6 @@ public class AuthController : ControllerBase
         }
     }
 
-    [HttpPost("ping")]
-    public IActionResult Ping() => Ok(new { ok = true, msg = "Auth route is reachable" });
-
     [HttpPost("login")]
     [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("auth")]
     public async Task<IActionResult> Login([FromBody] LoginRequest? req, CancellationToken ct)

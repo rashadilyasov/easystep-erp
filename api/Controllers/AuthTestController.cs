@@ -19,4 +19,11 @@ public class AuthTestController : ControllerBase
         _log.LogInformation("AuthTestController.MinimalPing hit");
         return Ok(new { ok = true, msg = "Minimal auth route works" });
     }
+
+    [HttpPost("ping")]
+    public IActionResult Ping()
+    {
+        _log.LogInformation("AuthTestController.Ping hit");
+        return Ok(new { ok = true, msg = "Auth route is reachable" });
+    }
 }

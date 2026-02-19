@@ -4,8 +4,8 @@ node_modules/
 .pnp.js
 
 # Build outputs
-web/.next/
-web/out/
+.next/
+out/
 api/bin/
 api/obj/
 api/**/bin/

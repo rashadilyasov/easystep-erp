@@ -1,6 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  distDir: process.env.VERCEL ? "../.next" : ".next",
   reactStrictMode: true,
   env: {
     NEXT_PUBLIC_API_URL:

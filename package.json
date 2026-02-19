@@ -1,17 +1,30 @@
 {
   "name": "easystep-erp",
-  "private": true,
   "version": "1.0.0",
-  "description": "Easy Step ERP - Frontend in web/, API in api/",
+  "private": true,
+  "description": "Easy Step ERP - Frontend (Next.js) + API (api/)",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
   "dependencies": {
+    "clsx": "^2.1.1",
+    "next": "14.2.18",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
     "tailwindcss": "^3.4.14",
     "postcss": "^8",
     "autoprefixer": "^10.4.20"
   },
-  "scripts": {
-    "build": "cd web && npm install && npm run build",
-    "start": "cd web && npm run start",
-    "dev": "cd web && npm run dev"
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "eslint": "^8",
+    "eslint-config-next": "14.2.35",
+    "typescript": "^5"
   },
   "engines": {
     "node": ">=18"

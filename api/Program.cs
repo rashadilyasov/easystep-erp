@@ -166,9 +166,11 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
-// Migrations + seed + cleanup
-using (var scope = app.Services.CreateScope())
+// Migrations + seed — background-da ki, healthcheck tez keçsin
+_ = Task.Run(async () =>
 {
+    await Task.Delay(2000);
+    using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
     try
@@ -220,7 +222,7 @@ using (var scope = app.Services.CreateScope())
     {
         logger.LogWarning(ex, "DB migration/seed failed (OK if DB not ready)");
     }
-}
+});
 
 app.Run();
 

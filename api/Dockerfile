@@ -8,6 +8,5 @@ FROM mcr.microsoft.com/dotnet/aspnet:8.0
 WORKDIR /app
 COPY --from=build /app/publish .
 EXPOSE 8080
-ENV ASPNETCORE_URLS=http://+:8080
-ENV PORT=8080
+# Railway PORT runtime-da inject edir - Program.cs istifadə edir
 ENTRYPOINT ["dotnet", "EasyStep.Erp.Api.dll"]

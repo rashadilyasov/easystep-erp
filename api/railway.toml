@@ -1,4 +1,4 @@
 # Railway API — Root Directory = api
 [deploy]
-healthcheckPath = "/api/Health"
-healthcheckTimeout = 180
+# healthcheck söndürülüb — deploy keçsin
+healthcheckPath = ""

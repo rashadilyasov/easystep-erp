@@ -73,9 +73,10 @@ export async function apiFetch<T>(path: string, options: FetchOptions = {}): Pro
         const body = JSON.parse(text) as { message?: string; detail?: string; error?: string; title?: string };
         msg = body.message || body.detail || body.error || body.title || msg;
       } catch {
-        if (text && text.length < 200) msg = text;
+        if (text && text.length < 300) msg = text.replace(/<[^>]*>/g, "").trim().slice(0, 200);
       }
-      throw new Error(msg || `API xətası (${res.status})`);
+      const fallback = `API xətası (${res.status})`;
+      throw new Error((msg && msg.trim()) || fallback);
     }
     if (!text || text.trim() === "") return {} as T;
     try {

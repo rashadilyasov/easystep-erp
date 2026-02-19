@@ -59,8 +59,14 @@ easysteperp.com açın → Header-da **"Daxil ol"** və ya **"Qeydiyyat"** klik 
 
 1. **Qeydiyyat** klik → form doldur → **Qeydiyyat** düyməsi
 2. Əgər "API xətası" gəlirsə:
-   - **F12** → **Network** → failed request → **Status** və **Response** nədir?
-   - Railway **View logs** — API tərəfində xəta var?
+   - **F12** → **Network** → `auth/register` və ya `auth/login` sorğusunu tapın
+   - **Status** nədir? (400, 401, 500, 502?)
+   - **Response** tabında nə yazır? (JSON `message` sahəsi)
+   - **Railway** → View logs — API tərəfində xəta var?
+3. Ümumi səbəblər:
+   - **502** — Proxy API-yə çata bilmir (API_URL, Railway down)
+   - **401** — Admin login: "E-poçt və ya şifrə səhvdir" və ya "E-poçtunuz təsdiq olunmayıb"
+   - **400** — "Bu e-poçt artıq qeydiyyatdadır"
 
 ---
 

@@ -71,6 +71,7 @@ async function proxy(
       method,
       headers,
       body: body ?? undefined,
+      signal: AbortSignal.timeout(25000),
     });
     const data = await res.text();
     return new NextResponse(data, {
@@ -78,9 +79,15 @@ async function proxy(
       headers: { "Content-Type": res.headers.get("Content-Type") || "application/json" },
     });
   } catch (e) {
-    console.error("[API Proxy]", e);
+    const err = e instanceof Error ? e : new Error(String(e));
+    console.error("[API Proxy]", err.message, { url: url.replace(/[?].*/, "") });
+    const isTimeout = err.name === "TimeoutError" || err.message?.includes("timeout");
     return NextResponse.json(
-      { message: "Backend API-ya çıxış yoxdur. API_URL yoxlayın." },
+      {
+        message: isTimeout
+          ? "API cavab vermədi (timeout). Bir az sonra yenidən cəhd edin."
+          : "Backend API-ya çıxış yoxdur. API_URL və Railway statusunu yoxlayın.",
+      },
       { status: 502 }
     );
   }

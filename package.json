@@ -1,0 +1,14 @@
+{
+  "name": "easystep-erp",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Easy Step ERP - Frontend in web/, API in api/",
+  "scripts": {
+    "build": "cd web && npm install && npm run build",
+    "start": "cd web && npm run start",
+    "dev": "cd web && npm run dev"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

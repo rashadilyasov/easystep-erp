@@ -166,17 +166,18 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
-// Migrations + seed — startup-da, login işləməzdən əvvəl
-using (var scope = app.Services.CreateScope())
+// Migrations — arxa planda (app tez başlasın, healthcheck keçsin)
+_ = Task.Run(async () =>
 {
-    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+    await Task.Delay(5_000);
     try
     {
+        using var scope = app.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
         if (useSqlite)
         {
             await db.Database.EnsureCreatedAsync();
-            // Ensure SiteContents table exists (EnsureCreated doesn't add to existing DB)
             await db.Database.ExecuteSqlRawAsync(
                 "CREATE TABLE IF NOT EXISTS SiteContents (Id TEXT PRIMARY KEY, [Key] TEXT UNIQUE NOT NULL, Value TEXT NOT NULL, UpdatedAt TEXT NOT NULL)");
             await DbInitializer.SeedAsync(db);
@@ -184,43 +185,18 @@ using (var scope = app.Services.CreateScope())
         else
         {
             await db.Database.MigrateAsync();
-            // Repair: create missing token tables if migration history got out of sync (PostgreSQL)
-            try
-            {
-                await db.Database.ExecuteSqlRawAsync(
-                    @"CREATE TABLE IF NOT EXISTS ""RefreshTokens"" (""Id"" uuid NOT NULL, ""UserId"" uuid NOT NULL, ""TokenHash"" text NOT NULL, ""ExpiresAt"" timestamp with time zone NOT NULL, ""RevokedAt"" timestamp with time zone, ""CreatedAt"" timestamp with time zone NOT NULL, CONSTRAINT ""PK_RefreshTokens"" PRIMARY KEY (""Id""), CONSTRAINT ""FK_RefreshTokens_Users_UserId"" FOREIGN KEY (""UserId"") REFERENCES ""Users"" (""Id"") ON DELETE CASCADE)");
-                await db.Database.ExecuteSqlRawAsync(@"CREATE INDEX IF NOT EXISTS ""IX_RefreshTokens_ExpiresAt"" ON ""RefreshTokens"" (""ExpiresAt"")");
-                await db.Database.ExecuteSqlRawAsync(@"CREATE INDEX IF NOT EXISTS ""IX_RefreshTokens_UserId"" ON ""RefreshTokens"" (""UserId"")");
-            }
-            catch (Exception ex) { logger.LogDebug(ex, "RefreshTokens repair skipped"); }
-            try
-            {
-                await db.Database.ExecuteSqlRawAsync(
-                    @"CREATE TABLE IF NOT EXISTS ""PasswordResetTokens"" (""Id"" uuid NOT NULL, ""UserId"" uuid NOT NULL, ""TokenHash"" text NOT NULL, ""ExpiresAt"" timestamp with time zone NOT NULL, ""UsedAt"" timestamp with time zone, ""CreatedAt"" timestamp with time zone NOT NULL, CONSTRAINT ""PK_PasswordResetTokens"" PRIMARY KEY (""Id""), CONSTRAINT ""FK_PasswordResetTokens_Users_UserId"" FOREIGN KEY (""UserId"") REFERENCES ""Users"" (""Id"") ON DELETE CASCADE)");
-                await db.Database.ExecuteSqlRawAsync(@"CREATE INDEX IF NOT EXISTS ""IX_PasswordResetTokens_ExpiresAt"" ON ""PasswordResetTokens"" (""ExpiresAt"")");
-                await db.Database.ExecuteSqlRawAsync(@"CREATE INDEX IF NOT EXISTS ""IX_PasswordResetTokens_UserId"" ON ""PasswordResetTokens"" (""UserId"")");
-            }
-            catch (Exception ex) { logger.LogDebug(ex, "PasswordResetTokens repair skipped"); }
+            try { await db.Database.ExecuteSqlRawAsync(@"CREATE TABLE IF NOT EXISTS ""RefreshTokens"" (""Id"" uuid NOT NULL, ""UserId"" uuid NOT NULL, ""TokenHash"" text NOT NULL, ""ExpiresAt"" timestamp with time zone NOT NULL, ""RevokedAt"" timestamp with time zone, ""CreatedAt"" timestamp with time zone NOT NULL, CONSTRAINT ""PK_RefreshTokens"" PRIMARY KEY (""Id""), CONSTRAINT ""FK_RefreshTokens_Users_UserId"" FOREIGN KEY (""UserId"") REFERENCES ""Users"" (""Id"") ON DELETE CASCADE)"); } catch { }
+            try { await db.Database.ExecuteSqlRawAsync(@"CREATE TABLE IF NOT EXISTS ""PasswordResetTokens"" (""Id"" uuid NOT NULL, ""UserId"" uuid NOT NULL, ""TokenHash"" text NOT NULL, ""ExpiresAt"" timestamp with time zone NOT NULL, ""UsedAt"" timestamp with time zone, ""CreatedAt"" timestamp with time zone NOT NULL, CONSTRAINT ""PK_PasswordResetTokens"" PRIMARY KEY (""Id""), CONSTRAINT ""FK_PasswordResetTokens_Users_UserId"" FOREIGN KEY (""UserId"") REFERENCES ""Users"" (""Id"") ON DELETE CASCADE)"); } catch { }
             await DbInitializer.SeedAsync(db);
         }
-
         var now = DateTime.UtcNow;
-        var expiredRefresh = 0;
-        var expiredReset = 0;
-        var expiredEmailVerify = 0;
-        var expiredEmailOtp = 0;
-        try { expiredRefresh = await db.RefreshTokens.Where(r => r.ExpiresAt < now || r.RevokedAt != null).ExecuteDeleteAsync(); } catch (Exception ex) { logger.LogDebug(ex, "RefreshTokens cleanup skipped"); }
-        try { expiredReset = await db.PasswordResetTokens.Where(p => p.ExpiresAt < now || p.UsedAt != null).ExecuteDeleteAsync(); } catch (Exception ex) { logger.LogDebug(ex, "PasswordResetTokens cleanup skipped"); }
-        try { expiredEmailVerify = await db.EmailVerificationTokens.Where(e => e.ExpiresAt < now || e.UsedAt != null).ExecuteDeleteAsync(); } catch (Exception ex) { logger.LogDebug(ex, "EmailVerificationTokens cleanup skipped"); }
-        try { expiredEmailOtp = await db.EmailOtpCodes.Where(e => e.ExpiresAt < now || e.UsedAt != null).ExecuteDeleteAsync(); } catch (Exception ex) { logger.LogDebug(ex, "EmailOtpCodes cleanup skipped"); }
-        if (expiredRefresh > 0 || expiredReset > 0 || expiredEmailVerify > 0 || expiredEmailOtp > 0)
-            logger.LogInformation("Cleaned tokens: R={R} P={P} EV={E} OTP={O}", expiredRefresh, expiredReset, expiredEmailVerify, expiredEmailOtp);
+        try { await db.RefreshTokens.Where(r => r.ExpiresAt < now || r.RevokedAt != null).ExecuteDeleteAsync(); } catch { }
+        try { await db.PasswordResetTokens.Where(p => p.ExpiresAt < now || p.UsedAt != null).ExecuteDeleteAsync(); } catch { }
+        try { await db.EmailVerificationTokens.Where(e => e.ExpiresAt < now || e.UsedAt != null).ExecuteDeleteAsync(); } catch { }
+        try { await db.EmailOtpCodes.Where(e => e.ExpiresAt < now || e.UsedAt != null).ExecuteDeleteAsync(); } catch { }
     }
-    catch (Exception ex)
-    {
-        logger.LogWarning(ex, "DB migration/seed failed (OK if DB not ready)");
-    }
-}
+    catch { /* migration failed - app continues */ }
+});
 
 app.Run();
 

@@ -1,4 +1,4 @@
-# Railway API service — Root Directory = api olmalıdır
+# Railway API — Root Directory = api
 [deploy]
 healthcheckPath = "/api/Health"
-healthcheckTimeout = 120
+healthcheckTimeout = 180

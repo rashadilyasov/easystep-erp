@@ -66,13 +66,23 @@ export async function apiFetch<T>(path: string, options: FetchOptions = {}): Pro
         }
       }
     }
+    const text = await res.text();
     if (!res.ok) {
-      const err = await res.json().catch(() => ({ message: res.statusText }));
-      const body = err as { message?: string; detail?: string; error?: string; title?: string };
-      const msg = body.message || body.detail || body.error || body.title || res.statusText;
+      let msg = res.statusText;
+      try {
+        const body = JSON.parse(text) as { message?: string; detail?: string; error?: string; title?: string };
+        msg = body.message || body.detail || body.error || body.title || msg;
+      } catch {
+        if (text && text.length < 200) msg = text;
+      }
       throw new Error(msg || `API xətası (${res.status})`);
     }
-    return res.json();
+    if (!text || text.trim() === "") return {} as T;
+    try {
+      return JSON.parse(text) as T;
+    } catch {
+      return {} as T;
+    }
   } catch (e) {
     if (e instanceof Error) throw e;
     throw new Error("Bağlantı xətası — internet bağlantınızı yoxlayın");

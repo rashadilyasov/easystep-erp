@@ -52,7 +52,7 @@ export default function RegisterForm() {
       });
       setSuccess(true);
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "API xətası";
+      const msg = e instanceof Error ? e.message : "Bağlantı xətası. Zəhmət olmasa internet bağlantınızı yoxlayın.";
       setError(msg);
     } finally {
       setLoading(false);

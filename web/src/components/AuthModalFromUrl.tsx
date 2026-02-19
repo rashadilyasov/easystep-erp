@@ -26,13 +26,14 @@ export default function AuthModalFromUrl() {
       openRegister();
     }
 
-    // Clean URL: keep redirect param for LoginForm, remove auth
+    // Clean URL after modal has opened (delay ensures modal renders first)
     const redirect = searchParams.get("redirect");
     const params = new URLSearchParams();
     if (redirect) params.set("redirect", redirect);
     const query = params.toString();
     const newUrl = pathname + (query ? `?${query}` : "");
-    router.replace(newUrl, { scroll: false });
+    const id = setTimeout(() => router.replace(newUrl, { scroll: false }), 100);
+    return () => clearTimeout(id);
   }, [searchParams, pathname, router, openLogin, openRegister]);
 
   return null;

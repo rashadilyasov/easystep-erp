@@ -64,11 +64,13 @@ public class AuthController : ControllerBase
 
     [HttpPost("login")]
     [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("auth")]
-    public async Task<IActionResult> Login([FromBody] LoginRequest req, CancellationToken ct)
+    public async Task<IActionResult> Login([FromBody] LoginRequest? req, CancellationToken ct)
     {
+        if (req == null || string.IsNullOrWhiteSpace(req.Email))
+            return BadRequest(new { message = "E-poçt və şifrə tələb olunur" });
         try
         {
-        var result = await _auth.ValidateLoginAsync(req.Email, req.Password, ct);
+        var result = await _auth.ValidateLoginAsync(req.Email, req.Password ?? "", ct);
         if (result is not { } r)
             return Unauthorized(new { message = "E-poçt və ya şifrə səhvdir" });
 

@@ -16,9 +16,10 @@ if (string.IsNullOrEmpty(port))
 builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 
 // DbContext — Development-da SQLite, əks halda PostgreSQL (hosting üçün)
-// Railway: ConnectionStrings__DefaultConnection, DATABASE_URL və ya PGDATABASE_URL
+// Railway: ConnectionStrings, DATABASE_URL, DATABASE_PRIVATE_URL (hamısı dəstəklənir)
 var conn = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? Environment.GetEnvironmentVariable("DATABASE_URL")
+    ?? Environment.GetEnvironmentVariable("DATABASE_PRIVATE_URL")
     ?? Environment.GetEnvironmentVariable("PGDATABASE_URL")
     ?? "Host=localhost;Database=easystep_erp;Username=postgres;Password=postgres";
 conn = (conn ?? "").Trim();

@@ -1,4 +1,6 @@
-// API: NEXT_PUBLIC_API_URL varsa birbaşa backend, yoxsa easysteperp.com üçün fallback
+// Production: birbaşa Railway API (proxy DNS_HOSTNAME_RESOLVED_PRIVATE verir)
+const DIRECT_API = "https://api.easysteperp.com";
+
 export function getApiBase(): string {
   if (typeof window === "undefined") return "";
   const u = process.env.NEXT_PUBLIC_API_URL?.trim();
@@ -6,9 +8,9 @@ export function getApiBase(): string {
     const base = u.replace(/\/$/, "");
     return base.startsWith("http") ? base : `https://${base}`;
   }
-  // Production fallback — proxy 404 verdikdə birbaşa Railway API
-  if (window.location?.hostname?.includes("easysteperp.com")) {
-    return "https://api.easysteperp.com";
+  const host = window.location?.hostname ?? "";
+  if (host.includes("easysteperp.com") || host.includes("vercel.app")) {
+    return DIRECT_API;
   }
   return ""; // localhost — relative /api/* proxy
 }

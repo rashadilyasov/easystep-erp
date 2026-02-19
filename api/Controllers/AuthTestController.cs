@@ -13,13 +13,6 @@ public class AuthTestController : ControllerBase
 
     public AuthTestController(ILogger<AuthTestController> log) => _log = log;
 
-    [HttpPost("minimal-ping")]
-    public IActionResult MinimalPing()
-    {
-        _log.LogInformation("AuthTestController.MinimalPing hit");
-        return Ok(new { ok = true, msg = "Minimal auth route works" });
-    }
-
     [HttpPost("ping")]
     public IActionResult Ping()
     {

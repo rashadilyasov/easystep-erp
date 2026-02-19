@@ -10,7 +10,7 @@
 **Settings** → **Environment Variables**
 | Name | Value |
 |------|-------|
-| `API_URL` | `https://api.easysteperp.com` və ya Railway URL (`https://xxxx.up.railway.app`) |
+| `API_URL` | `https://2qz1te51.up.railway.app` (Railway URL — api.easysteperp.com DNS işləmirsə) |
 
 ### Son deploy
 **Deployments** → ən son deployment:
@@ -29,7 +29,7 @@
 ### Networking
 **Settings** → **Networking**
 - Public domain: `xxxx.up.railway.app` və ya Custom Domain: `api.easysteperp.com`
-- API test: `https://api.easysteperp.com/api/Health` → `{"status":"ok", ...}`
+- API test: `https://2qz1te51.up.railway.app/api/Health` → `{"status":"ok", ...}`
 
 ### Variables
 CORS və base URL düzgündür:
@@ -40,9 +40,9 @@ CORS və base URL düzgündür:
 
 ---
 
-## 3. Bluehost DNS
-**Domains** → **DNS** / **Zone Editor**
-- `api` CNAME → `2qz1te51.up.railway.app` (və ya Railway public URL)
+## 3. Bluehost DNS (api.easysteperp.com işləmirsə — Railway URL birbaşa işləyir)
+**Domains** → **DNS** / **Zone Editor** — Host **yalnız** `api` (tam domain deyil!)
+- `api` CNAME → `2qz1te51.up.railway.app`
 - `@` A → `216.198.79.1` (Vercel)
 - `www` CNAME → `7eb820fef6505c97.vercel-dns-017.com.`
 
@@ -62,7 +62,12 @@ Deploy bitəndən sonra:
 
 ---
 
-## 6. Tez həll
+## 6. Railway URL tapmaq
+**Railway** → easystep-erp → API servisi → **Settings** → **Networking** → **Public Networking**
+- Göstərilən URL-i (məs. `xxxx.up.railway.app`) **Vercel** `API_URL`-ə yazın.
+- Əgər URL fərqlidirsə — köhnə `2qz1te51` dəyişə bilər.
+
+## 7. Tez həll
 | Problem | Həll |
 |--------|------|
 | Köhnə səhifə | Vercel Redeploy (Skip cache) + Ctrl+Shift+R |

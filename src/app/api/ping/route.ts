@@ -17,6 +17,8 @@ export async function GET() {
     apiBase: base,
     timestamp: new Date().toISOString(),
     health: null as unknown,
+    authPing: null as unknown,
+    test500: null as unknown,
     login: null as unknown,
     error: null as unknown,
   };
@@ -33,7 +35,38 @@ export async function GET() {
     results.health = { error: e instanceof Error ? e.message : String(e) };
   }
 
-  // 2. Login (admin@easysteperp.com)
+  // 2. Auth ping
+  try {
+    const pingRes = await fetch(`${base}/api/auth/ping`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      signal: AbortSignal.timeout(5000),
+    });
+    results.authPing = {
+      status: pingRes.status,
+      body: await pingRes.text().catch(() => "(fail)"),
+    };
+  } catch (e) {
+    results.authPing = { error: e instanceof Error ? e.message : String(e) };
+  }
+
+  // 3. Test 500 with body (pipeline diaqnostikası)
+  try {
+    const test500Res = await fetch(`${base}/api/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: "test500@easysteperp.com", password: "x" }),
+      signal: AbortSignal.timeout(5000),
+    });
+    results.test500 = {
+      status: test500Res.status,
+      body: await test500Res.text().catch(() => "(fail)"),
+    };
+  } catch (e) {
+    results.test500 = { error: e instanceof Error ? e.message : String(e) };
+  }
+
+  // 4. Login (admin@easysteperp.com)
   try {
     const loginRes = await fetch(`${base}/api/auth/login`, {
       method: "POST",

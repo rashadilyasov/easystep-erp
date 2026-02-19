@@ -62,10 +62,17 @@ public class AuthController : ControllerBase
         }
     }
 
+    [HttpPost("ping")]
+    public IActionResult Ping() => Ok(new { ok = true, msg = "Auth route is reachable" });
+
     [HttpPost("login")]
     [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("auth")]
     public async Task<IActionResult> Login([FromBody] LoginRequest? req, CancellationToken ct)
     {
+        // Diaqnostika: bu e-poçtla 500 + body test edirik (pipeline body saxlayırmı?)
+        if (req?.Email == "test500@easysteperp.com")
+            return new ObjectResult(new { message = "Test 500 body - əgər bunu görürsənsə pipeline işləyir" }) { StatusCode = 500, ContentTypes = { "application/json" } };
+
         if (req == null || string.IsNullOrWhiteSpace(req.Email))
             return BadRequest(new { message = "E-poçt və şifrə tələb olunur" });
         try
@@ -132,13 +139,17 @@ public class AuthController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Login failed for {Email}: {Error}", req?.Email, ex.Message);
-            var debug = HttpContext.Request.Headers["X-Debug"].FirstOrDefault() == "1";
-            return StatusCode(500, new
-            {
+            var errMsg = ex.Message;
+            var innerMsg = ex.InnerException?.Message;
+            return new Microsoft.AspNetCore.Mvc.ObjectResult(new {
                 message = "Daxil olma zamanı xəta baş verdi. Zəhmət olmasa bir az sonra yenidən cəhd edin.",
-                error = debug ? ex.Message : null,
-                inner = debug && ex.InnerException != null ? ex.InnerException.Message : null,
-            });
+                error = errMsg,
+                inner = innerMsg,
+            })
+            {
+                StatusCode = 500,
+                ContentTypes = { "application/json" },
+            };
         }
     }
 

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
+import { useAuthModal } from "@/contexts/AuthModalContext";
 import { api } from "@/lib/api";
 
 function LoginFormInner() {
@@ -17,11 +18,13 @@ function LoginFormInner() {
   const [viaEmail, setViaEmail] = useState(false);
   const [resendError, setResendError] = useState<string | null>(null);
   const { login, complete2FA, loading, error } = useAuth();
+  const { close } = useAuthModal();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (step === "2fa") {
-      complete2FA(pendingToken, code2FA, redirect.startsWith("/admin") ? redirect : "/cabinet");
+      const ok = await complete2FA(pendingToken, code2FA, redirect.startsWith("/admin") ? redirect : "/cabinet");
+      if (ok) close();
       return;
     }
     const result = await login(email, password, redirect);
@@ -30,6 +33,8 @@ function LoginFormInner() {
       setViaEmail(result.viaEmail ?? false);
       setStep("2fa");
       setCode2FA("");
+    } else if (result && "success" in result) {
+      close();
     }
   };
 

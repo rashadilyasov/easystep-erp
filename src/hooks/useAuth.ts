@@ -10,7 +10,11 @@ export function useAuth() {
   const [error, setError] = useState<string | null>(null);
 
   const login = useCallback(
-    async (email: string, password: string, redirectTo = "/cabinet") => {
+    async (
+      email: string,
+      password: string,
+      redirectTo = "/cabinet"
+    ): Promise<{ requires2FA: true; pendingToken: string; viaEmail?: boolean; message?: string } | { success: true } | undefined> => {
       setLoading(true);
       setError(null);
       try {
@@ -22,6 +26,7 @@ export function useAuth() {
           localStorage.setItem("accessToken", res.accessToken);
           if (res.refreshToken) localStorage.setItem("refreshToken", res.refreshToken);
           router.push(redirectTo.startsWith("/") ? redirectTo : "/cabinet");
+          return { success: true };
         }
       } catch (e) {
         const msg = e instanceof Error ? e.message : "Xəta baş verdi";
@@ -35,7 +40,7 @@ export function useAuth() {
   );
 
   const complete2FA = useCallback(
-    async (pendingToken: string, code: string, redirectTo = "/admin") => {
+    async (pendingToken: string, code: string, redirectTo = "/admin"): Promise<boolean> => {
       setLoading(true);
       setError(null);
       try {
@@ -43,10 +48,12 @@ export function useAuth() {
         localStorage.setItem("accessToken", res.accessToken);
         if (res.refreshToken) localStorage.setItem("refreshToken", res.refreshToken);
         router.push(redirectTo.startsWith("/") ? redirectTo : "/admin");
+        return true;
       } catch (e) {
         const msg = e instanceof Error ? e.message : "Xəta baş verdi";
         const isConnError = /fetch|network|abort|vaxtı bitdi|failed to respond|çıxış yoxdur/i.test(msg);
         setError(isConnError ? "Bağlantı xətası. İnterneti yoxlayın və bir az sonra yenidən cəhd edin." : msg);
+        return false;
       } finally {
         setLoading(false);
       }

@@ -166,11 +166,9 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
-// Migrations + seed — background-da ki, healthcheck tez keçsin
-_ = Task.Run(async () =>
+// Migrations + seed — startup-da, login işləməzdən əvvəl
+using (var scope = app.Services.CreateScope())
 {
-    await Task.Delay(2000);
-    using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
     try
@@ -222,7 +220,7 @@ _ = Task.Run(async () =>
     {
         logger.LogWarning(ex, "DB migration/seed failed (OK if DB not ready)");
     }
-});
+}
 
 app.Run();
 

@@ -43,6 +43,9 @@ export async function apiFetch<T>(path: string, options: FetchOptions = {}): Pro
       "Content-Type": "application/json",
       ...(init.headers as Record<string, string>),
     };
+    if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("debug") === "1") {
+      headers["X-Debug"] = "1";
+    }
     if (!skipAuth) {
       const token = getAccessToken();
       if (token) headers["Authorization"] = `Bearer ${token}`;
@@ -75,8 +78,10 @@ export async function apiFetch<T>(path: string, options: FetchOptions = {}): Pro
     if (!res.ok) {
       let msg = res.statusText;
       try {
-        const body = JSON.parse(text) as { message?: string; detail?: string; error?: string; title?: string };
+        const body = JSON.parse(text) as { message?: string; detail?: string; error?: string; title?: string; inner?: string };
         msg = body.message || body.detail || body.error || body.title || msg;
+        if (body.error) msg += ` [${body.error}]`;
+        if (body.inner) msg += ` (${body.inner})`;
       } catch {
         if (text && text.length < 300) msg = text.replace(/<[^>]*>/g, "").trim().slice(0, 200);
       }

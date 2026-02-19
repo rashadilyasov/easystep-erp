@@ -18,8 +18,12 @@ public class JsonExceptionHandler : IExceptionHandler
         context.Response.StatusCode = 500;
         context.Response.ContentType = "application/json";
 
-        var msg = "Daxil olma zamanı xəta baş verdi. Zəhmət olmasa bir az sonra yenidən cəhd edin.";
-        await context.Response.WriteAsJsonAsync(new { message = msg }, ct);
+        var debug = context.Request.Headers["X-Debug"].FirstOrDefault() == "1";
+        var msg = "Xəta baş verdi. Zəhmət olmasa bir az sonra yenidən cəhd edin.";
+        var body = new Dictionary<string, object?> { ["message"] = msg };
+        if (debug) body["error"] = exception.Message;
+        if (debug && exception.InnerException != null) body["inner"] = exception.InnerException.Message;
+        await context.Response.WriteAsJsonAsync(body, ct);
         return true;
     }
 }

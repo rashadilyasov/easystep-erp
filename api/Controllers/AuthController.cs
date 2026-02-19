@@ -131,8 +131,14 @@ public class AuthController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Login failed for {Email}", req?.Email);
-            return StatusCode(500, new { message = "Daxil olma zamanı xəta baş verdi. Zəhmət olmasa bir az sonra yenidən cəhd edin." });
+            _logger.LogError(ex, "Login failed for {Email}: {Error}", req?.Email, ex.Message);
+            var debug = HttpContext.Request.Headers["X-Debug"].FirstOrDefault() == "1";
+            return StatusCode(500, new
+            {
+                message = "Daxil olma zamanı xəta baş verdi. Zəhmət olmasa bir az sonra yenidən cəhd edin.",
+                error = debug ? ex.Message : null,
+                inner = debug && ex.InnerException != null ? ex.InnerException.Message : null,
+            });
         }
     }
 

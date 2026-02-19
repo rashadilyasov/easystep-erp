@@ -17,6 +17,7 @@ export async function GET() {
     apiBase: base,
     timestamp: new Date().toISOString(),
     health: null as unknown,
+    minimalPing: null as unknown,
     authPing: null as unknown,
     test500: null as unknown,
     login: null as unknown,
@@ -35,7 +36,22 @@ export async function GET() {
     results.health = { error: e instanceof Error ? e.message : String(e) };
   }
 
-  // 2. Auth ping
+  // 2. Minimal auth (yalnız ILogger — dependency testi)
+  try {
+    const minimalRes = await fetch(`${base}/api/auth/minimal-ping`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      signal: AbortSignal.timeout(5000),
+    });
+    results.minimalPing = {
+      status: minimalRes.status,
+      body: await minimalRes.text().catch(() => "(fail)"),
+    };
+  } catch (e) {
+    results.minimalPing = { error: e instanceof Error ? e.message : String(e) };
+  }
+
+  // 3. Auth ping (AuthController)
   try {
     const pingRes = await fetch(`${base}/api/auth/ping`, {
       method: "POST",

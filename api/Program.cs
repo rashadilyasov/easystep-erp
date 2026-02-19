@@ -29,11 +29,12 @@ if (conn.StartsWith("postgresql://", StringComparison.OrdinalIgnoreCase) || conn
     try
     {
         var uri = new Uri(conn);
-        var user = uri.UserInfo?.Split(':')[0] ?? "postgres";
-        var pass = uri.UserInfo?.Contains(':') == true ? string.Join(":", uri.UserInfo.Split(':').Skip(1)) : "";
+        var parts = uri.UserInfo?.Split(new[] { ':' }, 2) ?? Array.Empty<string>();
+        var user = parts.Length > 0 ? Uri.UnescapeDataString(parts[0]) : "postgres";
+        var pass = parts.Length > 1 ? Uri.UnescapeDataString(parts[1]) : "";
         var db = uri.AbsolutePath.TrimStart('/').Split('?')[0];
         if (string.IsNullOrEmpty(db)) db = "railway";
-        conn = $"Host={uri.Host};Port={uri.Port};Database={db};Username={Uri.UnescapeDataString(user)};Password={Uri.UnescapeDataString(pass)};Ssl Mode=Require";
+        conn = $"Host={uri.Host};Port={uri.Port};Database={db};Username={user};Password={pass};Ssl Mode=Require";
     }
     catch { /* keep original if parse fails */ }
 }
@@ -45,7 +46,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     if (useSqlite)
         options.UseSqlite(conn);
     else
-        options.UseNpgsql(conn, o => o.EnableRetryOnFailure(2));
+        options.UseNpgsql(conn, o => o.EnableRetryOnFailure(3, TimeSpan.FromSeconds(2), null));
 });
 
 // Services

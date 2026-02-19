@@ -42,7 +42,7 @@ public class AuthService
             SecurityAlgorithms.HmacSha256);
 
         var token = new JwtSecurityToken(
-            issuer: _config["Jwt:Issuer"],
+            issuer: _config["Jwt:Issuer"] ?? _config["Jwt_Issuer"] ?? "EasyStepErp",
             claims: claims.ToArray(),
             expires: DateTime.UtcNow.AddMinutes(expiry),
             signingCredentials: creds);

@@ -109,10 +109,14 @@ public class AuthController : ControllerBase
 
         await _auth.UpdateLastLoginAsync(user.Id, ct);
 
-        await _audit.LogAsync("Login", user.Id, user.Email,
-            HttpContext.Connection.RemoteIpAddress?.ToString(),
-            HttpContext.Request.Headers.UserAgent,
-            ct: default);
+        try
+        {
+            await _audit.LogAsync("Login", user.Id, user.Email,
+                HttpContext.Connection.RemoteIpAddress?.ToString(),
+                HttpContext.Request.Headers.UserAgent,
+                ct: default);
+        }
+        catch (Exception auditEx) { _logger.LogWarning(auditEx, "Audit log failed"); }
 
         var accessToken = _auth.GenerateAccessToken(user, tenant);
         var refreshToken = _auth.GenerateRefreshToken();

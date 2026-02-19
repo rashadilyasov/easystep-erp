@@ -22,10 +22,6 @@ var conn = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? Environment.GetEnvironmentVariable("PGDATABASE_URL")
     ?? "Host=localhost;Database=easystep_erp;Username=postgres;Password=postgres";
 conn = (conn ?? "").Trim();
-// Railway Postgres: SSL options (Prefer = try SSL, fallback if fails)
-if (!string.IsNullOrEmpty(conn) && conn.StartsWith("postgresql://", StringComparison.OrdinalIgnoreCase)
-    && !conn.Contains("sslmode=", StringComparison.OrdinalIgnoreCase))
-    conn += (conn.Contains('?') ? "&" : "?") + "sslmode=Prefer";
 var useSqlite = conn.StartsWith("Data Source=", StringComparison.OrdinalIgnoreCase)
     || conn.EndsWith(".db", StringComparison.OrdinalIgnoreCase);
 

@@ -22,6 +22,20 @@ var conn = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? Environment.GetEnvironmentVariable("PGDATABASE_URL")
     ?? "Host=localhost;Database=easystep_erp;Username=postgres;Password=postgres";
 conn = (conn ?? "").Trim();
+// postgresql:// URI → Npgsql key=value format (Railway DATABASE_URL)
+if (conn.StartsWith("postgresql://", StringComparison.OrdinalIgnoreCase) || conn.StartsWith("postgres://", StringComparison.OrdinalIgnoreCase))
+{
+    try
+    {
+        var uri = new Uri(conn);
+        var user = uri.UserInfo?.Split(':')[0] ?? "postgres";
+        var pass = uri.UserInfo?.Contains(':') == true ? string.Join(":", uri.UserInfo.Split(':').Skip(1)) : "";
+        var db = uri.AbsolutePath.TrimStart('/');
+        if (string.IsNullOrEmpty(db)) db = "railway";
+        conn = $"Host={uri.Host};Port={uri.Port};Database={db};Username={Uri.UnescapeDataString(user)};Password={Uri.UnescapeDataString(pass)}";
+    }
+    catch { /* keep original if parse fails */ }
+}
 var useSqlite = conn.StartsWith("Data Source=", StringComparison.OrdinalIgnoreCase)
     || conn.EndsWith(".db", StringComparison.OrdinalIgnoreCase);
 

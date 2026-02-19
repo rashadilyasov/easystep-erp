@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -14,7 +14,7 @@ namespace EasyStep.Erp.Api.Migrations
             migrationBuilder.AddColumn<bool>(
                 name: "TwoFactorViaEmail",
                 table: "Users",
-                type: "INTEGER",
+                type: "boolean",
                 nullable: false,
                 defaultValue: false);
 
@@ -22,12 +22,12 @@ namespace EasyStep.Erp.Api.Migrations
                 name: "EmailOtpCodes",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
-                    UserId = table.Column<Guid>(type: "TEXT", nullable: false),
-                    CodeHash = table.Column<string>(type: "TEXT", nullable: false),
-                    ExpiresAt = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    UsedAt = table.Column<DateTime>(type: "TEXT", nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false)
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    CodeHash = table.Column<string>(type: "text", nullable: false),
+                    ExpiresAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UsedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {

@@ -52,7 +52,10 @@ export default function RegisterForm() {
       });
       setSuccess(true);
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Bağlantı xətası. Zəhmət olmasa internet bağlantınızı yoxlayın.";
+      const raw = e instanceof Error ? e.message : "Bağlantı xətası. Zəhmət olmasa internet bağlantınızı yoxlayın.";
+      const msg = raw.includes("fetch") || raw.includes("network") || raw.toLowerCase().includes("failed")
+        ? "Bağlantı xətası. İnterneti yoxlayın və bir az sonra yenidən cəhd edin."
+        : raw;
       setError(msg);
     } finally {
       setLoading(false);

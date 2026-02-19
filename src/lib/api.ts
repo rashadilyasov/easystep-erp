@@ -1,18 +1,8 @@
-// Production: birbaşa Railway API (proxy DNS_HOSTNAME_RESOLVED_PRIVATE verir)
-const DIRECT_API = "https://api.easysteperp.com";
-
+// Brauzer həmişə relative /api/* istifadə edir — Next.js proxy backend-ə yönləndirir.
+// Bu CORS və DNS (api.easysteperp.com) problemlərini aradan qaldırır.
 export function getApiBase(): string {
   if (typeof window === "undefined") return "";
-  const u = process.env.NEXT_PUBLIC_API_URL?.trim();
-  if (u) {
-    const base = u.replace(/\/$/, "");
-    return base.startsWith("http") ? base : `https://${base}`;
-  }
-  const host = window.location?.hostname ?? "";
-  if (host.includes("easysteperp.com") || host.includes("vercel.app")) {
-    return DIRECT_API;
-  }
-  return ""; // localhost - relative /api/* proxy
+  return ""; // relative URL = proxy vasitəsilə
 }
 
 function getAccessToken(): string | null {

@@ -10,7 +10,7 @@ export async function GET() {
   const apiBase =
     process.env.API_URL ||
     process.env.NEXT_PUBLIC_API_URL ||
-    (process.env.VERCEL ? "https://api.easysteperp.com" : "http://localhost:5000");
+    (process.env.VERCEL ? (process.env.RAILWAY_PUBLIC_URL || "https://2qz1te51.up.railway.app") : "http://localhost:5000");
   const url = `${apiBase.replace(/\/$/, "")}/api/Health`;
   try {
     const res = await fetch(url);

@@ -6,6 +6,9 @@ import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
+// Railway default — api.easysteperp.com DNS problemləri ola bilər
+const RAILWAY_FALLBACK = "https://2qz1te51.up.railway.app";
+
 function getApiBase(): string {
   const url = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL;
   if (url) {
@@ -13,8 +16,8 @@ function getApiBase(): string {
     if (!u.startsWith("http://") && !u.startsWith("https://")) u = "https://" + u;
     return u;
   }
-  if (process.env.VERCEL) return "https://api.easysteperp.com";
-  return "http://localhost:5000"; // lokaldə api default port
+  if (process.env.VERCEL) return process.env.RAILWAY_PUBLIC_URL || RAILWAY_FALLBACK;
+  return "http://localhost:5000";
 }
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ path?: string[] }> }) {

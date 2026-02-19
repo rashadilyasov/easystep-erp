@@ -5,6 +5,8 @@ import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
+const RAILWAY_FALLBACK = "https://2qz1te51.up.railway.app";
+
 function getApiBase(): string {
   const url = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL;
   if (url) {
@@ -12,7 +14,7 @@ function getApiBase(): string {
     if (!u.startsWith("http://") && !u.startsWith("https://")) u = "https://" + u;
     return u;
   }
-  return process.env.VERCEL ? "https://api.easysteperp.com" : "http://localhost:5000";
+  return process.env.VERCEL ? (process.env.RAILWAY_PUBLIC_URL || RAILWAY_FALLBACK) : "http://localhost:5000";
 }
 
 async function proxyReq(request: NextRequest, segment: string[], method: string) {

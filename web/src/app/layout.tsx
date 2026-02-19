@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import Providers from "@/components/Providers";
@@ -8,7 +7,7 @@ const inter = Inter({
   variable: "--font-geist",
 });
 
-export const metadata: Metadata = {
+export const metadata = {
   title: "Easy Step ERP | Müştəri Portalı",
   description:
     "Easy Step ERP – təchizatçı şirkətləri üçün alış, satış, anbar, pul uçotu. Qeydiyyat, paket seçimi, ödəniş və yükləmə.",

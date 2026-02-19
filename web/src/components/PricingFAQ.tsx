@@ -12,7 +12,7 @@ const DEFAULT_FAQ: { question: string; answer: string }[] = [
   {
     question: "İşçilərim ERP bilmir, öyrənə bilərlər?",
     answer:
-      "Bəli. Xüsusi ERP biliyi olmayan əməkdaşlar sistemi bir neçə günə rahatlıqla istifadə edə bilər. Proqram real biznes dili ilə işləyir — „Nə qədər malım qalıb?“, „Kim mənə borcludur?“ kimi suallara cavab verir.",
+      "Bəli. Xüsusi ERP biliyi olmayan əməkdaşlar sistemi bir neçə günə rahatlıqla istifadə edə bilər. Proqram real biznes dili ilə işləyir - „Nə qədər malım qalıb?“, „Kim mənə borcludur?“ kimi suallara cavab verir.",
   },
   {
     question: "Anbar qalıqları real vaxtda görünəcək?",
@@ -32,12 +32,12 @@ const DEFAULT_FAQ: { question: string; answer: string }[] = [
   {
     question: "Telefonla da işləyir?",
     answer:
-      "Proqram veb brauzerdə işləyir. Kompüter və planşetdə tam funksiyalı. Telefonda isə sadəcə sənədləri təsdiqləmə və hesabata baxmaq mümkündür.",
+      "Proqram Windows-da və serverə yüklənir. Mobil tətbiqdə hesabatlara baxmaq və sənədləri təsdiqləmək mümkündür.",
   },
   {
     question: "Ödəniş etməsəm nə olur?",
     answer:
-      "Abunə müddəti bitəndə sistemə giriş dayandırılır. Məlumatlarınız saxlanılır — yenidən abunə alanda əvvəlki vəziyyətinizə qayıdarsınız.",
+      "Abunə müddəti bitəndə sistemə giriş dayandırılır. Məlumatlarınız saxlanılır - yenidən abunə alanda əvvəlki vəziyyətinizə qayıdarsınız.",
   },
   {
     question: "Məlumatlarım təhlükəsizdir?",

@@ -5,11 +5,11 @@ import { useState, useEffect } from "react";
 const FRAME_DURATION_MS = 4500;
 
 const FRAME_MESSAGES = [
-  "📊 Bir baxışda bütün rəqəmlər — qərar qəbulu sürətlənir",
-  "💰 Borclu və borc — kimə nə qədər borc var, hamısı aydın",
-  "📦 Real vaxtda anbar — hər malın harada olduğunu bilin",
-  "🛡️ Hər addım qeyd olunur — etibarlı və təhlükəsiz",
-  "💵 Kassa və bank — nə gəldi, nə çıxdı, bir ayda",
+  "📊 Bir baxışda bütün rəqəmlər - qərar qəbulu sürətlənir",
+  "💰 Borclu və borc - kimə nə qədər borc var, hamısı aydın",
+  "📦 Real vaxtda anbar - hər malın harada olduğunu bilin",
+  "🛡️ Hər addım qeyd olunur - etibarlı və təhlükəsiz",
+  "💵 Kassa və bank - nə gəldi, nə çıxdı, bir ayda",
 ];
 
 const SIDEBAR_ITEMS = ["Dashboard", "Kontragentlər", "Anbarlar", "Alış", "Satış", "Pul"] as const;
@@ -95,9 +95,9 @@ const FRAMES = [
               </thead>
               <tbody>
                 {[
-                  { name: "ABC MMC", borc: "₼ 2 450", mueyyen: "—" },
-                  { name: "XYZ Ltd", borc: "—", mueyyen: "₼ 1 890" },
-                  { name: "Trade Plus", borc: "₼ 5 120", mueyyen: "—" },
+                  { name: "ABC MMC", borc: "₼ 2 450", mueyyen: "-" },
+                  { name: "XYZ Ltd", borc: "-", mueyyen: "₼ 1 890" },
+                  { name: "Trade Plus", borc: "₼ 5 120", mueyyen: "-" },
                 ].map((r) => (
                   <tr key={r.name} className="border-t border-slate-100 hover:bg-primary-50/50">
                     <td className="py-3 md:py-4 px-3 md:px-5 font-semibold text-slate-800">{r.name}</td>
@@ -109,7 +109,7 @@ const FRAMES = [
             </table>
           </div>
           <div className="mt-3 md:mt-4 px-3 md:px-4 py-2 bg-emerald-50 rounded-xl text-xs md:text-sm font-medium text-emerald-700 border border-emerald-200/60">
-            Kimə nə qədər borc — bir baxışda
+            Kimə nə qədər borc - bir baxışda
           </div>
         </div>
       </div>
@@ -141,7 +141,7 @@ const FRAMES = [
             ))}
           </div>
           <div className="mt-3 md:mt-4 px-3 md:px-4 py-2 bg-primary-50 rounded-xl text-xs md:text-sm font-medium text-primary-700 border border-primary-200/60">
-            Real vaxtda stok — hər an güncel məlumat
+            Real vaxtda stok - hər an güncel məlumat
           </div>
         </div>
       </div>
@@ -156,9 +156,9 @@ const FRAMES = [
           <div className="h-10 md:h-11 bg-gradient-to-r from-emerald-600 to-emerald-500 rounded-xl mb-4 md:mb-5 flex items-center px-4 md:px-5 text-white font-semibold text-xs md:text-sm shadow-lg shadow-emerald-500/25">🛡️ Nəzarət və Təhlükəsizlik</div>
           <div className="space-y-3 md:space-y-4">
             {[
-              { icon: "✓", text: "Hər əməliyyat tarixçəsi ilə qeyd olunur — şəffaflıq", color: "from-emerald-50 to-white" },
-              { icon: "✓", text: "İstifadəçi rolları və icazələr — nəzarət", color: "from-emerald-50 to-white" },
-              { icon: "✓", text: "OWASP ASVS standartlarına uyğun — etibarlılıq", color: "from-emerald-50 to-white" },
+              { icon: "✓", text: "Hər əməliyyat tarixçəsi ilə qeyd olunur - şəffaflıq", color: "from-emerald-50 to-white" },
+              { icon: "✓", text: "İstifadəçi rolları və icazələr - nəzarət", color: "from-emerald-50 to-white" },
+              { icon: "✓", text: "OWASP ASVS standartlarına uyğun - etibarlılıq", color: "from-emerald-50 to-white" },
             ].map((item) => (
               <div key={item.text} className={`flex items-center gap-3 md:gap-4 p-3 md:p-5 rounded-xl md:rounded-2xl border border-emerald-200/80 bg-gradient-to-r ${item.color} shadow-sm`}>
                 <span className="flex-shrink-0 flex items-center justify-center w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-emerald-500 text-white text-lg md:text-xl font-bold shadow-md">{item.icon}</span>
@@ -167,7 +167,7 @@ const FRAMES = [
             ))}
           </div>
           <div className="mt-3 md:mt-4 px-3 md:px-4 py-2 bg-emerald-50 rounded-xl text-xs md:text-sm font-bold text-emerald-700 border border-emerald-200/60">
-            Məlumatlarınız qorunur — 100% etibarlı
+            Məlumatlarınız qorunur - 100% etibarlı
           </div>
         </div>
       </div>
@@ -194,7 +194,7 @@ const FRAMES = [
             ))}
           </div>
           <div className="p-3 md:p-5 bg-gradient-to-r from-primary-50 to-emerald-50 rounded-xl md:rounded-2xl border border-primary-200/60">
-            <div className="text-xs md:text-sm font-bold text-slate-700">Nə gəldi, nə çıxdı — hər şey aydın və nəzarətdə.</div>
+            <div className="text-xs md:text-sm font-bold text-slate-700">Nə gəldi, nə çıxdı - hər şey aydın və nəzarətdə.</div>
           </div>
         </div>
       </div>

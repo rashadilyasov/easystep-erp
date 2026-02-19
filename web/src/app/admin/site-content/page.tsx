@@ -12,7 +12,7 @@ const CONTENT_KEYS = [
 
 const DEFAULT_CONTENT: Record<string, unknown> = {
   pricing: {
-    title: "Böyük şirkət sistemi — kiçik və orta biznes qiyməti ilə",
+    title: "Böyük şirkət sistemi - kiçik və orta biznes qiyməti ilə",
     subtitle: "Aylıq əlçatan paketlərlə peşəkar idarəetmə. ERP proqramı üçün planını seç, ödəniş et və proqramı yüklə.",
     comparisonFeatures: [
       "Alış-satış sifarişləri, qaimə, faktura və tranzit əməliyyatlarının idarəetməsi",
@@ -37,7 +37,7 @@ const DEFAULT_CONTENT: Record<string, unknown> = {
   },
   features: {
     title: "Funksiyalar",
-    intro: "Anbar uçotu proqramı kimi real qalıqlar, aydın ödənişlər, təchizat və borc nəzarəti — təchizatçı şirkətləri üçün.",
+    intro: "Anbar uçotu proqramı kimi real qalıqlar, aydın ödənişlər, təchizat və borc nəzarəti - təchizatçı şirkətləri üçün.",
     features: [
       { title: "Alış-satış sifarişləri, qaimə, faktura və tranzit əməliyyatlarının idarəetməsi", desc: "Sifarişdən qaiməyə, faktura və invoice-ə qədər tam sənəd axını. Tranzit əməliyyatları ilə təchizat-satış dövriyyəsinin vahid idarəetməsi." },
       { title: "Anbar uçotu, real vaxt stok nəzarəti və minimum stok limitləri", desc: "Çoxanbarlı uçot, real vaxt stok monitorinqi, minimum stok limitləri, inventarizasiya və anbarlar arası transfer." },
@@ -50,7 +50,7 @@ const DEFAULT_CONTENT: Record<string, unknown> = {
       { question: "Anbar qalıqları real vaxtda görünəcək?", answer: "Bəli. Anbar və qalıqlar hər an real vəziyyətdə görünür. Hər alış, satış və köçürmə dərhal sistemə əks olunur." },
       { question: "Mənim işim təchizat və toptan satışdır. Uyğundur?", answer: "Bəli. Easy Step ERP təchizat və paylama şirkətləri üçün xüsusilə uyğundur." },
       { question: "Excel-dən keçmək çətin olmayacaq?", answer: "Keçid sadədir. Mövcud məlumatlarınızı Excel-dən idxal edə bilərsiniz." },
-      { question: "Telefonla da işləyir?", answer: "Proqram veb brauzerdə işləyir. Kompüter və planşetdə tam funksiyalı. Telefonda isə sadəcə sənədləri təsdiqləmə və hesabata baxmaq mümkündür." },
+      { question: "Telefonla da işləyir?", answer: "Proqram Windows-da və serverə yüklənir. Mobil tətbiqdə hesabatlara baxmaq və sənədləri təsdiqləmək mümkündür." },
       { question: "Ödəniş etməsəm nə olur?", answer: "Abunə müddəti bitəndə sistemə giriş dayandırılır. Məlumatlarınız saxlanılır." },
       { question: "Məlumatlarım təhlükəsizdir?", answer: "Bəli. Məlumatlar OWASP ASVS standartlarına uyğun qorunur." },
       { question: "Dəstək varmı?", answer: "Bəli. Əlaqə bölməsindən dəstək ala bilərsiniz." },
@@ -58,7 +58,7 @@ const DEFAULT_CONTENT: Record<string, unknown> = {
     ],
   },
   home: {
-    hero: { h1: "İşi etibarlı insanlara, nəticəni sistemə həvalə edin", subtitle: "Peşəkar idarəetmə — sadə interfeys. Real vaxtda nəzarət." },
+    hero: { h1: "İşi etibarlı insanlara, nəticəni sistemə həvalə edin", subtitle: "Peşəkar idarəetmə - sadə interfeys. Real vaxtda nəzarət." },
     targetTitle: "Easy Step ERP kimlər üçündür?",
     targetItems: [
       { title: "Təchizat və paylama", desc: "Distribütorlar, təchizatçılar", icon: "📦" },
@@ -66,7 +66,7 @@ const DEFAULT_CONTENT: Record<string, unknown> = {
     ],
     benefitsTitle: "Funksional üstünlüklər",
     benefitsItems: [
-      { icon: "📦", title: "Anbar və qalıqlar", desc: "Hər an real vəziyyət — stok nəzarəti", gradient: "from-blue-50 to-white" },
+      { icon: "📦", title: "Anbar və qalıqlar", desc: "Hər an real vəziyyət - stok nəzarəti", gradient: "from-blue-50 to-white" },
     ],
   },
 };

@@ -37,7 +37,7 @@ export default function PricingContent() {
   const comparisonFeatures = Array.isArray(pricing.comparisonFeatures) && pricing.comparisonFeatures.length > 0
     ? pricing.comparisonFeatures
     : DEFAULT_COMPARISON;
-  const title = pricing.title ?? "Böyük şirkət sistemi — kiçik və orta biznes qiyməti ilə";
+  const title = pricing.title ?? "Böyük şirkət sistemi - kiçik və orta biznes qiyməti ilə";
   const subtitle = pricing.subtitle ?? "Aylıq əlçatan paketlərlə peşəkar idarəetmə. ERP proqramı üçün planını seç, ödəniş et və proqramı yüklə.";
   const comparisonTitle = pricing.comparisonTitle ?? "Plan müqayisəsi";
   const footerNote = pricing.footerNote ?? "Bütün planlarda tam funksionallıq mövcuddur. Müddətə görə fərqlənir.";

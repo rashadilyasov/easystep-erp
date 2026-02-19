@@ -2,7 +2,7 @@ import PublicHeader from "@/components/PublicHeader";
 import PublicFooter from "@/components/PublicFooter";
 
 export const metadata = {
-  title: "Easy Step ERP Təhlükəsizlik — Nəzarət, Tarixçə, İcazələr",
+  title: "Easy Step ERP Təhlükəsizlik - Nəzarət, Tarixçə, İcazələr",
   description:
     "İstifadəçi rolları, əməliyyat tarixçəsi və təhlükəsizlik yanaşması ilə məlumatlarınız nəzarətdə.",
 };

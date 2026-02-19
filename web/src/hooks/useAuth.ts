@@ -24,7 +24,8 @@ export function useAuth() {
           router.push(redirectTo.startsWith("/") ? redirectTo : "/cabinet");
         }
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Xəta baş verdi");
+        const msg = e instanceof Error ? e.message : "Xəta baş verdi";
+        setError(msg.includes("fetch") || msg.includes("network") ? "Bağlantı xətası. İnterneti yoxlayın və bir az sonra yenidən cəhd edin." : msg);
       } finally {
         setLoading(false);
       }
@@ -42,7 +43,8 @@ export function useAuth() {
         if (res.refreshToken) localStorage.setItem("refreshToken", res.refreshToken);
         router.push(redirectTo.startsWith("/") ? redirectTo : "/admin");
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Xəta baş verdi");
+        const msg = e instanceof Error ? e.message : "Xəta baş verdi";
+        setError(msg.includes("fetch") || msg.includes("network") ? "Bağlantı xətası. İnterneti yoxlayın və bir az sonra yenidən cəhd edin." : msg);
       } finally {
         setLoading(false);
       }

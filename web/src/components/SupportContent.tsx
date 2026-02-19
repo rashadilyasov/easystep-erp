@@ -67,7 +67,7 @@ export default function SupportContent() {
             <div key={t.id} className="p-6 bg-white rounded-2xl border border-slate-200">
               <div className="flex justify-between items-start">
                 <div>
-                  <h3 className="font-semibold text-slate-900">#{t.id.slice(0, 8)} — {t.subject}</h3>
+                  <h3 className="font-semibold text-slate-900">#{t.id.slice(0, 8)} - {t.subject}</h3>
                   <p className="text-sm text-slate-600 mt-1">Açılış tarixi: {t.date}</p>
                   <div className="mt-2">{statusBadge(t.status)}</div>
                 </div>

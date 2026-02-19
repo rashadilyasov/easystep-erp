@@ -9,9 +9,9 @@ export default function CabinetDashboard() {
         <div className="p-6 bg-slate-50 border border-slate-200 rounded-2xl">
           <h3 className="font-semibold text-slate-900 mb-2">Sürətli keçidlər</h3>
           <ul className="text-sm text-slate-600 space-y-1">
-            <li>• Yükləmə — Desktop ERP quraşdırıcısı</li>
-            <li>• Ödənişlər — Plan və faktura</li>
-            <li>• Akademiya — Video təlimatlar</li>
+            <li>• Yükləmə - Desktop ERP quraşdırıcısı</li>
+            <li>• Ödənişlər - Plan və faktura</li>
+            <li>• Akademiya - Video təlimatlar</li>
           </ul>
         </div>
         <div className="p-6 bg-amber-50 border border-amber-200 rounded-2xl">

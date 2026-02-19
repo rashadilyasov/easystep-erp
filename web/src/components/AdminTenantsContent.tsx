@@ -83,7 +83,7 @@ export default function AdminTenantsContent() {
             tenants.map((t) => (
               <tr key={t.id} className="border-t border-slate-200">
                 <td className="px-4 py-3 font-medium">{t.name}</td>
-                <td className="px-4 py-3">{t.subscription?.planName ?? "—"}</td>
+                <td className="px-4 py-3">{t.subscription?.planName ?? "-"}</td>
                 <td className="px-4 py-3">
                   {t.subscription ? (
                     <span
@@ -98,13 +98,13 @@ export default function AdminTenantsContent() {
                       {t.subscription.status}
                     </span>
                   ) : (
-                    "—"
+                    "-"
                   )}
                 </td>
                 <td className="px-4 py-3">
                   {t.subscription?.endDate
                     ? new Date(t.subscription.endDate).toLocaleDateString("az-AZ")
-                    : "—"}
+                    : "-"}
                 </td>
                 <td className="px-4 py-3">
                   {t.name.includes("System") ? null : (
@@ -136,7 +136,7 @@ export default function AdminTenantsContent() {
                 >
                   {plans.map((p) => (
                     <option key={p.id} value={p.id}>
-                      {p.name} — {p.price} {p.currency}
+                      {p.name} - {p.price} {p.currency}
                     </option>
                   ))}
                 </select>

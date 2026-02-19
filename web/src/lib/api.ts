@@ -12,7 +12,7 @@ export function getApiBase(): string {
   if (host.includes("easysteperp.com") || host.includes("vercel.app")) {
     return DIRECT_API;
   }
-  return ""; // localhost — relative /api/* proxy
+  return ""; // localhost - relative /api/* proxy
 }
 
 function getAccessToken(): string | null {
@@ -101,7 +101,7 @@ export async function apiFetch<T>(path: string, options: FetchOptions = {}): Pro
     }
   } catch (e) {
     if (e instanceof Error) throw e;
-    throw new Error("Bağlantı xətası — internet bağlantınızı yoxlayın");
+    throw new Error("Bağlantı xətası - internet bağlantınızı yoxlayın");
   }
 }
 

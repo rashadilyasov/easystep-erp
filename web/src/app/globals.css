@@ -46,6 +46,11 @@
     @apply bg-[var(--background)] text-[var(--foreground)] antialiased;
     overflow-x: hidden;
   }
+  /* İ (dot above) görünməsi üçün - Azərbaycan hərfləri kəsilməsin */
+  h1, h2, h3, .text-2xl, .text-3xl, .text-4xl {
+    padding-top: 0.1em;
+    overflow: visible;
+  }
 }
 
 @layer components {

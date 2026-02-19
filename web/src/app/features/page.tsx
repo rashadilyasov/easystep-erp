@@ -2,7 +2,7 @@ import PublicHeader from "@/components/PublicHeader";
 import PublicFooter from "@/components/PublicFooter";
 
 export const metadata = {
-  title: "Easy Step ERP Funksiyalar — Alış-Satış, Anbar, P/L, Cash Flow, Ekspeditor",
+  title: "Easy Step ERP Funksiyalar - Alış-Satış, Anbar, P/L, Cash Flow, Ekspeditor",
   description:
     "Alış-satış sifarişləri, tranzit əməliyyatları, minimum stok nəzarəti, müştəri PriceList, borc aging, ekspeditor, realizasiya, əmək haqqı, layihə idarəetməsi, P/L və Cash Flow hesabatları. Milli ERP.",
 };
@@ -79,7 +79,7 @@ export default function Features() {
         <div className="max-w-6xl mx-auto">
           <h1 className="text-4xl font-bold text-slate-900 mb-4">Funksiyalar</h1>
           <p className="text-xl text-slate-600 mb-12">
-            Anbar uçotu proqramı kimi real qalıqlar, aydın ödənişlər, təchizat və borc nəzarəti — təchizatçı şirkətləri üçün.
+            Anbar uçotu proqramı kimi real qalıqlar, aydın ödənişlər, təchizat və borc nəzarəti - təchizatçı şirkətləri üçün.
           </p>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {features.map((f, i) => (

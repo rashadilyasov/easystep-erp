@@ -102,7 +102,7 @@ export default function AdminSecurity() {
         <div className="p-6 bg-white rounded-2xl border border-slate-200">
           <h3 className="font-semibold text-slate-900 mb-2">İki faktorlu autentifikasiya (2FA)</h3>
           <p className="text-slate-600 text-sm mb-4">
-            Girişi mühafizə edin — Authenticator app və ya e-poçt OTP ilə.
+            Girişi mühafizə edin - Authenticator app və ya e-poçt OTP ilə.
           </p>
 
           {!setup ? (

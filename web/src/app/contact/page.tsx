@@ -3,7 +3,7 @@ import PublicFooter from "@/components/PublicFooter";
 import ContactForm from "@/components/ContactForm";
 
 export const metadata = {
-  title: "Demo və Əlaqə — Easy Step ERP",
+  title: "Demo və Əlaqə - Easy Step ERP",
   description:
     "Easy Step ERP haqqında sualınız var? Demo istəyin və biznesiniz üçün uyğun həll alın.",
 };

@@ -1,7 +1,7 @@
 import AcademyContent from "@/components/AcademyContent";
 
 export const metadata = {
-  title: "Easy Step ERP Academy — Videodərslər və Praktik İstifadə",
+  title: "Easy Step ERP Academy - Videodərslər və Praktik İstifadə",
   description:
     "Sahibkar və əməkdaşlar üçün qısa videodərslər. Proqramı tez öyrənin və sistemi düzgün qurun.",
 };

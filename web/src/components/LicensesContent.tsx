@@ -22,8 +22,8 @@ export default function LicensesContent() {
           activeDevices: 2,
           maxDevices: 5,
           devices: [
-            { id: "1", name: "Windows PC — İş masası", lastSeen: "16.02.2026 15:30", fingerprint: "a8f3b2...", status: 0 },
-            { id: "2", name: "Windows PC — Laptop", lastSeen: "14.02.2026 10:15", fingerprint: "c4d9e1...", status: 0 },
+            { id: "1", name: "Windows PC - İş masası", lastSeen: "16.02.2026 15:30", fingerprint: "a8f3b2...", status: 0 },
+            { id: "2", name: "Windows PC - Laptop", lastSeen: "14.02.2026 10:15", fingerprint: "c4d9e1...", status: 0 },
           ],
         })
       )

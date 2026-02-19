@@ -1,5 +1,5 @@
 /**
- * API proxy — bütün /api/* müraciətləri backend-ə yönləndirir.
+ * API proxy - bütün /api/* müraciətləri backend-ə yönləndirir.
  * Runtime-da API_URL oxunur, build-time constraint yoxdur.
  */
 import { NextRequest, NextResponse } from "next/server";

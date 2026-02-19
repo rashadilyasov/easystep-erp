@@ -144,7 +144,7 @@ export default function Plans() {
             >
               <div>
                 <span className="font-medium">
-                  {p.name} — {p.price} {p.currency}
+                  {p.name} - {p.price} {p.currency}
                 </span>
                 {!p.isActive && (
                   <span className="ml-2 text-xs text-amber-600">(deaktiv)</span>

@@ -51,7 +51,7 @@ export default function AdminAuditContent() {
                 <td className="px-4 py-3">{l.date}</td>
                 <td className="px-4 py-3">{l.actor}</td>
                 <td className="px-4 py-3">{l.action}</td>
-                <td className="px-4 py-3">{l.ipAddress ?? "—"}</td>
+                <td className="px-4 py-3">{l.ipAddress ?? "-"}</td>
               </tr>
             ))
           )}

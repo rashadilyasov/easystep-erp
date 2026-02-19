@@ -72,7 +72,7 @@ export default function BillingContent() {
         {d.plan ? (
           <>
             <p className="text-slate-600">
-              {d.plan.name} — {d.plan.price} ₼
+              {d.plan.name} - {d.plan.price} ₼
             </p>
             <label className="flex items-center gap-2 mt-4">
               <input
@@ -125,7 +125,7 @@ export default function BillingContent() {
                         {p.status === "Succeeded" ? "Təsdiqləndi" : p.status}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-slate-500">{p.trxId ?? "—"}</td>
+                    <td className="px-4 py-3 text-slate-500">{p.trxId ?? "-"}</td>
                     <td className="px-4 py-3">
                       {p.status === "Succeeded" ? (
                         <a
@@ -137,7 +137,7 @@ export default function BillingContent() {
                           Çek
                         </a>
                       ) : (
-                        "—"
+                        "-"
                       )}
                     </td>
                   </tr>

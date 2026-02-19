@@ -84,7 +84,7 @@ export default function PricingPlans() {
                 Ən çox seçilən
               </span>
             )}
-            <h3 className="text-lg font-semibold text-slate-900 mb-2">{p.name} — {p.durationMonths} ay</h3>
+            <h3 className="text-lg font-semibold text-slate-900 mb-2">{p.name} - {p.durationMonths} ay</h3>
             <div className="mb-4">
               <span className="text-3xl font-bold text-slate-900">{p.price} ₼</span>
               <span className="text-slate-600"> / {p.durationMonths} ay</span>
@@ -93,7 +93,7 @@ export default function PricingPlans() {
             {savings12 > 0 && (
               <p className="text-sm text-green-600 font-medium mb-4">{savings12} ₼ əmanət</p>
             )}
-            {p.durationMonths === 12 && savings12 <= 0 && <p className="text-sm text-slate-500 mb-4">—</p>}
+            {p.durationMonths === 12 && savings12 <= 0 && <p className="text-sm text-slate-500 mb-4">-</p>}
             {p.durationMonths !== 12 && <p className="mb-4">&nbsp;</p>}
             <Link
               href={`/checkout?planId=${p.id}`}

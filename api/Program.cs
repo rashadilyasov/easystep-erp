@@ -107,7 +107,7 @@ builder.Services.AddRateLimiter(options =>
     });
 });
 
-// CORS — Cors:Origins (Cors__Origins__0) və Cors_Origins_0 formatlarını dəstəkləyir
+// CORS — Cors:Origins + vercel.app, localhost, 127.0.0.1
 static string[] GetCorsOrigins(IConfiguration config)
 {
     var arr = config.GetSection("Cors:Origins").Get<string[]>();
@@ -121,12 +121,23 @@ static string[] GetCorsOrigins(IConfiguration config)
     }
     return list.Count > 0 ? list.ToArray() : new[] { "http://localhost:3000" };
 }
+static bool IsAllowedOrigin(string? origin)
+{
+    if (string.IsNullOrEmpty(origin)) return false;
+    if (origin == "http://localhost:3000" || origin == "http://127.0.0.1:3000") return true;
+    if (origin.StartsWith("https://", StringComparison.OrdinalIgnoreCase) &&
+        (origin.Contains("easysteperp.com", StringComparison.OrdinalIgnoreCase) ||
+         origin.EndsWith(".vercel.app", StringComparison.OrdinalIgnoreCase)))
+        return true;
+    return false;
+}
 var corsOrigins = GetCorsOrigins(builder.Configuration);
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        policy.WithOrigins(corsOrigins)
+        policy
+            .SetIsOriginAllowed(origin => IsAllowedOrigin(origin) || corsOrigins.Contains(origin, StringComparer.OrdinalIgnoreCase))
             .AllowAnyMethod()
             .AllowAnyHeader();
     });

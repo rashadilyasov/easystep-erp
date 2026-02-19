@@ -25,7 +25,7 @@ Bu URL-in **açılması** lazımdır: `https://URL/api/Health` → `{"status":"o
 |------|-------|
 | `API_URL` və ya `NEXT_PUBLIC_API_URL` | Railway URL (`https://xxxx.up.railway.app` və ya `https://api.easysteperp.com`) |
 
-Dəyişəndən sonra: **Deployments** → **Redeploy** (Production).
+Dəyişəndən sonra: **Deployments** → **Redeploy** (Production). Əgər köhnə versiya qalıbsa: **Redeploy** → **Redeploy with Skip Build Cache**.
 
 ---
 

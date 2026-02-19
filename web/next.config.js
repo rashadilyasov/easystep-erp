@@ -1,7 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  // API proxy: app/api/[[...path]]/route.ts — runtime env istifadə edir
+  env: {
+    NEXT_PUBLIC_API_URL:
+      process.env.NEXT_PUBLIC_API_URL ||
+      (process.env.NODE_ENV === "production" ? "https://api.easysteperp.com" : undefined),
+  },
 };
 
 module.exports = nextConfig;

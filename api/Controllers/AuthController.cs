@@ -8,20 +8,20 @@ namespace EasyStep.Erp.Api.Controllers;
 [Route("api/auth")]  // Kiçik hərf — Linux/case-sensitive üçün
 public class AuthController : ControllerBase
 {
-    private readonly AuthService _auth;
-    private readonly AuditService _audit;
-    private readonly IEmailService _email;
+    private readonly IServiceProvider _services;
     private readonly IConfiguration _config;
     private readonly ILogger<AuthController> _logger;
 
-    public AuthController(AuthService auth, AuditService audit, IEmailService email, IConfiguration config, ILogger<AuthController> logger)
+    public AuthController(IServiceProvider services, IConfiguration config, ILogger<AuthController> logger)
     {
-        _auth = auth;
-        _audit = audit;
-        _email = email;
+        _services = services;
         _config = config;
         _logger = logger;
     }
+
+    private AuthService Auth => _services.GetRequiredService<AuthService>();
+    private AuditService Audit => _services.GetRequiredService<AuditService>();
+    private IEmailService Email => _services.GetRequiredService<IEmailService>();
 
     [HttpPost("register")]
     [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("auth")]
@@ -32,7 +32,7 @@ public class AuthController : ControllerBase
 
         try
         {
-            var (ok, token) = await _auth.RegisterAsync(req, ct);
+            var (ok, token) = await Auth.RegisterAsync(req, ct);
             if (!ok)
                 return BadRequest(new { message = "Bu e-poçt artıq qeydiyyatdadır" });
 
@@ -51,7 +51,7 @@ public class AuthController : ControllerBase
 <p>Əgər bu qeydiyyat sizdən gəlməyibsə, bu e-poçtu nəzərə almayın.</p>
 <p>— Easy Step ERP<br/>hello@easysteperp.com</p>
 </body></html>";
-            await _email.SendAsync(req.Email, "Easy Step ERP - E-poçt təsdiqi", html, ct);
+            await Email.SendAsync(req.Email, "Easy Step ERP - E-poçt təsdiqi", html, ct);
         }
 
             return Ok(new { message = "Qeydiyyat uğurla tamamlandı. E-poçtunuzu yoxlayın və təsdiq linkinə keçid edin." });
@@ -77,7 +77,7 @@ public class AuthController : ControllerBase
             return BadRequest(new { message = "E-poçt və şifrə tələb olunur" });
         try
         {
-        var result = await _auth.ValidateLoginAsync(req.Email, req.Password ?? "", ct);
+        var result = await Auth.ValidateLoginAsync(req.Email, req.Password ?? "", ct);
         if (result is not { } r)
             return Unauthorized(new { message = "E-poçt və ya şifrə səhvdir" });
 
@@ -91,10 +91,10 @@ public class AuthController : ControllerBase
 
         if (user.TwoFactorEnabled)
         {
-            var pendingToken = _auth.GeneratePending2FAToken(user);
+            var pendingToken = Auth.GeneratePending2FAToken(user);
             if (user.TwoFactorViaEmail)
             {
-                var code = await _auth.CreateAndStoreEmailOtpAsync(user.Id, ct);
+                var code = await Auth.CreateAndStoreEmailOtpAsync(user.Id, ct);
                 if (!string.IsNullOrEmpty(code))
                 {
                     var html = $@"
@@ -107,33 +107,33 @@ public class AuthController : ControllerBase
 <p>Əgər bu tələb sizdən gəlməyibsə, bu e-poçtu nəzərə almayın.</p>
 <p>— Easy Step ERP<br/>hello@easysteperp.com</p>
 </body></html>";
-                    await _email.SendAsync(user.Email, "Easy Step ERP - Daxil olma kodu", html, ct);
+                    await Email.SendAsync(user.Email, "Easy Step ERP - Daxil olma kodu", html, ct);
                 }
                 return Ok(new { requires2FA = true, pendingToken, message = "E-poçtunuza göndərilən 6 rəqəmli kodu daxil edin.", viaEmail = true });
             }
             return Ok(new { requires2FA = true, pendingToken, message = "2FA kodunu daxil edin (Authenticator app)", viaEmail = false });
         }
 
-        await _auth.UpdateLastLoginAsync(user.Id, ct);
+        await Auth.UpdateLastLoginAsync(user.Id, ct);
 
         try
         {
-            await _audit.LogAsync("Login", user.Id, user.Email,
+            await Audit.LogAsync("Login", user.Id, user.Email,
                 HttpContext.Connection.RemoteIpAddress?.ToString(),
                 HttpContext.Request.Headers.UserAgent,
                 ct: default);
         }
         catch (Exception auditEx) { _logger.LogWarning(auditEx, "Audit log failed"); }
 
-        var accessToken = _auth.GenerateAccessToken(user, tenant);
-        var refreshToken = _auth.GenerateRefreshToken();
-        await _auth.StoreRefreshTokenAsync(user.Id, refreshToken, ct);
+        var accessToken = Auth.GenerateAccessToken(user, tenant);
+        var refreshToken = Auth.GenerateRefreshToken();
+        await Auth.StoreRefreshTokenAsync(user.Id, refreshToken, ct);
 
         return Ok(new
         {
             accessToken,
             refreshToken,
-            expiresIn = _auth.GetExpiresInSeconds(),
+            expiresIn = Auth.GetExpiresInSeconds(),
         });
         }
         catch (Exception ex)
@@ -162,7 +162,7 @@ public class AuthController : ControllerBase
         if (string.IsNullOrEmpty(userId) || !Guid.TryParse(userId, out var id))
             return Unauthorized();
 
-        var user = await _auth.GetUserByIdAsync(id, ct);
+        var user = await Auth.GetUserByIdAsync(id, ct);
         if (user == null) return Unauthorized();
 
         if (req?.ViaEmail == true)
@@ -170,8 +170,8 @@ public class AuthController : ControllerBase
             user.TwoFactorSecret = null;
             user.TwoFactorViaEmail = true;
             user.TwoFactorEnabled = false;
-            await _auth.SaveChangesAsync(ct);
-            var code = await _auth.CreateAndStoreEmailOtpAsync(user.Id, ct);
+            await Auth.SaveChangesAsync(ct);
+            var code = await Auth.CreateAndStoreEmailOtpAsync(user.Id, ct);
             if (!string.IsNullOrEmpty(code))
             {
                 var html = $@"
@@ -183,16 +183,16 @@ public class AuthController : ControllerBase
 <p>Kodu quraşdırma səhifəsində daxil edin.</p>
 <p>— Easy Step ERP<br/>hello@easysteperp.com</p>
 </body></html>";
-                await _email.SendAsync(user.Email, "Easy Step ERP - 2FA təsdiq kodu", html, ct);
+                await Email.SendAsync(user.Email, "Easy Step ERP - 2FA təsdiq kodu", html, ct);
             }
             return Ok(new { viaEmail = true, message = "Kod e-poçtunuza göndərildi. Kodu daxil edin." });
         }
 
-        var (secret, qrCodeUrl) = _auth.GenerateTOTPSecret(email);
+        var (secret, qrCodeUrl) = Auth.GenerateTOTPSecret(email);
         user.TwoFactorSecret = secret;
         user.TwoFactorViaEmail = false;
         user.TwoFactorEnabled = false;
-        await _auth.SaveChangesAsync(ct);
+        await Auth.SaveChangesAsync(ct);
 
         return Ok(new { secret, qrCodeUrl, viaEmail = false, message = "QR kodu skan edin və kodu təsdiqləyin" });
     }
@@ -201,14 +201,14 @@ public class AuthController : ControllerBase
     [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("auth")]
     public async Task<IActionResult> RequestEmailOtp([FromBody] RequestEmailOtpRequest req, CancellationToken ct)
     {
-        var user = await _auth.ValidatePending2FATokenAsync(req.PendingToken, ct);
+        var user = await Auth.ValidatePending2FATokenAsync(req.PendingToken, ct);
         if (user == null)
             return Unauthorized(new { message = "Session vaxtı keçib. Yenidən daxil olun." });
 
         if (!user.TwoFactorEnabled)
             return BadRequest(new { message = "2FA aktiv deyil." });
 
-        var code = await _auth.CreateAndStoreEmailOtpAsync(user.Id, ct);
+        var code = await Auth.CreateAndStoreEmailOtpAsync(user.Id, ct);
         if (string.IsNullOrEmpty(code))
             return StatusCode(500, new { message = "Kod yaradıla bilmədi." });
 
@@ -222,7 +222,7 @@ public class AuthController : ControllerBase
 <p>Əgər bu tələb sizdən gəlməyibsə, bu e-poçtu nəzərə almayın.</p>
 <p>— Easy Step ERP<br/>hello@easysteperp.com</p>
 </body></html>";
-        await _email.SendAsync(user.Email, "Easy Step ERP - Daxil olma kodu", html, ct);
+        await Email.SendAsync(user.Email, "Easy Step ERP - Daxil olma kodu", html, ct);
 
         return Ok(new { message = "Kod e-poçtunuza göndərildi." });
     }
@@ -235,19 +235,19 @@ public class AuthController : ControllerBase
         if (string.IsNullOrEmpty(userId) || !Guid.TryParse(userId, out var id))
             return Unauthorized();
 
-        var user = await _auth.GetUserByIdAsync(id, ct);
+        var user = await Auth.GetUserByIdAsync(id, ct);
         if (user == null)
             return Unauthorized();
 
         var valid = user.TwoFactorViaEmail
-            ? await _auth.ValidateAndConsumeEmailOtpAsync(user.Id, req.Code, ct)
-            : (!string.IsNullOrEmpty(user.TwoFactorSecret) && _auth.ValidateTOTP(user.TwoFactorSecret, req.Code));
+            ? await Auth.ValidateAndConsumeEmailOtpAsync(user.Id, req.Code, ct)
+            : (!string.IsNullOrEmpty(user.TwoFactorSecret) && Auth.ValidateTOTP(user.TwoFactorSecret, req.Code));
 
         if (!valid)
             return BadRequest(new { message = "Kod səhvdir" });
 
         user.TwoFactorEnabled = true;
-        await _auth.SaveChangesAsync(ct);
+        await Auth.SaveChangesAsync(ct);
 
         return Ok(new { message = "2FA aktivləşdirildi" });
     }
@@ -260,11 +260,11 @@ public class AuthController : ControllerBase
         if (string.IsNullOrEmpty(userId) || !Guid.TryParse(userId, out var id))
             return Unauthorized();
 
-        var user = await _auth.GetUserByIdAsync(id, ct);
+        var user = await Auth.GetUserByIdAsync(id, ct);
         if (user == null || !user.TwoFactorViaEmail)
             return BadRequest(new { message = "Bu əməliyyat yalnız e-poçt 2FA üçündür." });
 
-        var code = await _auth.CreateAndStoreEmailOtpAsync(user.Id, ct);
+        var code = await Auth.CreateAndStoreEmailOtpAsync(user.Id, ct);
         if (string.IsNullOrEmpty(code))
             return StatusCode(500, new { message = "Kod yaradıla bilmədi." });
 
@@ -276,7 +276,7 @@ public class AuthController : ControllerBase
 <p>2FA söndürmək üçün kodunuz: <strong>{code}</strong></p>
 <p>— Easy Step ERP<br/>hello@easysteperp.com</p>
 </body></html>";
-        await _email.SendAsync(user.Email, "Easy Step ERP - 2FA söndürmə kodu", html, ct);
+        await Email.SendAsync(user.Email, "Easy Step ERP - 2FA söndürmə kodu", html, ct);
 
         return Ok(new { message = "Kod e-poçtunuza göndərildi." });
     }
@@ -289,15 +289,15 @@ public class AuthController : ControllerBase
         if (string.IsNullOrEmpty(userId) || !Guid.TryParse(userId, out var id))
             return Unauthorized();
 
-        var user = await _auth.GetUserByIdAsync(id, ct);
+        var user = await Auth.GetUserByIdAsync(id, ct);
         if (user == null) return Unauthorized();
 
-        if (!_auth.VerifyPassword(req.Password, user.PasswordHash))
+        if (!Auth.VerifyPassword(req.Password, user.PasswordHash))
             return Unauthorized(new { message = "Şifrə səhvdir" });
 
         var valid = user.TwoFactorViaEmail
-            ? await _auth.ValidateAndConsumeEmailOtpAsync(user.Id, req.Code, ct)
-            : (!string.IsNullOrEmpty(user.TwoFactorSecret) && _auth.ValidateTOTP(user.TwoFactorSecret, req.Code));
+            ? await Auth.ValidateAndConsumeEmailOtpAsync(user.Id, req.Code, ct)
+            : (!string.IsNullOrEmpty(user.TwoFactorSecret) && Auth.ValidateTOTP(user.TwoFactorSecret, req.Code));
 
         if (!valid)
             return BadRequest(new { message = "2FA kodu səhvdir" });
@@ -305,7 +305,7 @@ public class AuthController : ControllerBase
         user.TwoFactorEnabled = false;
         user.TwoFactorSecret = null;
         user.TwoFactorViaEmail = false;
-        await _auth.SaveChangesAsync(ct);
+        await Auth.SaveChangesAsync(ct);
 
         return Ok(new { message = "2FA deaktivləşdirildi" });
     }
@@ -314,33 +314,33 @@ public class AuthController : ControllerBase
     [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("auth")]
     public async Task<IActionResult> Complete2FA([FromBody] Complete2FARequest req, CancellationToken ct)
     {
-        var user = await _auth.ValidatePending2FATokenAsync(req.PendingToken, ct);
+        var user = await Auth.ValidatePending2FATokenAsync(req.PendingToken, ct);
         if (user == null)
             return Unauthorized(new { message = "Session vaxtı keçib. Yenidən daxil olun." });
 
         var valid = user.TwoFactorViaEmail
-            ? await _auth.ValidateAndConsumeEmailOtpAsync(user.Id, req.Code, ct)
-            : (!string.IsNullOrEmpty(user.TwoFactorSecret) && _auth.ValidateTOTP(user.TwoFactorSecret, req.Code));
+            ? await Auth.ValidateAndConsumeEmailOtpAsync(user.Id, req.Code, ct)
+            : (!string.IsNullOrEmpty(user.TwoFactorSecret) && Auth.ValidateTOTP(user.TwoFactorSecret, req.Code));
 
         if (!valid)
             return Unauthorized(new { message = "2FA kodu səhvdir" });
 
-        await _auth.UpdateLastLoginAsync(user.Id, ct);
+        await Auth.UpdateLastLoginAsync(user.Id, ct);
 
-        await _audit.LogAsync("Login", user.Id, user.Email,
+        await Audit.LogAsync("Login", user.Id, user.Email,
             HttpContext.Connection.RemoteIpAddress?.ToString(),
             HttpContext.Request.Headers.UserAgent,
             ct: default);
 
-        var accessToken = _auth.GenerateAccessToken(user, user.Tenant);
-        var refreshToken = _auth.GenerateRefreshToken();
-        await _auth.StoreRefreshTokenAsync(user.Id, refreshToken, ct);
+        var accessToken = Auth.GenerateAccessToken(user, user.Tenant);
+        var refreshToken = Auth.GenerateRefreshToken();
+        await Auth.StoreRefreshTokenAsync(user.Id, refreshToken, ct);
 
         return Ok(new
         {
             accessToken,
             refreshToken,
-            expiresIn = _auth.GetExpiresInSeconds(),
+            expiresIn = Auth.GetExpiresInSeconds(),
         });
     }
 
@@ -350,7 +350,7 @@ public class AuthController : ControllerBase
         if (string.IsNullOrWhiteSpace(req.RefreshToken))
             return Unauthorized(new { message = "Refresh token tələb olunur" });
 
-        var result = await _auth.ValidateRefreshTokenAsync(req.RefreshToken, ct);
+        var result = await Auth.ValidateRefreshTokenAsync(req.RefreshToken, ct);
         if (result is not { } r)
             return Unauthorized(new { message = "Refresh token etibarsız və ya vaxtı keçib" });
 
@@ -358,15 +358,15 @@ public class AuthController : ControllerBase
         if (tenant == null)
             return Unauthorized();
 
-        var accessToken = _auth.GenerateAccessToken(user!, tenant);
-        var refreshToken = _auth.GenerateRefreshToken();
-        await _auth.StoreRefreshTokenAsync(user!.Id, refreshToken, ct);
+        var accessToken = Auth.GenerateAccessToken(user!, tenant);
+        var refreshToken = Auth.GenerateRefreshToken();
+        await Auth.StoreRefreshTokenAsync(user!.Id, refreshToken, ct);
 
         return Ok(new
         {
             accessToken,
             refreshToken,
-            expiresIn = _auth.GetExpiresInSeconds(),
+            expiresIn = Auth.GetExpiresInSeconds(),
         });
     }
 
@@ -386,7 +386,7 @@ public class AuthController : ControllerBase
     {
         var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
         if (!string.IsNullOrEmpty(userId) && Guid.TryParse(userId, out var id))
-            await _auth.RevokeAllRefreshTokensForUserAsync(id, ct);
+            await Auth.RevokeAllRefreshTokensForUserAsync(id, ct);
         return Ok(new { message = "Çıxış edildi" });
     }
 
@@ -394,7 +394,7 @@ public class AuthController : ControllerBase
     [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("auth")]
     public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest req, CancellationToken ct)
     {
-        var token = await _auth.CreatePasswordResetTokenAsync(req.Email, ct);
+        var token = await Auth.CreatePasswordResetTokenAsync(req.Email, ct);
         if (token != null)
         {
             var baseUrl = _config["App:BaseUrl"] ?? "http://localhost:3000";
@@ -409,7 +409,7 @@ public class AuthController : ControllerBase
 <p>Əgər bu tələb sizdən gəlməyibsə, bu e-poçtu nəzərə almayın.</p>
 <p>— Easy Step ERP</p>
 </body></html>";
-            await _email.SendAsync(req.Email, "Easy Step ERP - Şifrə sıfırlama", html, ct);
+            await Email.SendAsync(req.Email, "Easy Step ERP - Şifrə sıfırlama", html, ct);
         }
         return Ok(new { message = "Şifrə sıfırlama linki e-poçtunuza göndərildi." });
     }
@@ -421,11 +421,11 @@ public class AuthController : ControllerBase
         if (string.IsNullOrWhiteSpace(req.Token) || string.IsNullOrWhiteSpace(req.NewPassword) || req.NewPassword.Length < 6)
             return BadRequest(new { message = "Token və ən azı 6 simvoldan ibarət yeni şifrə tələb olunur" });
 
-        var userId = await _auth.ValidateAndConsumeResetTokenAsync(req.Token, ct);
+        var userId = await Auth.ValidateAndConsumeResetTokenAsync(req.Token, ct);
         if (userId == null)
             return BadRequest(new { message = "Link etibarsız və ya vaxtı keçib. Yenidən cəhd edin." });
 
-        if (!await _auth.ResetPasswordAsync(userId.Value, req.NewPassword, ct))
+        if (!await Auth.ResetPasswordAsync(userId.Value, req.NewPassword, ct))
             return BadRequest(new { message = "Xəta baş verdi" });
 
         return Ok(new { message = "Şifrə uğurla dəyişdirildi" });
@@ -438,11 +438,11 @@ public class AuthController : ControllerBase
         if (string.IsNullOrWhiteSpace(req.Token))
             return BadRequest(new { message = "Token tələb olunur" });
 
-        var userId = await _auth.ValidateAndConsumeEmailVerificationTokenAsync(req.Token, ct);
+        var userId = await Auth.ValidateAndConsumeEmailVerificationTokenAsync(req.Token, ct);
         if (userId == null)
             return BadRequest(new { message = "Link etibarsız və ya vaxtı keçib. Yenidən qeydiyyatdan keçin və ya bizimlə əlaqə saxlayın." });
 
-        if (!await _auth.MarkEmailVerifiedAsync(userId.Value, ct))
+        if (!await Auth.MarkEmailVerifiedAsync(userId.Value, ct))
             return BadRequest(new { message = "Xəta baş verdi" });
 
         return Ok(new { message = "E-poçtunuz təsdiqləndi. İndi daxil ola bilərsiniz." });

@@ -20,6 +20,7 @@ export async function GET() {
     minimalPing: null as unknown,
     authPing: null as unknown,
     test500: null as unknown,
+    loginDebug: null as unknown,
     login: null as unknown,
     error: null as unknown,
   };
@@ -82,7 +83,23 @@ export async function GET() {
     results.test500 = { error: e instanceof Error ? e.message : String(e) };
   }
 
-  // 4. Login (admin@easysteperp.com)
+  // 4. Login debug (real error via 200 — 500 body stripping bypass)
+  try {
+    const debugRes = await fetch(`${base}/api/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Debug": "1" },
+      body: JSON.stringify({ email: "debug@easysteperp.com", password: "x" }),
+      signal: AbortSignal.timeout(5000),
+    });
+    results.loginDebug = {
+      status: debugRes.status,
+      body: await debugRes.text().catch(() => "(fail)"),
+    };
+  } catch (e) {
+    results.loginDebug = { error: e instanceof Error ? e.message : String(e) };
+  }
+
+  // 5. Login (admin@easysteperp.com)
   try {
     const loginRes = await fetch(`${base}/api/auth/login`, {
       method: "POST",

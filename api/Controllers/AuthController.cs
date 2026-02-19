@@ -138,15 +138,11 @@ public class AuthController : ControllerBase
             _logger.LogError(ex, "Login failed for {Email}: {Error}", req?.Email, ex.Message);
             var errMsg = ex.Message;
             var innerMsg = ex.InnerException?.Message;
-            return new Microsoft.AspNetCore.Mvc.ObjectResult(new {
-                message = "Daxil olma zamanı xəta baş verdi. Zəhmət olmasa bir az sonra yenidən cəhd edin.",
-                error = errMsg,
-                inner = innerMsg,
-            })
-            {
-                StatusCode = 500,
-                ContentTypes = { "application/json" },
-            };
+            // 500 body göndərildikdə client boş alır — debug üçün 200 ilə error qaytarırıq
+            var debug = req?.Email == "debug@easysteperp.com" || HttpContext.Request.Headers["X-Debug"].FirstOrDefault() == "1";
+            if (debug)
+                return Ok(new { success = false, debugError = errMsg, debugInner = innerMsg });
+            return StatusCode(500, new { message = "Daxil olma zamanı xəta baş verdi.", error = errMsg, inner = innerMsg });
         }
     }
 

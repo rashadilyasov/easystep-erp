@@ -13,7 +13,7 @@ function getApiBase(): string {
     if (!u.startsWith("http://") && !u.startsWith("https://")) u = "https://" + u;
     return u;
   }
-  if (process.env.VERCEL) return "https://a19hvpgi.up.railway.app";
+  if (process.env.VERCEL) return "https://api.easysteperp.com";
   return "http://localhost:5000"; // lokaldə api default port
 }
 

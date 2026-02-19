@@ -30,9 +30,9 @@ if (conn.StartsWith("postgresql://", StringComparison.OrdinalIgnoreCase) || conn
         var uri = new Uri(conn);
         var user = uri.UserInfo?.Split(':')[0] ?? "postgres";
         var pass = uri.UserInfo?.Contains(':') == true ? string.Join(":", uri.UserInfo.Split(':').Skip(1)) : "";
-        var db = uri.AbsolutePath.TrimStart('/');
+        var db = uri.AbsolutePath.TrimStart('/').Split('?')[0];
         if (string.IsNullOrEmpty(db)) db = "railway";
-        conn = $"Host={uri.Host};Port={uri.Port};Database={db};Username={Uri.UnescapeDataString(user)};Password={Uri.UnescapeDataString(pass)}";
+        conn = $"Host={uri.Host};Port={uri.Port};Database={db};Username={Uri.UnescapeDataString(user)};Password={Uri.UnescapeDataString(pass)};Ssl Mode=Require";
     }
     catch { /* keep original if parse fails */ }
 }

@@ -12,13 +12,15 @@ public class AuthController : ControllerBase
     private readonly AuditService _audit;
     private readonly IEmailService _email;
     private readonly IConfiguration _config;
+    private readonly ILogger<AuthController> _logger;
 
-    public AuthController(AuthService auth, AuditService audit, IEmailService email, IConfiguration config)
+    public AuthController(AuthService auth, AuditService audit, IEmailService email, IConfiguration config, ILogger<AuthController> logger)
     {
         _auth = auth;
         _audit = audit;
         _email = email;
         _config = config;
+        _logger = logger;
     }
 
     [HttpPost("register")]
@@ -64,6 +66,8 @@ public class AuthController : ControllerBase
     [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("auth")]
     public async Task<IActionResult> Login([FromBody] LoginRequest req, CancellationToken ct)
     {
+        try
+        {
         var result = await _auth.ValidateLoginAsync(req.Email, req.Password, ct);
         if (result is not { } r)
             return Unauthorized(new { message = "E-poçt və ya şifrə səhvdir" });
@@ -118,6 +122,12 @@ public class AuthController : ControllerBase
             refreshToken,
             expiresIn = _auth.GetExpiresInSeconds(),
         });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Login failed for {Email}", req?.Email);
+            return StatusCode(500, new { message = "Daxil olma zamanı xəta baş verdi. Zəhmət olmasa bir az sonra yenidən cəhd edin." });
+        }
     }
 
     [HttpPost("2fa/setup")]

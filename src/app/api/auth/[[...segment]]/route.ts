@@ -36,7 +36,7 @@ async function proxyReq(request: NextRequest, segment: string[], method: string)
       method,
       headers,
       body: body ?? undefined,
-      signal: AbortSignal.timeout(25000),
+      signal: AbortSignal.timeout(35000),
     });
     const data = await res.text();
     return new NextResponse(data, {

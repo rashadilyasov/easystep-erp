@@ -28,7 +28,7 @@ type FetchOptions = RequestInit & {
   _retrying?: boolean;
 };
 
-const FETCH_TIMEOUT_MS = 12000;
+const FETCH_TIMEOUT_MS = 30000;
 
 export async function apiFetch<T>(path: string, options: FetchOptions = {}): Promise<T> {
   try {
@@ -95,7 +95,12 @@ export async function apiFetch<T>(path: string, options: FetchOptions = {}): Pro
       return {} as T;
     }
   } catch (e) {
-    if (e instanceof Error) throw e;
+    if (e instanceof Error) {
+      if (e.name === "AbortError" || e.message?.includes("aborted")) {
+        throw new Error("Bağlantı vaxtı bitdi. Zəhmət olmasa yenidən cəhd edin.");
+      }
+      throw e;
+    }
     throw new Error("Bağlantı xətası - internet bağlantınızı yoxlayın");
   }
 }

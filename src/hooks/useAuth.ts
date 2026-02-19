@@ -25,7 +25,7 @@ export function useAuth() {
         }
       } catch (e) {
         const msg = e instanceof Error ? e.message : "Xəta baş verdi";
-        setError(msg.includes("fetch") || msg.includes("network") ? "Bağlantı xətası. İnterneti yoxlayın və bir az sonra yenidən cəhd edin." : msg);
+        setError(msg.includes("fetch") || msg.includes("network") || msg.includes("abort") || msg.includes("vaxtı bitdi") ? "Bağlantı xətası. İnterneti yoxlayın və bir az sonra yenidən cəhd edin." : msg);
       } finally {
         setLoading(false);
       }
@@ -44,7 +44,7 @@ export function useAuth() {
         router.push(redirectTo.startsWith("/") ? redirectTo : "/admin");
       } catch (e) {
         const msg = e instanceof Error ? e.message : "Xəta baş verdi";
-        setError(msg.includes("fetch") || msg.includes("network") ? "Bağlantı xətası. İnterneti yoxlayın və bir az sonra yenidən cəhd edin." : msg);
+        setError(msg.includes("fetch") || msg.includes("network") || msg.includes("abort") || msg.includes("vaxtı bitdi") ? "Bağlantı xətası. İnterneti yoxlayın və bir az sonra yenidən cəhd edin." : msg);
       } finally {
         setLoading(false);
       }

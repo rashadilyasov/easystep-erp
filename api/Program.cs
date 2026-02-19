@@ -171,15 +171,13 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
-// Migrations — arxa planda (app tez başlasın, healthcheck keçsin)
-_ = Task.Run(async () =>
+// Migrations + seed — FOREGROUND (login işləməzdən əvvəl DB hazır olmalıdır)
+using (var scope = app.Services.CreateScope())
 {
-    await Task.Delay(5_000);
+    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
     try
     {
-        using var scope = app.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
         if (useSqlite)
         {
             await db.Database.EnsureCreatedAsync();
@@ -194,14 +192,14 @@ _ = Task.Run(async () =>
             try { await db.Database.ExecuteSqlRawAsync(@"CREATE TABLE IF NOT EXISTS ""PasswordResetTokens"" (""Id"" uuid NOT NULL, ""UserId"" uuid NOT NULL, ""TokenHash"" text NOT NULL, ""ExpiresAt"" timestamp with time zone NOT NULL, ""UsedAt"" timestamp with time zone, ""CreatedAt"" timestamp with time zone NOT NULL, CONSTRAINT ""PK_PasswordResetTokens"" PRIMARY KEY (""Id""), CONSTRAINT ""FK_PasswordResetTokens_Users_UserId"" FOREIGN KEY (""UserId"") REFERENCES ""Users"" (""Id"") ON DELETE CASCADE)"); } catch { }
             await DbInitializer.SeedAsync(db);
         }
-        var now = DateTime.UtcNow;
-        try { await db.RefreshTokens.Where(r => r.ExpiresAt < now || r.RevokedAt != null).ExecuteDeleteAsync(); } catch { }
-        try { await db.PasswordResetTokens.Where(p => p.ExpiresAt < now || p.UsedAt != null).ExecuteDeleteAsync(); } catch { }
-        try { await db.EmailVerificationTokens.Where(e => e.ExpiresAt < now || e.UsedAt != null).ExecuteDeleteAsync(); } catch { }
-        try { await db.EmailOtpCodes.Where(e => e.ExpiresAt < now || e.UsedAt != null).ExecuteDeleteAsync(); } catch { }
+        logger.LogInformation("DB migration and seed completed");
     }
-    catch { /* migration failed - app continues */ }
-});
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "DB migration/seed FAILED - login will not work");
+        throw;
+    }
+}
 
 app.Run();
 

@@ -27,7 +27,7 @@ Smtp__UseSsl=true
 
 | Name | Value |
 |------|-------|
-| `ConnectionStrings__DefaultConnection` | `${{Postgres.DATABASE_URL}}` |
+| `ConnectionStrings__DefaultConnection` və ya `DATABASE_URL` | `${{Postgres.DATABASE_URL}}` (Reference) |
 | `Jwt__Key` | min 32 simvol |
 | `Cors__Origins__0` | `https://easysteperp.com` |
 | `Cors__Origins__1` | `https://www.easysteperp.com` |

@@ -5,6 +5,7 @@ namespace EasyStep.Erp.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Route("api/auth")]  // Kiçik hərf — Linux/case-sensitive üçün
 public class AuthController : ControllerBase
 {
     private readonly AuthService _auth;

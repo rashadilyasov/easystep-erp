@@ -52,7 +52,7 @@ export default function AuthModal() {
       data-auth-modal-backdrop
     >
       <div
-        className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden cursor-default"
+        className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-visible cursor-default"
         onClick={(e) => e.stopPropagation()}
         data-auth-modal-content
       >

@@ -16,8 +16,8 @@ export default function Home() {
 
       {/* Hero */}
       <section className="pt-24 pb-24 sm:pb-20 px-3 sm:px-6 lg:px-8 overflow-visible bg-gradient-to-b from-white via-slate-50/30 to-white">
-        <div className="max-w-5xl mx-auto w-full min-w-0 overflow-x-hidden">
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-slate-900 mb-4 leading-tight text-center animate-fade-in-up opacity-0 [animation-fill-mode:forwards] pt-1 overflow-visible">
+        <div className="max-w-5xl mx-auto w-full min-w-0 overflow-visible">
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-slate-900 mb-4 text-center animate-fade-in-up opacity-0 [animation-fill-mode:forwards]">
             İşi etibarlı insanlara, nəticəni sistemə həvalə edin
           </h1>
           <p className="text-lg sm:text-xl text-slate-600 mb-6 max-w-2xl mx-auto text-center animate-fade-in-up opacity-0 [animation-delay:0.08s] [animation-fill-mode:forwards]">

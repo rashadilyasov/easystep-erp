@@ -47,7 +47,7 @@ function LoginFormInner() {
     return (
       <form className="space-y-4" onSubmit={handleSubmit}>
         {(error || resendError) && (
-          <div className="p-3 bg-red-50 text-red-700 rounded-xl text-sm">{error || resendError}</div>
+          <div className="p-3 bg-red-50 text-red-700 rounded-xl text-sm leading-relaxed">{error || resendError}</div>
         )}
         <p className="text-slate-600 text-sm">
           {viaEmail ? "E-poçtunuza göndərilən 6 rəqəmli kodu daxil edin." : "Autentifikator tətbiqindən 6 rəqəmli kodu daxil edin."}
@@ -98,7 +98,7 @@ function LoginFormInner() {
   return (
     <form className="space-y-4" onSubmit={handleSubmit}>
       {error && (
-        <div className="p-3 bg-red-50 text-red-700 rounded-xl text-sm">{error}</div>
+        <div className="p-3 bg-red-50 text-red-700 rounded-xl text-sm leading-relaxed">{error}</div>
       )}
       <div>
         <label className="block text-sm font-medium text-slate-700 mb-2">E-poçt</label>
@@ -127,7 +127,7 @@ function LoginFormInner() {
           <input type="checkbox" className="rounded" />
           <span className="text-sm text-slate-600">Xatırla</span>
         </label>
-        <Link href="/forgot-password" className="text-sm text-primary-600 hover:underline">
+        <Link href="/forgot-password" className="text-sm text-primary-600 hover:underline leading-relaxed">
           Şifrəni unutdum
         </Link>
       </div>

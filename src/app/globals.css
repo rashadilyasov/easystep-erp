@@ -45,12 +45,15 @@
   body {
     @apply bg-[var(--background)] text-[var(--foreground)] antialiased;
     overflow-x: hidden;
+    line-height: 1.5;
   }
   /* İ (dot above) görünməsi üçün - Azərbaycan hərfləri kəsilməsin */
-  h1, h2, h3, .text-2xl, .text-3xl, .text-4xl {
-    padding-top: 0.1em;
+  h1, h2, h3, .text-2xl, .text-3xl, .text-4xl, .text-5xl, .text-6xl {
+    padding-top: 0.25em;
+    line-height: 1.4;
     overflow: visible;
   }
+  h1 { padding-top: 0.35em; line-height: 1.45; }
 }
 
 @layer components {

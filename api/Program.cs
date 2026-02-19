@@ -1,5 +1,6 @@
 using EasyStep.Erp.Api.Data;
 using EasyStep.Erp.Api.Services;
+using EasyStep.Erp.Api;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
@@ -55,6 +56,9 @@ builder.Services.AddScoped<AuditService>();
 builder.Services.AddHttpClient();
 builder.Services.AddScoped<IPaymentProvider, PayriffService>();
 builder.Services.AddScoped<IEmailService, SmtpEmailService>();
+
+// Global exception handler — həmişə JSON qaytarır (HTML deyil)
+builder.Services.AddExceptionHandler<JsonExceptionHandler>();
 
 // Controllers
 builder.Services.AddControllers();
@@ -146,6 +150,8 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+app.UseExceptionHandler();
 
 // Pipeline
 if (app.Environment.IsDevelopment())

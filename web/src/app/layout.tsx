@@ -26,7 +26,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="az">
-      <body className={`${inter.variable} font-sans`} data-build="popup-v7">
+      <body className={`${inter.variable} font-sans`} data-build="deploy-2025-02-19">
         <Providers>{children}</Providers>
       </body>
     </html>

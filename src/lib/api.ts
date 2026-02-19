@@ -83,7 +83,11 @@ export async function apiFetch<T>(path: string, options: FetchOptions = {}): Pro
         if (body.error) msg += ` [${body.error}]`;
         if (body.inner) msg += ` (${body.inner})`;
       } catch {
-        if (text && text.length < 300) msg = text.replace(/<[^>]*>/g, "").trim().slice(0, 200);
+        const cleaned = text?.replace(/<[^>]*>/g, "").trim().slice(0, 200);
+        if (cleaned && !cleaned.startsWith("<!")) msg = cleaned;
+      }
+      if (res.status >= 500 && typeof console !== "undefined" && console.error) {
+        console.error("[API 500]", url, "Response:", text?.slice(0, 600) || "(empty)");
       }
       const fallback = `API xətası (${res.status})`;
       throw new Error((msg && msg.trim()) || fallback);

@@ -228,9 +228,21 @@ public class AdminController : ControllerBase
         return Ok(new { message = "İstifadəçi silindi" });
     }
 
+    [HttpPost("tenants/delete")]
+    public async Task<IActionResult> DeleteTenantByBody([FromBody] DeleteTenantRequest req, CancellationToken ct)
+    {
+        if (req?.TenantId == null) return BadRequest(new { message = "TenantId tələb olunur" });
+        return await DeleteTenantCore(req.TenantId.Value, ct);
+    }
+
     [HttpPost("tenants/{tenantId:guid}/delete")]
     [HttpDelete("tenants/{tenantId:guid}")]
     public async Task<IActionResult> DeleteTenant(Guid tenantId, CancellationToken ct)
+    {
+        return await DeleteTenantCore(tenantId, ct);
+    }
+
+    private async Task<IActionResult> DeleteTenantCore(Guid tenantId, CancellationToken ct)
     {
         var tenant = await _db.Tenants.FindAsync(new object[] { tenantId }, ct);
         if (tenant == null) return NotFound(new { message = "Tenant tapılmadı" });
@@ -664,6 +676,7 @@ public class AdminController : ControllerBase
 
 }
 
+public record DeleteTenantRequest(Guid? TenantId);
 public record PayoutBatchRequest(Guid[]? CommissionIds);
 public record ExtendRequest(int Months = 0, Guid? PlanId = null);
 public record AdminUpdateUserRequest(string? Email, string? Phone);

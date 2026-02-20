@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { api } from "@/lib/api";
 
-export default function AdminGuard({ children }: { children: React.ReactNode }) {
+export default function AffiliateGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [allowed, setAllowed] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -13,22 +13,21 @@ export default function AdminGuard({ children }: { children: React.ReactNode }) 
   useEffect(() => {
     const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
     if (!token) {
-      router.replace("/login?redirect=/admin");
+      router.replace("/login?redirect=/affiliate");
       return;
     }
     setError(null);
     api
       .me()
       .then((u) => {
-        if (u.role === "SuperAdmin") setAllowed(true);
-        else if (u.role === "Affiliate") router.replace("/affiliate");
+        if (u.role === "Affiliate") setAllowed(true);
         else router.replace("/cabinet");
       })
       .catch((e) => {
         if (e?.name === "AbortError") {
-          setError("API cavab vermir. Zəhmət olmasa API-nin işlədiyini yoxlayın (port 5000).");
+          setError("API cavab vermir. Zəhmət olmasa API-nin işlədiyini yoxlayın.");
         } else {
-          router.replace("/login?redirect=/admin");
+          router.replace("/login?redirect=/affiliate");
         }
       });
   }, [router]);
@@ -37,7 +36,7 @@ export default function AdminGuard({ children }: { children: React.ReactNode }) 
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-slate-50 px-4">
         <p className="text-slate-700 text-center max-w-md">{error}</p>
-        <Link href="/admin" className="text-primary-600 hover:underline font-medium">
+        <Link href="/affiliate" className="text-primary-600 hover:underline font-medium">
           Yenidən yoxla
         </Link>
       </div>

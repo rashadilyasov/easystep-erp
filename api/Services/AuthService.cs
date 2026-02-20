@@ -14,11 +14,13 @@ public class AuthService
 {
     private readonly ApplicationDbContext _db;
     private readonly IConfiguration _config;
+    private readonly AffiliateService _affiliate;
 
-    public AuthService(ApplicationDbContext db, IConfiguration config)
+    public AuthService(ApplicationDbContext db, IConfiguration config, AffiliateService affiliate)
     {
         _db = db;
         _config = config;
+        _affiliate = affiliate;
     }
 
     public string HashPassword(string password) => BCrypt.Net.BCrypt.HashPassword(password, 12);
@@ -115,10 +117,17 @@ public class AuthService
         return (user, user.Tenant);
     }
 
-    public async Task<(bool Ok, string? VerificationToken)> RegisterAsync(RegisterRequest req, CancellationToken ct = default)
+    public async Task<(bool Ok, string? VerificationToken, string? ErrorCode)> RegisterAsync(RegisterRequest req, CancellationToken ct = default)
     {
         if (await _db.Users.AnyAsync(u => u.Email == req.Email, ct))
-            return (false, null);
+            return (false, null, "EmailExists");
+
+        if (!string.IsNullOrWhiteSpace(req.PromoCode))
+        {
+            var promo = await _affiliate.GetByCodeAsync(req.PromoCode.Trim(), ct);
+            if (promo == null)
+                return (false, null, "InvalidPromoCode");
+        }
 
         var tenant = new Tenant
         {
@@ -148,6 +157,11 @@ public class AuthService
         _db.Users.Add(user);
         await _db.SaveChangesAsync(ct);
 
+        if (!string.IsNullOrWhiteSpace(req.PromoCode))
+        {
+            await _affiliate.UsePromoCodeForTenantAsync(req.PromoCode.Trim(), tenant.Id, ct);
+        }
+
         var token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(24)).Replace("+", "-").Replace("/", "_").TrimEnd('=');
         var expiryHours = int.Parse(_config["Auth:EmailVerificationExpiryHours"] ?? "24");
         _db.EmailVerificationTokens.Add(new EmailVerificationToken
@@ -160,7 +174,57 @@ public class AuthService
         });
         await _db.SaveChangesAsync(ct);
 
-        return (true, token);
+        return (true, token, null);
+    }
+
+    public async Task<(bool Ok, string? VerificationToken, string? ErrorCode)> RegisterAffiliateAsync(RegisterAffiliateRequest req, CancellationToken ct = default)
+    {
+        if (await _db.Users.AnyAsync(u => u.Email == req.Email, ct))
+            return (false, null, "EmailExists");
+
+        var affTenantId = DbInitializer.AffiliatesTenantId;
+        var tenantExists = await _db.Tenants.AnyAsync(t => t.Id == affTenantId, ct);
+        if (!tenantExists)
+            return (false, null, "AffiliateSystemNotReady");
+
+        var user = new User
+        {
+            Id = Guid.NewGuid(),
+            TenantId = affTenantId,
+            Email = req.Email,
+            PasswordHash = HashPassword(req.Password),
+            Role = UserRole.Affiliate,
+            EmailVerified = false,
+            TwoFactorEnabled = false,
+            CreatedAt = DateTime.UtcNow,
+        };
+        _db.Users.Add(user);
+
+        var affiliate = new Affiliate
+        {
+            Id = Guid.NewGuid(),
+            UserId = user.Id,
+            BalanceTotal = 0,
+            BalancePending = 0,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+        };
+        _db.Affiliates.Add(affiliate);
+        await _db.SaveChangesAsync(ct);
+
+        var token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(24)).Replace("+", "-").Replace("/", "_").TrimEnd('=');
+        var expiryHours = int.Parse(_config["Auth:EmailVerificationExpiryHours"] ?? "24");
+        _db.EmailVerificationTokens.Add(new EmailVerificationToken
+        {
+            Id = Guid.NewGuid(),
+            UserId = user.Id,
+            TokenHash = HashPasswordResetToken(token),
+            ExpiresAt = DateTime.UtcNow.AddHours(expiryHours),
+            CreatedAt = DateTime.UtcNow,
+        });
+        await _db.SaveChangesAsync(ct);
+
+        return (true, token, null);
     }
 
     public async Task<Guid?> ValidateAndConsumeEmailVerificationTokenAsync(string token, CancellationToken ct = default)
@@ -370,6 +434,8 @@ public class AuthService
     }
 }
 
+public record RegisterAffiliateRequest(string Email, string Password, string FullName, bool AcceptTerms);
+
 public record RegisterRequest(
     string Email,
     string Password,
@@ -378,5 +444,6 @@ public record RegisterRequest(
     string? TaxId,
     string? Country,
     string? City,
-    bool AcceptTerms
+    bool AcceptTerms,
+    string? PromoCode = null
 );

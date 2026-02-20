@@ -25,6 +25,7 @@ export function useAuth() {
         if (res.accessToken) {
           localStorage.setItem("accessToken", res.accessToken);
           if (res.refreshToken) localStorage.setItem("refreshToken", res.refreshToken);
+          if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("auth-changed"));
           router.push(redirectTo.startsWith("/") ? redirectTo : "/cabinet");
           return { success: true };
         }
@@ -47,6 +48,7 @@ export function useAuth() {
         const res = await api.auth.complete2FA(pendingToken, code);
         localStorage.setItem("accessToken", res.accessToken);
         if (res.refreshToken) localStorage.setItem("refreshToken", res.refreshToken);
+        if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("auth-changed"));
         router.push(redirectTo.startsWith("/") ? redirectTo : "/admin");
         return true;
       } catch (e) {
@@ -67,6 +69,7 @@ export function useAuth() {
     } catch { /* ignore - still log out locally */ }
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
+    if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("auth-changed"));
     router.push("/");
   }, [router]);
 

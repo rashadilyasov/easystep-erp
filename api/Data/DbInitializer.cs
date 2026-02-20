@@ -13,6 +13,7 @@ public static class DbInitializer
         Guid.Parse("a0000001-0001-0001-0001-000000000004"),
     };
     private static readonly Guid SystemTenantId = Guid.Parse("b0000000-0000-0000-0000-000000000001");
+    public static readonly Guid AffiliatesTenantId = Guid.Parse("b0000000-0000-0000-0000-000000000002");
     private const string AdminEmail = "admin@easysteperp.com";
 
     public static async Task SeedAsync(ApplicationDbContext db, CancellationToken ct = default)
@@ -40,6 +41,18 @@ public static class DbInitializer
                 EmailVerified = true,
                 TwoFactorEnabled = false,
                 CreatedAt = DateTime.UtcNow,
+            });
+        }
+
+        if (!await db.Tenants.AnyAsync(t => t.Id == AffiliatesTenantId, ct))
+        {
+            db.Tenants.Add(new Tenant
+            {
+                Id = AffiliatesTenantId,
+                Name = "Affiliates",
+                ContactPerson = "Affiliate",
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
             });
         }
 

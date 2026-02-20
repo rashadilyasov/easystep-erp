@@ -31,9 +31,9 @@ public class AuthController : ControllerBase
 
         try
         {
-            var (ok, token) = await _auth.RegisterAsync(req, ct);
+            var (ok, token, errorCode) = await _auth.RegisterAsync(req, ct);
             if (!ok)
-                return BadRequest(new { message = "Bu e-poçt artıq qeydiyyatdadır" });
+                return BadRequest(new { message = errorCode == "InvalidPromoCode" ? "Promo kod mövcud deyil və ya artıq istifadə olunub" : "Bu e-poçt artıq qeydiyyatdadır" });
 
             if (!string.IsNullOrEmpty(token))
             {
@@ -64,6 +64,54 @@ public class AuthController : ControllerBase
         catch (Exception)
         {
             return StatusCode(500, new { message = "Qeydiyyat zamanı xəta baş verdi. Zəhmət olmasa bir az sonra yenidən cəhd edin." });
+        }
+    }
+
+    [HttpPost("register-affiliate")]
+    [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("auth")]
+    public async Task<IActionResult> RegisterAffiliate([FromBody] RegisterAffiliateRequest? req, CancellationToken ct)
+    {
+        if (req == null || string.IsNullOrWhiteSpace(req.Email))
+            return BadRequest(new { message = "E-poçt və şifrə tələb olunur" });
+        if (!req.AcceptTerms)
+            return BadRequest(new { message = "Şərtləri qəbul etməlisiniz" });
+        if ((req.Password ?? "").Length < 12)
+            return BadRequest(new { message = "Şifrə minimum 12 simvol olmalıdır" });
+
+        try
+        {
+            var (ok, token, errorCode) = await _auth.RegisterAffiliateAsync(req, ct);
+            if (!ok)
+                return BadRequest(new { message = errorCode == "EmailExists" ? "Bu e-poçt artıq qeydiyyatdadır" : "Affiliate qeydiyyatı müvəqqəti olaraq mövcud deyil" });
+
+            if (!string.IsNullOrEmpty(token))
+            {
+                var baseUrl = _config["App:BaseUrl"] ?? "https://www.easysteperp.com";
+                var verifyUrl = $"{baseUrl}/verify-email?token={Uri.EscapeDataString(token)}";
+                var html = $@"
+<!DOCTYPE html>
+<html><body style='font-family:Arial,sans-serif'>
+<h2>E-poçtunuzu təsdiqləyin</h2>
+<p>Salam,</p>
+<p>Easy Step ERP Affiliate hesabınızı aktivləşdirmək üçün aşağıdakı linkə keçid edin:</p>
+<p><a href='{verifyUrl}'>{verifyUrl}</a></p>
+<p>Link 24 saat ərzində keçərlidir.</p>
+<p>— Easy Step ERP<br/>hello@easysteperp.com</p>
+</body></html>";
+                var to = req.Email;
+                var subject = "Easy Step ERP - Affiliate e-poçt təsdiqi";
+                _ = Task.Run(async () =>
+                {
+                    try { await _email.SendAsync(to, subject, html, CancellationToken.None); }
+                    catch (Exception ex) { _logger.LogError(ex, "Background email send failed for affiliate {To}", to); }
+                });
+            }
+
+            return Ok(new { message = "Affiliate qeydiyyatı uğurla tamamlandı. E-poçtunuzu yoxlayın və təsdiq linkinə keçid edin." });
+        }
+        catch (Exception)
+        {
+            return StatusCode(500, new { message = "Qeydiyyat zamanı xəta baş verdi." });
         }
     }
 

@@ -153,8 +153,15 @@ export const api = {
       taxId?: string;
       country?: string;
       city?: string;
+      promoCode?: string;
       acceptTerms: boolean;
     }) => apiFetch("/api/auth/register", { method: "POST", body: JSON.stringify(data), skipAuth: true }),
+    registerAffiliate: (data: { email: string; password: string; fullName: string; acceptTerms: boolean }) =>
+      apiFetch<{ message: string }>("/api/auth/register-affiliate", {
+        method: "POST",
+        body: JSON.stringify(data),
+        skipAuth: true,
+      }),
     refresh: (refreshToken: string) =>
       apiFetch<{ accessToken: string; refreshToken: string }>("/api/auth/refresh", {
         method: "POST",
@@ -221,8 +228,11 @@ export const api = {
     apiFetch<{
       plan: { name: string; price: number; currency: string; endDate: string } | null;
       autoRenew: boolean;
-      payments: { id: string; date: string; amount: number; currency: string; status: string; trxId: string | null; invoiceNumber?: string | null }[];
+      promoCode?: { code: string; discountPercent: number } | null;
+      payments: { id: string; date: string; amount: number; discountAmount?: number; currency: string; status: string; trxId: string | null; invoiceNumber?: string | null }[];
     }>("/api/billing"),
+  validatePromo: (code: string) =>
+    apiFetch<{ valid: boolean; discountPercent?: number }>(`/api/billing/validate-promo?code=${encodeURIComponent(code)}`, { skipAuth: true }),
   receiptUrl: (paymentId: string) => `/cabinet/billing/receipt/${paymentId}`,
   downloadUrl: (releaseId: string) =>
     apiFetch<{ url: string; expiresIn: number }>(`/api/downloads/${releaseId}/url`),
@@ -249,6 +259,31 @@ export const api = {
       body: JSON.stringify({ enabled }),
     }),
   me: () => apiFetch<{ email: string; role: string; tenantId: string }>("/api/auth/me"),
+  affiliate: {
+    dashboard: () =>
+      apiFetch<{
+        activeCustomers: number;
+        balancePending: number;
+        balanceTotal: number;
+        lastMonthCommissions: { amount: number; status: string; date: string; tenantName: string }[];
+        promoCodes: { id: string; code: string; discountPercent: number; commissionPercent: number; status: string; usedAt: string | null; tenantName: string | null }[];
+      }>("/api/affiliate/dashboard"),
+    promoCodes: () =>
+      apiFetch<
+        { id: string; code: string; discountPercent: number; commissionPercent: number; status: string; createdAt: string; usedAt: string | null; tenantName: string | null }[]
+      >("/api/affiliate/promo-codes"),
+    createPromoCode: (data?: { discountPercent?: number; commissionPercent?: number }) =>
+      apiFetch<{ id: string; code: string; discountPercent: number; commissionPercent: number; status: string; message: string }>(
+        "/api/affiliate/promo-codes",
+        { method: "POST", body: JSON.stringify(data ?? {}) }
+      ),
+    commissions: (limit?: number) =>
+      apiFetch<
+        { id: string; amount: number; paymentAmount: number; commissionPercent: number; status: string; date: string; paidAt: string | null; tenantName: string }[]
+      >(`/api/affiliate/commissions${limit ? `?limit=${limit}` : ""}`),
+    settings: () =>
+      apiFetch<{ defaultDiscountPercent: number; defaultCommissionPercent: number }>("/api/affiliate/settings"),
+  },
   admin: {
     stats: () =>
       apiFetch<{ totalTenants: number; activeSubscriptions: number; revenueThisMonth: number; openTickets: number }>(
@@ -278,6 +313,8 @@ export const api = {
         }[]
       >("/api/admin/tenants"),
     payments: () => apiFetch<{ id: string; date: string; tenantName: string; amount: number; currency: string; status: string; provider: string; transactionId: string | null }[]>("/api/admin/payments"),
+    deleteTenant: (tenantId: string) =>
+      apiFetch<{ message: string }>(`/api/admin/tenants/${tenantId}`, { method: "DELETE" }),
     extendSubscription: (tenantId: string, months?: number, planId?: string) =>
       apiFetch<{ message: string }>(`/api/admin/tenants/${tenantId}/extend`, {
         method: "POST",
@@ -327,6 +364,36 @@ export const api = {
           body: JSON.stringify(value),
         }),
     },
+    affiliates: () =>
+      apiFetch<
+        { id: string; userId: string; email: string; balanceTotal: number; balancePending: number; createdAt: string; activeCustomers: number }[]
+      >("/api/admin/affiliates"),
+    affiliateCommissions: (params?: { status?: string; affiliateId?: string }) => {
+      const search = new URLSearchParams(params as Record<string, string>).toString();
+      return apiFetch<
+        {
+          id: string;
+          amount: number;
+          paymentAmount: number;
+          commissionPercent: number;
+          status: string;
+          date: string;
+          approvedAt: string | null;
+          paidAt: string | null;
+          affiliateEmail: string;
+          tenantName: string;
+        }[]
+      >(`/api/admin/affiliate-commissions${search ? `?${search}` : ""}`);
+    },
+    approveCommission: (id: string) =>
+      apiFetch<{ message: string }>(`/api/admin/affiliate-commissions/${id}/approve`, { method: "POST" }),
+    payCommission: (id: string) =>
+      apiFetch<{ message: string }>(`/api/admin/affiliate-commissions/${id}/pay`, { method: "POST" }),
+    payoutBatch: (commissionIds: string[]) =>
+      apiFetch<{ message: string; paid: number }>("/api/admin/affiliate-commissions/payout-batch", {
+        method: "POST",
+        body: JSON.stringify({ commissionIds }),
+      }),
   },
   revokeDevice: (deviceId: string) =>
     apiFetch<{ message: string }>("/api/license/revoke-device", {

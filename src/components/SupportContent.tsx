@@ -35,8 +35,10 @@ export default function SupportContent() {
       setSubject("");
       setBody("");
       load();
-    } catch {
-      alert("Xəta baş verdi");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Xəta baş verdi";
+      alert(msg);
+      if (typeof console !== "undefined" && console.error) console.error("[Support ticket]", e);
     } finally {
       setSubmitting(false);
     }

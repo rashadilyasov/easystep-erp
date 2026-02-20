@@ -1,15 +1,36 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Logo from "./Logo";
 import { useAuthModal } from "@/contexts/AuthModalContext";
+import { api } from "@/lib/api";
 
 type NavItem = "features" | "pricing" | "contact" | "security" | null;
 
 export default function PublicHeader({ active }: { active?: NavItem }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
   const { openLogin, openRegister } = useAuthModal();
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const refresh = async () => {
+      if (!localStorage.getItem("accessToken")) {
+        setUserRole(null);
+        return;
+      }
+      try {
+        const me = await api.me();
+        setUserRole(me?.role ?? null);
+      } catch {
+        setUserRole(null);
+      }
+    };
+    refresh();
+    window.addEventListener("auth-changed", refresh);
+    return () => window.removeEventListener("auth-changed", refresh);
+  }, []);
   const linkClass = (item: NavItem) =>
     item === active
       ? "text-primary-600 font-medium"
@@ -38,22 +59,47 @@ export default function PublicHeader({ active }: { active?: NavItem }) {
       <Link href="/security" className={`py-2 lg:py-0 ${linkClass("security")}`} onClick={() => setMobileOpen(false)}>
         Təhlükəsizlik
       </Link>
-      <button
-        type="button"
-        className={`py-2 lg:py-0 bg-transparent border-none cursor-pointer font-inherit ${linkClass(null)}`}
-        onClick={handleOpenLogin}
-        data-auth-trigger="login"
-      >
-        Daxil ol
-      </button>
-      <button
-        type="button"
-        className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-medium transition-all duration-300 hover:shadow-lg hover:shadow-primary-500/25 hover:-translate-y-0.5 active:translate-y-0"
-        onClick={handleOpenRegister}
-        data-auth-trigger="register"
-      >
-        Qeydiyyat
-      </button>
+      <Link href="/register-affiliate" className={`py-2 lg:py-0 ${linkClass(null)}`} onClick={() => setMobileOpen(false)}>
+        Affiliate
+      </Link>
+      {userRole ? (
+        <>
+          {userRole === "SuperAdmin" && (
+            <Link href="/admin" className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 font-medium" onClick={() => setMobileOpen(false)}>
+              Admin
+            </Link>
+          )}
+          {userRole === "Affiliate" && (
+            <Link href="/affiliate" className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-medium" onClick={() => setMobileOpen(false)}>
+              Affiliate panel
+            </Link>
+          )}
+          {(userRole === "CustomerAdmin" || userRole === "CustomerUser" || (userRole && !["SuperAdmin", "Affiliate"].includes(userRole))) && (
+            <Link href="/cabinet" className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-medium" onClick={() => setMobileOpen(false)}>
+              Panelim
+            </Link>
+          )}
+        </>
+      ) : (
+        <>
+          <button
+            type="button"
+            className={`py-2 lg:py-0 bg-transparent border-none cursor-pointer font-inherit ${linkClass(null)}`}
+            onClick={handleOpenLogin}
+            data-auth-trigger="login"
+          >
+            Daxil ol
+          </button>
+          <button
+            type="button"
+            className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-medium transition-all duration-300 hover:shadow-lg hover:shadow-primary-500/25 hover:-translate-y-0.5 active:translate-y-0"
+            onClick={handleOpenRegister}
+            data-auth-trigger="register"
+          >
+            Qeydiyyat
+          </button>
+        </>
+      )}
     </>
   );
 

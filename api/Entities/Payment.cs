@@ -17,6 +17,7 @@ public class Payment
     public string Provider { get; set; } = "Payriff";
     public string? TransactionId { get; set; }
     public decimal Amount { get; set; }
+    public decimal DiscountAmount { get; set; }
     public string Currency { get; set; } = "AZN";
     public PaymentStatus Status { get; set; }
     public string? RawEventRef { get; set; }

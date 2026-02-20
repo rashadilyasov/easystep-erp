@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { api } from "@/lib/api";
 
 export default function CabinetGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -9,11 +10,17 @@ export default function CabinetGuard({ children }: { children: React.ReactNode }
 
   useEffect(() => {
     const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
-    if (token) {
-      setAllowed(true);
-    } else {
+    if (!token) {
       router.replace("/login?redirect=/cabinet");
+      return;
     }
+    api
+      .me()
+      .then((u) => {
+        if (u.role === "Affiliate") router.replace("/affiliate");
+        else setAllowed(true);
+      })
+      .catch(() => router.replace("/login?redirect=/cabinet"));
   }, [router]);
 
   if (!allowed) {

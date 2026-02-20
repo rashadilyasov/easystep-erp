@@ -50,6 +50,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 });
 
 // Services
+builder.Services.AddScoped<AffiliateService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<AuditService>();
 builder.Services.AddHttpClient();
@@ -77,6 +78,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("AdminOnly", p => p.RequireRole("SuperAdmin"));
+    options.AddPolicy("AffiliateOnly", p => p.RequireRole("Affiliate"));
 });
 
 // Swagger + JWT
@@ -183,6 +185,25 @@ using (var scope = app.Services.CreateScope())
             await db.Database.EnsureCreatedAsync();
             await db.Database.ExecuteSqlRawAsync(
                 "CREATE TABLE IF NOT EXISTS SiteContents (Id TEXT PRIMARY KEY, [Key] TEXT UNIQUE NOT NULL, Value TEXT NOT NULL, UpdatedAt TEXT NOT NULL)");
+            try
+            {
+                await db.Database.ExecuteSqlRawAsync("ALTER TABLE Tenants ADD COLUMN PromoCodeId TEXT");
+            }
+            catch { }
+            try
+            {
+                await db.Database.ExecuteSqlRawAsync("ALTER TABLE Payments ADD COLUMN DiscountAmount REAL DEFAULT 0");
+            }
+            catch { }
+            try
+            {
+                await db.Database.ExecuteSqlRawAsync("CREATE TABLE IF NOT EXISTS Affiliates (Id TEXT PRIMARY KEY, UserId TEXT NOT NULL, BalanceTotal REAL NOT NULL, BalancePending REAL NOT NULL, CreatedAt TEXT NOT NULL, UpdatedAt TEXT NOT NULL, FOREIGN KEY (UserId) REFERENCES Users(Id))");
+                await db.Database.ExecuteSqlRawAsync("CREATE TABLE IF NOT EXISTS PromoCodes (Id TEXT PRIMARY KEY, Code TEXT UNIQUE NOT NULL, AffiliateId TEXT NOT NULL, TenantId TEXT, DiscountPercent REAL NOT NULL, CommissionPercent REAL NOT NULL, Status INTEGER NOT NULL, CreatedAt TEXT NOT NULL, UsedAt TEXT, FOREIGN KEY (AffiliateId) REFERENCES Affiliates(Id), FOREIGN KEY (TenantId) REFERENCES Tenants(Id))");
+                await db.Database.ExecuteSqlRawAsync("CREATE TABLE IF NOT EXISTS AffiliateCommissions (Id TEXT PRIMARY KEY, AffiliateId TEXT NOT NULL, TenantId TEXT NOT NULL, PaymentId TEXT NOT NULL, Amount REAL NOT NULL, PaymentAmount REAL NOT NULL, CommissionPercent REAL NOT NULL, Status INTEGER NOT NULL, CreatedAt TEXT NOT NULL, ApprovedAt TEXT, PaidAt TEXT, FOREIGN KEY (AffiliateId) REFERENCES Affiliates(Id), FOREIGN KEY (TenantId) REFERENCES Tenants(Id), FOREIGN KEY (PaymentId) REFERENCES Payments(Id))");
+                await db.Database.ExecuteSqlRawAsync("CREATE UNIQUE INDEX IF NOT EXISTS IX_Affiliates_UserId ON Affiliates(UserId)");
+                await db.Database.ExecuteSqlRawAsync("CREATE UNIQUE INDEX IF NOT EXISTS IX_PromoCodes_Code ON PromoCodes(Code)");
+            }
+            catch { }
             await DbInitializer.SeedAsync(db);
         }
         else

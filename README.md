@@ -53,6 +53,16 @@ Web: http://localhost:3000
 | Customer Admin | Kabinet: billing, plan, istifadəçilər |
 | Customer User | Academy, support, yükləmə |
 | Super Admin | Admin panel |
+| Affiliate | Promo kodlar, komissiyalar, affiliate panel |
+
+## Affiliate modulu
+
+- **Qeydiyyat:** `/register-affiliate` — affiliate kimi qeydiyyat
+- **Promo kodlar:** Hər affiliate unikal kodlar yaradır; hər kod yalnız 1 müştəri tərəfindən istifadə olunur
+- **Müştəri:** `/register`-da promo kod daxil edir; qeydiyyatdan sonra ödənişlərdə endirim tətbiq olunur
+- **Komissiya:** Ödəniş uğurlu olanda affiliate-ə PENDING komissiya yazılır; admin approve/payout edir
+- **Təkrarlanan:** Müştəri hər ay ödəyəndə yenidən komissiya hesablanır
+- **Qiymətlər:** Promo kod daxil edərək endirimi önizləmək mümkündür
 
 ## Admin panel
 

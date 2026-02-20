@@ -20,6 +20,8 @@ Smtp__User=hello@easysteperp.com
 Smtp__Password=BURADA_PAROLUNU_YAPISTIR
 Smtp__From=hello@easysteperp.com
 Smtp__UseSsl=true
+Affiliate__DefaultDiscountPercent=5
+Affiliate__DefaultCommissionPercent=5
 ```
 
 > **Vacib:** `__` (iki alt xətt) — bir alt xətt `_` işləməz.

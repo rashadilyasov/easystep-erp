@@ -27,7 +27,7 @@ const FALLBACK_PLANS: Plan[] = [
   { id: "4", name: "Əla", durationMonths: 12, price: 420, popular: true },
 ];
 
-export default function PricingPlans() {
+export default function PricingPlans({ discountPercent }: { discountPercent?: number }) {
   const [plans, setPlans] = useState<Plan[]>(FALLBACK_PLANS);
   const [loading, setLoading] = useState(true);
 
@@ -64,11 +64,14 @@ export default function PricingPlans() {
   }
 
   const oneMonthPrice = plans.find((x) => x.durationMonths === 1)?.price ?? 49;
+  const hasDiscount = discountPercent != null && discountPercent > 0;
 
   return (
     <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
       {plans.map((p) => {
-        const perMonth = p.durationMonths > 0 ? Math.round(p.price / p.durationMonths) : p.price;
+        const originalPrice = p.price;
+        const finalPrice = hasDiscount ? Math.round(originalPrice * (1 - discountPercent! / 100) * 100) / 100 : originalPrice;
+        const perMonth = p.durationMonths > 0 ? Math.round(finalPrice / p.durationMonths) : finalPrice;
         const savings12 = p.durationMonths === 12 ? oneMonthPrice * 12 - p.price : 0;
         return (
           <div
@@ -86,7 +89,10 @@ export default function PricingPlans() {
             )}
             <h3 className="text-lg font-semibold text-slate-900 mb-2">{p.name} - {p.durationMonths} ay</h3>
             <div className="mb-4">
-              <span className="text-3xl font-bold text-slate-900">{p.price} ₼</span>
+              {hasDiscount && (
+                <span className="text-lg text-slate-400 line-through block">{p.price} ₼</span>
+              )}
+              <span className="text-3xl font-bold text-slate-900">{finalPrice} ₼</span>
               <span className="text-slate-600"> / {p.durationMonths} ay</span>
             </div>
             <p className="text-sm text-slate-600 mb-2">Ayda {perMonth} ₼</p>

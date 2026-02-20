@@ -14,9 +14,11 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState<typeof FALLBACK_STATS>(FALLBACK_STATS);
   const [loading, setLoading] = useState(true);
   const [apiOk, setApiOk] = useState(true);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const load = useCallback(() => {
     setLoading(true);
+    setErrorMsg(null);
     api.admin
       .stats()
       .then((data) => {
@@ -28,9 +30,12 @@ export default function AdminDashboard() {
         });
         setApiOk(true);
       })
-      .catch(() => {
+      .catch((e) => {
         setStats(FALLBACK_STATS);
         setApiOk(false);
+        const msg = e instanceof Error ? e.message : "Naməlum xəta";
+        setErrorMsg(msg);
+        if (typeof console !== "undefined" && console.error) console.error("[Admin stats]", e);
       })
       .finally(() => setLoading(false));
   }, []);
@@ -44,10 +49,24 @@ export default function AdminDashboard() {
       <h1 className="text-2xl font-bold text-slate-900 mb-6">Admin Dashboard</h1>
 
       {!apiOk && (
-        <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between gap-4">
-          <p className="text-sm text-amber-800">
-            API ilə əlaqə yoxdur. Statistikalar 0 göstərilir. <strong>api</strong> qovluğunda <code className="bg-amber-100 px-1 rounded">dotnet run</code> ilə serveri işə salın.
-          </p>
+        <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <p className="text-sm text-amber-800">
+              API ilə əlaqə yoxdur. Statistikalar 0 göstərilir.{" "}
+              {typeof window !== "undefined" && !window.location.hostname.includes("easysteperp.com")
+                ? "api qovluğunda dotnet run ilə serveri işə salın."
+                : "API_URL və Railway konfiqurasiyasını yoxlayın."}
+            </p>
+            {errorMsg && <p className="text-xs text-amber-700 mt-2 font-mono break-all">{errorMsg}</p>}
+            <a
+              href="/api/health"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block mt-2 text-xs text-primary-600 hover:underline"
+            >
+              API əlaqəsini yoxla →
+            </a>
+          </div>
           <button onClick={load} className="shrink-0 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 text-sm">
             Yenilə
           </button>

@@ -19,13 +19,15 @@ public class BillingController : ControllerBase
     private readonly IPaymentProvider _payment;
     private readonly IConfiguration _config;
     private readonly Services.AuditService _audit;
+    private readonly AffiliateService _affiliate;
 
-    public BillingController(ApplicationDbContext db, IPaymentProvider payment, IConfiguration config, Services.AuditService audit)
+    public BillingController(ApplicationDbContext db, IPaymentProvider payment, IConfiguration config, Services.AuditService audit, AffiliateService affiliate)
     {
         _db = db;
         _payment = payment;
         _config = config;
         _audit = audit;
+        _affiliate = affiliate;
     }
 
     [HttpGet]
@@ -46,13 +48,20 @@ public class BillingController : ControllerBase
             .Where(p => p.TenantId == tenantId.Value)
             .OrderByDescending(p => p.CreatedAt)
             .Take(50)
-            .Select(p => new { p.Id, p.CreatedAt, p.Amount, p.Currency, p.Status, p.TransactionId })
+            .Select(p => new { p.Id, p.CreatedAt, p.Amount, p.DiscountAmount, p.Currency, p.Status, p.TransactionId })
             .ToListAsync(ct);
 
         var paymentIds = payments.Select(p => p.Id).ToList();
         var invoices = await _db.Invoices
             .Where(i => i.TenantId == tenantId!.Value && paymentIds.Contains(i.PaymentId))
             .ToDictionaryAsync(i => i.PaymentId, i => i.Number, ct);
+
+        var tenant = await _db.Tenants
+            .Include(t => t.PromoCode)
+            .FirstOrDefaultAsync(t => t.Id == tenantId.Value, ct);
+        var promoInfo = tenant?.PromoCodeId != null && tenant?.PromoCode != null
+            ? new { code = tenant.PromoCode.Code, discountPercent = tenant.PromoCode.DiscountPercent }
+            : (object?)null;
 
         var plan = sub?.Plan;
         return Ok(new
@@ -61,17 +70,32 @@ public class BillingController : ControllerBase
                 ? new { name = plan.Name, price = plan.Price, currency = plan.Currency, endDate = sub!.EndDate }
                 : (object?)null,
             autoRenew = sub?.AutoRenew ?? false,
+            promoCode = promoInfo,
             payments = payments.Select(p => new
             {
                 p.Id,
                 date = p.CreatedAt.ToString("dd.MM.yyyy"),
                 p.Amount,
+                discountAmount = p.DiscountAmount,
                 p.Currency,
                 status = p.Status.ToString(),
                 trxId = p.TransactionId != null && p.TransactionId.Length > 12 ? p.TransactionId[..12] + "..." : p.TransactionId,
                 invoiceNumber = invoices.GetValueOrDefault(p.Id),
             }),
         });
+    }
+
+    /// <summary>Qiymətlər səhifəsində promo endirimi önizləməsi üçün. Sadece mövcud və istifadə olunmamış kodları yoxlayır.</summary>
+    [HttpGet("validate-promo")]
+    [AllowAnonymous]
+    public async Task<IActionResult> ValidatePromo([FromQuery] string? code, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(code))
+            return Ok(new { valid = false });
+        var promo = await _affiliate.GetByCodeAsync(code.Trim(), ct);
+        if (promo == null)
+            return Ok(new { valid = false });
+        return Ok(new { valid = true, discountPercent = promo.DiscountPercent });
     }
 
     [HttpGet("receipt/{paymentId:guid}")]
@@ -133,8 +157,19 @@ table{{width:100%;border-collapse:collapse}} td{{padding:8px;border-bottom:1px s
         if (plan == null || !plan.IsActive)
             return BadRequest(new { message = "Plan tapılmadı" });
 
+        var tenant = await _db.Tenants
+            .Include(t => t.PromoCode)
+            .FirstOrDefaultAsync(t => t.Id == tenantId.Value, ct);
+        var originalAmount = plan.Price;
+        var discountAmount = 0m;
+        if (tenant?.PromoCodeId != null && tenant.PromoCode != null && tenant.PromoCode.Status == PromoCodeStatus.Used)
+        {
+            discountAmount = Math.Round(originalAmount * (tenant.PromoCode.DiscountPercent / 100), 2);
+        }
+        var finalAmount = originalAmount - discountAmount;
+        if (finalAmount <= 0) finalAmount = 0.01m;
+
         var apiBase = _config["App:ApiBaseUrl"] ?? "http://localhost:5000";
-        var webBase = _config["App:BaseUrl"] ?? "http://localhost:3000";
         var callbackUrl = $"{apiBase}/api/billing/webhook/payriff";
         var metadata = new Dictionary<string, string>
         {
@@ -143,7 +178,7 @@ table{{width:100%;border-collapse:collapse}} td{{padding:8px;border-bottom:1px s
         };
 
         var result = await _payment.CreateOrderAsync(
-            (decimal)plan.Price,
+            (decimal)finalAmount,
             plan.Currency,
             $"{plan.Name} - Easy Step ERP",
             callbackUrl,
@@ -162,7 +197,8 @@ table{{width:100%;border-collapse:collapse}} td{{padding:8px;border-bottom:1px s
             PlanId = plan.Id,
             Provider = _payment.Name,
             TransactionId = result.OrderId,
-            Amount = plan.Price,
+            Amount = finalAmount,
+            DiscountAmount = discountAmount,
             Currency = plan.Currency,
             Status = PaymentStatus.Pending,
             RawEventRef = result.TransactionId,
@@ -268,6 +304,12 @@ table{{width:100%;border-collapse:collapse}} td{{padding:8px;border-bottom:1px s
                     }
                 }
             }
+
+            try
+            {
+                await _affiliate.CreateCommissionForPaymentAsync(payment, ct);
+            }
+            catch { /* commission creation failed – log but don't fail webhook */ }
         }
         else if (status == "CANCELED" || status == "DECLINED" || status == "EXPIRED")
         {

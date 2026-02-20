@@ -38,6 +38,7 @@ export default function AdminTenantsContent() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [editingUser, setEditingUser] = useState<{ id: string; email: string; phone?: string } | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [deletingTenant, setDeletingTenant] = useState(false);
 
   const refreshTenants = useCallback(() => api.admin.tenants().then(setTenants), []);
 
@@ -103,6 +104,22 @@ export default function AdminTenantsContent() {
       alert(e instanceof Error ? e.message : "Xəta");
     } finally {
       setDeleting(null);
+    }
+  };
+
+  const handleDeleteTenant = async () => {
+    if (!detailModal) return;
+    if (!confirm(`${detailModal.tenant.name} tenantini və bütün əlaqəli məlumatları silmək istədiyinizə əminsiniz? Bu əməliyyat geri alına bilməz.`)) return;
+    setDeletingTenant(true);
+    try {
+      await api.admin.deleteTenant(detailModal.tenant.id);
+      setDetailModal(null);
+      refreshTenants();
+      alert("Tenant silindi");
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Xəta");
+    } finally {
+      setDeletingTenant(false);
     }
   };
 
@@ -308,13 +325,26 @@ export default function AdminTenantsContent() {
               <>
                 <div className="flex justify-between items-start mb-4">
                   <h3 className="font-semibold text-slate-900 text-lg">{detailModal.tenant.name}</h3>
-                  <button onClick={() => setDetailModal(null)} className="text-slate-500 hover:text-red-500">✕</button>
+                  <div className="flex items-center gap-2">
+                    {!detailModal.tenant.name.includes("System") && detailModal.tenant.name !== "Affiliates" && (
+                      <button
+                        onClick={handleDeleteTenant}
+                        disabled={deletingTenant}
+                        className="text-xs px-3 py-1.5 bg-red-100 text-red-800 rounded hover:bg-red-200 disabled:opacity-50"
+                      >
+                        {deletingTenant ? "..." : "Profili sil"}
+                      </button>
+                    )}
+                    <button onClick={() => setDetailModal(null)} className="text-slate-500 hover:text-red-500">✕</button>
+                  </div>
                 </div>
                 <div className="grid gap-4 text-sm">
                   <div>
                     <h4 className="font-medium text-slate-700 mb-2">İstifadəçilər</h4>
                     <div className="space-y-2">
-                      {detailModal.users.map((u) => (
+                      {detailModal.users.length === 0 ? (
+                        <p className="text-slate-500 text-sm py-2">Bu tenant üçün istifadəçi qeydiyyatda deyil</p>
+                      ) : detailModal.users.map((u) => (
                         <div key={u.id} className="flex items-center gap-2 flex-wrap p-2 bg-slate-50 rounded-lg">
                           {editingUser?.id === u.id ? (
                             <>

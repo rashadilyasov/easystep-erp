@@ -7,7 +7,8 @@ import { api } from "@/lib/api";
 type BillingData = {
   plan: { name: string; price: number; currency: string; endDate: string } | null;
   autoRenew: boolean;
-  payments: { id: string; date: string; amount: number; currency: string; status: string; trxId: string | null; invoiceNumber?: string | null }[];
+  promoCode?: { code: string; discountPercent: number } | null;
+  payments: { id: string; date: string; amount: number; discountAmount?: number; currency: string; status: string; trxId: string | null; invoiceNumber?: string | null }[];
 };
 
 export default function BillingContent() {
@@ -33,6 +34,7 @@ export default function BillingContent() {
   const d = data ?? {
     plan: null,
     autoRenew: false,
+    promoCode: null,
     payments: [] as BillingData["payments"],
   };
 
@@ -59,6 +61,18 @@ export default function BillingContent() {
 
   return (
     <>
+      {d.promoCode && (
+        <div className="mb-6 p-6 bg-green-50 border border-green-200 rounded-2xl">
+          <h3 className="font-semibold text-green-900 mb-2">Promo kod</h3>
+          <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-green-800">
+            <span><strong>Kod:</strong> {d.promoCode.code}</span>
+            <span><strong>Endirim:</strong> {d.promoCode.discountPercent}%</span>
+            {d.plan?.endDate && (
+              <span><strong>Növbəti ödəniş:</strong> {new Date(d.plan.endDate).toLocaleDateString("az-AZ", { day: "numeric", month: "long", year: "numeric" })}</span>
+            )}
+          </div>
+        </div>
+      )}
       <div className="mb-8 p-6 bg-white rounded-2xl border border-slate-200">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-semibold text-slate-900">Cari plan</h3>
@@ -73,6 +87,11 @@ export default function BillingContent() {
           <>
             <p className="text-slate-600">
               {d.plan.name} - {d.plan.price} ₼
+              {d.promoCode && (
+                <span className="ml-2 text-green-600 text-sm">
+                  ({d.promoCode.discountPercent}% endirim tətbiq olunur)
+                </span>
+              )}
             </p>
             <label className="flex items-center gap-2 mt-4">
               <input
@@ -115,6 +134,9 @@ export default function BillingContent() {
                     <td className="px-4 py-3">{p.date}</td>
                     <td className="px-4 py-3">
                       {p.amount} {p.currency === "AZN" ? "₼" : p.currency}
+                      {p.discountAmount != null && p.discountAmount > 0 && (
+                        <span className="block text-xs text-green-600">−{p.discountAmount} ₼ endirim</span>
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       <span

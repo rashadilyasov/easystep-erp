@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import PricingPlans from "@/components/PricingPlans";
 import PricingFAQ from "@/components/PricingFAQ";
 import { useSiteContent, getContent } from "@/hooks/useSiteContent";
+import { api } from "@/lib/api";
 
 const DEFAULT_COMPARISON = [
   "Alış-satış sifarişləri, qaimə, faktura və tranzit əməliyyatlarının idarəetməsi",
@@ -33,6 +35,10 @@ type PricingData = {
 
 export default function PricingContent() {
   const { content } = useSiteContent();
+  const [promoInput, setPromoInput] = useState("");
+  const [promoDiscount, setPromoDiscount] = useState<number | null>(null);
+  const [promoValidating, setPromoValidating] = useState(false);
+  const [promoError, setPromoError] = useState<string | null>(null);
   const pricing = getContent<PricingData>(content, "pricing", {});
   const comparisonFeatures = Array.isArray(pricing.comparisonFeatures) && pricing.comparisonFeatures.length > 0
     ? pricing.comparisonFeatures
@@ -42,13 +48,62 @@ export default function PricingContent() {
   const comparisonTitle = pricing.comparisonTitle ?? "Plan müqayisəsi";
   const footerNote = pricing.footerNote ?? "Bütün planlarda tam funksionallıq mövcuddur. Müddətə görə fərqlənir.";
 
+  const handleValidatePromo = async () => {
+    const code = promoInput.trim().toUpperCase();
+    if (!code) {
+      setPromoDiscount(null);
+      setPromoError(null);
+      return;
+    }
+    setPromoValidating(true);
+    setPromoError(null);
+    try {
+      const res = await api.validatePromo(code);
+      if (res.valid && res.discountPercent != null) {
+        setPromoDiscount(res.discountPercent);
+      } else {
+        setPromoDiscount(null);
+        setPromoError("Promo kod mövcud deyil və ya artıq istifadə olunub");
+      }
+    } catch {
+      setPromoDiscount(null);
+      setPromoError("Yoxlama xətası");
+    } finally {
+      setPromoValidating(false);
+    }
+  };
+
   return (
     <>
       <section className="pt-32 pb-16 px-4">
         <div className="max-w-6xl mx-auto">
           <h1 className="text-4xl font-bold text-slate-900 mb-4 text-center">{title}</h1>
-          <p className="text-xl text-slate-600 mb-12 text-center max-w-2xl mx-auto">{subtitle}</p>
-          <PricingPlans />
+          <p className="text-xl text-slate-600 mb-8 text-center max-w-2xl mx-auto">{subtitle}</p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-12">
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+              <input
+                type="text"
+                placeholder="Promo kod"
+                value={promoInput}
+                onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
+                onKeyDown={(e) => e.key === "Enter" && handleValidatePromo()}
+                className="px-4 py-2 border border-slate-300 rounded-lg text-sm uppercase placeholder:normal-case placeholder:text-slate-400 w-full sm:w-40"
+              />
+              <button
+                type="button"
+                onClick={handleValidatePromo}
+                disabled={promoValidating || !promoInput.trim()}
+                className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg font-medium hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {promoValidating ? "Yoxlanır..." : "Tətbiq et"}
+              </button>
+            </div>
+            {promoDiscount != null && (
+              <span className="text-green-600 font-medium text-sm">{promoDiscount}% endirim tətbiq olunacaq</span>
+            )}
+            {promoError && <span className="text-red-600 text-sm">{promoError}</span>}
+          </div>
+          <PricingPlans discountPercent={promoDiscount ?? undefined} />
         </div>
       </section>
 

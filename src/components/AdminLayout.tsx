@@ -11,6 +11,7 @@ const adminNav = [
   { href: "/admin/payments", label: "Ödənişlər" },
   { href: "/admin/content", label: "Kontent" },
   { href: "/admin/site-content", label: "Səhifə kontenti" },
+  { href: "/admin/affiliates", label: "Affiliatlar" },
   { href: "/admin/audit", label: "Audit log" },
   { href: "/admin/security", label: "Təhlükəsizlik (2FA)" },
 ];

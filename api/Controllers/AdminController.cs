@@ -228,6 +228,33 @@ public class AdminController : ControllerBase
         return Ok(new { message = "İstifadəçi silindi" });
     }
 
+    [HttpDelete("tenants/{tenantId:guid}")]
+    public async Task<IActionResult> DeleteTenant(Guid tenantId, CancellationToken ct)
+    {
+        var tenant = await _db.Tenants.FindAsync(new object[] { tenantId }, ct);
+        if (tenant == null) return NotFound(new { message = "Tenant tapılmadı" });
+        if (tenant.Name.Contains("System") || tenant.Name == "Affiliates")
+            return BadRequest(new { message = "Sistem tenantləri silinə bilməz" });
+
+        var userIds = await _db.Users.Where(u => u.TenantId == tenantId).Select(u => u.Id).ToListAsync(ct);
+        await _db.RefreshTokens.Where(r => userIds.Contains(r.UserId)).ExecuteDeleteAsync(ct);
+        await _db.EmailVerificationTokens.Where(t => userIds.Contains(t.UserId)).ExecuteDeleteAsync(ct);
+        await _db.PasswordResetTokens.Where(t => userIds.Contains(t.UserId)).ExecuteDeleteAsync(ct);
+        await _db.EmailOtpCodes.Where(o => userIds.Contains(o.UserId)).ExecuteDeleteAsync(ct);
+
+        await _db.AffiliateCommissions.Where(c => c.TenantId == tenantId).ExecuteDeleteAsync(ct);
+        await _db.Invoices.Where(i => i.TenantId == tenantId).ExecuteDeleteAsync(ct);
+        await _db.Payments.Where(p => p.TenantId == tenantId).ExecuteDeleteAsync(ct);
+        await _db.Subscriptions.Where(s => s.TenantId == tenantId).ExecuteDeleteAsync(ct);
+        await _db.Tickets.Where(t => t.TenantId == tenantId).ExecuteDeleteAsync(ct);
+        await _db.Devices.Where(d => d.TenantId == tenantId).ExecuteDeleteAsync(ct);
+        await _db.Users.Where(u => u.TenantId == tenantId).ExecuteDeleteAsync(ct);
+
+        _db.Tenants.Remove(tenant);
+        await _db.SaveChangesAsync(ct);
+        return Ok(new { message = "Tenant silindi" });
+    }
+
     [HttpPost("tenants/{id:guid}/extend")]
     public async Task<IActionResult> ExtendSubscription(Guid id, [FromBody] ExtendRequest? req, CancellationToken ct)
     {
@@ -475,8 +502,144 @@ public class AdminController : ControllerBase
         }));
     }
 
+    [HttpGet("affiliates")]
+    public async Task<IActionResult> GetAffiliates(CancellationToken ct = default)
+    {
+        var list = await _db.Affiliates
+            .Include(a => a.User)
+            .OrderByDescending(a => a.CreatedAt)
+            .Select(a => new
+            {
+                a.Id,
+                a.UserId,
+                email = a.User.Email,
+                a.BalanceTotal,
+                a.BalancePending,
+                createdAt = a.User.CreatedAt,
+            })
+            .ToListAsync(ct);
+        var promoCounts = await _db.PromoCodes
+            .Where(p => p.Status == PromoCodeStatus.Used)
+            .GroupBy(p => p.AffiliateId)
+            .Select(g => new { AffiliateId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.AffiliateId, x => x.Count, ct);
+        return Ok(list.Select(a => new
+        {
+            a.Id,
+            a.UserId,
+            a.email,
+            balanceTotal = a.BalanceTotal,
+            balancePending = a.BalancePending,
+            createdAt = a.createdAt.ToString("dd.MM.yyyy"),
+            activeCustomers = promoCounts.GetValueOrDefault(a.Id, 0),
+        }));
+    }
+
+    [HttpGet("affiliate-commissions")]
+    public async Task<IActionResult> GetAffiliateCommissions([FromQuery] string? status, [FromQuery] Guid? affiliateId, [FromQuery] int limit = 100, CancellationToken ct = default)
+    {
+        var query = _db.AffiliateCommissions
+            .Include(c => c.Affiliate).ThenInclude(a => a.User)
+            .Include(c => c.Tenant)
+            .AsQueryable();
+        if (affiliateId.HasValue)
+            query = query.Where(c => c.AffiliateId == affiliateId.Value);
+        if (!string.IsNullOrEmpty(status) && Enum.TryParse<AffiliateCommissionStatus>(status, true, out var st))
+            query = query.Where(c => c.Status == st);
+
+        var list = await query
+            .OrderByDescending(c => c.CreatedAt)
+            .Take(limit)
+            .Select(c => new
+            {
+                c.Id,
+                c.Amount,
+                c.PaymentAmount,
+                c.CommissionPercent,
+                c.Status,
+                c.CreatedAt,
+                c.ApprovedAt,
+                c.PaidAt,
+                affiliateEmail = c.Affiliate.User.Email,
+                tenantName = c.Tenant.Name,
+            })
+            .ToListAsync(ct);
+
+        return Ok(list.Select(c => new
+        {
+            c.Id,
+            c.Amount,
+            c.PaymentAmount,
+            c.CommissionPercent,
+            status = c.Status.ToString(),
+            date = c.CreatedAt.ToString("dd.MM.yyyy HH:mm"),
+            approvedAt = c.ApprovedAt?.ToString("dd.MM.yyyy"),
+            paidAt = c.PaidAt?.ToString("dd.MM.yyyy"),
+            c.affiliateEmail,
+            c.tenantName,
+        }));
+    }
+
+    [HttpPost("affiliate-commissions/{id:guid}/approve")]
+    public async Task<IActionResult> ApproveCommission(Guid id, CancellationToken ct)
+    {
+        var c = await _db.AffiliateCommissions.FindAsync(new object[] { id }, ct);
+        if (c == null) return NotFound(new { message = "Komissiya tapılmadı" });
+        if (c.Status != AffiliateCommissionStatus.Pending)
+            return BadRequest(new { message = "Yalnız Pending komissiyalar təsdiqlənə bilər" });
+
+        c.Status = AffiliateCommissionStatus.Approved;
+        c.ApprovedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync(ct);
+        return Ok(new { message = "Komissiya təsdiqləndi" });
+    }
+
+    [HttpPost("affiliate-commissions/{id:guid}/pay")]
+    public async Task<IActionResult> PayCommission(Guid id, CancellationToken ct)
+    {
+        var c = await _db.AffiliateCommissions
+            .Include(x => x.Affiliate)
+            .FirstOrDefaultAsync(x => x.Id == id, ct);
+        if (c == null) return NotFound(new { message = "Komissiya tapılmadı" });
+        if (c.Status != AffiliateCommissionStatus.Approved && c.Status != AffiliateCommissionStatus.Pending)
+            return BadRequest(new { message = "Komissiya ödənişə hazır deyil" });
+
+        c.Status = AffiliateCommissionStatus.Paid;
+        c.PaidAt = DateTime.UtcNow;
+        c.Affiliate.BalanceTotal += c.Amount;
+        c.Affiliate.BalancePending -= c.Amount;
+        c.Affiliate.UpdatedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync(ct);
+        return Ok(new { message = "Ödəniş tamamlandı" });
+    }
+
+    [HttpPost("affiliate-commissions/payout-batch")]
+    public async Task<IActionResult> PayoutBatch([FromBody] PayoutBatchRequest req, CancellationToken ct)
+    {
+        var ids = req.CommissionIds ?? Array.Empty<Guid>();
+        var paid = 0;
+        foreach (var id in ids)
+        {
+            var c = await _db.AffiliateCommissions
+                .Include(x => x.Affiliate)
+                .FirstOrDefaultAsync(x => x.Id == id, ct);
+            if (c != null && (c.Status == AffiliateCommissionStatus.Approved || c.Status == AffiliateCommissionStatus.Pending))
+            {
+                c.Status = AffiliateCommissionStatus.Paid;
+                c.PaidAt = DateTime.UtcNow;
+                c.Affiliate.BalanceTotal += c.Amount;
+                c.Affiliate.BalancePending -= c.Amount;
+                c.Affiliate.UpdatedAt = DateTime.UtcNow;
+                paid++;
+            }
+        }
+        await _db.SaveChangesAsync(ct);
+        return Ok(new { message = $"{paid} komissiya ödənildi", paid });
+    }
+
 }
 
+public record PayoutBatchRequest(Guid[]? CommissionIds);
 public record ExtendRequest(int Months = 0, Guid? PlanId = null);
 public record AdminUpdateUserRequest(string? Email, string? Phone);
 public record UpdateTicketStatusRequest(string Status);

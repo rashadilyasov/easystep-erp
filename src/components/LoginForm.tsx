@@ -23,7 +23,7 @@ function LoginFormInner() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (step === "2fa") {
-      const ok = await complete2FA(pendingToken, code2FA, redirect.startsWith("/admin") ? redirect : "/cabinet");
+      const ok = await complete2FA(pendingToken, code2FA, /^\/(admin|affiliate|cabinet)/.test(redirect) ? redirect : "/cabinet");
       if (ok) close();
       return;
     }

@@ -25,6 +25,9 @@ public class ApplicationDbContext : DbContext
     public DbSet<EmailVerificationToken> EmailVerificationTokens => Set<EmailVerificationToken>();
     public DbSet<EmailOtpCode> EmailOtpCodes => Set<EmailOtpCode>();
     public DbSet<SiteContent> SiteContents => Set<SiteContent>();
+    public DbSet<Affiliate> Affiliates => Set<Affiliate>();
+    public DbSet<PromoCode> PromoCodes => Set<PromoCode>();
+    public DbSet<AffiliateCommission> AffiliateCommissions => Set<AffiliateCommission>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -32,6 +35,7 @@ public class ApplicationDbContext : DbContext
         {
             e.HasKey(x => x.Id);
             e.HasIndex(x => x.Name);
+            e.HasOne(x => x.PromoCode).WithMany().HasForeignKey(x => x.PromoCodeId);
         });
 
         modelBuilder.Entity<User>(e =>
@@ -146,6 +150,33 @@ public class ApplicationDbContext : DbContext
         {
             e.HasKey(x => x.Id);
             e.HasIndex(x => x.Key).IsUnique();
+        });
+
+        modelBuilder.Entity<Affiliate>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => x.UserId).IsUnique();
+            e.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId);
+        });
+
+        modelBuilder.Entity<PromoCode>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => x.Code).IsUnique();
+            e.HasIndex(x => x.AffiliateId);
+            e.HasIndex(x => x.TenantId);
+            e.HasOne(x => x.Affiliate).WithMany().HasForeignKey(x => x.AffiliateId);
+            e.HasOne(x => x.Tenant).WithMany().HasForeignKey(x => x.TenantId);
+        });
+
+        modelBuilder.Entity<AffiliateCommission>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => x.AffiliateId);
+            e.HasIndex(x => x.PaymentId);
+            e.HasOne(x => x.Affiliate).WithMany().HasForeignKey(x => x.AffiliateId);
+            e.HasOne(x => x.Tenant).WithMany().HasForeignKey(x => x.TenantId);
+            e.HasOne(x => x.Payment).WithMany().HasForeignKey(x => x.PaymentId);
         });
     }
 }

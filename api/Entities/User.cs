@@ -5,7 +5,8 @@ public enum UserRole
     Visitor = 0,
     CustomerUser = 1,
     CustomerAdmin = 2,
-    SuperAdmin = 3
+    SuperAdmin = 3,
+    Affiliate = 4
 }
 
 public class User

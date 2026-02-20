@@ -50,6 +50,7 @@ export async function GET() {
   }
 
   // 3. Login (admin@easysteperp.com)
+  let accessToken: string | null = null;
   try {
     const loginRes = await fetch(`${base}/api/auth/login`, {
       method: "POST",
@@ -63,8 +64,29 @@ export async function GET() {
       ok: loginRes.ok,
       body: loginBody.length > 500 ? loginBody.slice(0, 500) + "..." : loginBody,
     };
+    if (loginRes.ok) {
+      try {
+        const parsed = JSON.parse(loginBody) as { accessToken?: string };
+        accessToken = parsed.accessToken ?? null;
+      } catch {
+        /* ignore */
+      }
+    }
   } catch (e) {
     results.login = { error: e instanceof Error ? e.message : String(e) };
+  }
+
+  // 4. Admin tenants + delete-route (auth tələb olunur)
+  if (accessToken) {
+    try {
+      const tenantsRes = await fetch(`${base}/api/admin/tenants`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+        signal: AbortSignal.timeout(10000),
+      });
+      results.adminTenants = { status: tenantsRes.status, ok: tenantsRes.ok };
+    } catch (e) {
+      results.adminTenants = { error: e instanceof Error ? e.message : String(e) };
+    }
   }
 
   return NextResponse.json(results, { status: 200 });

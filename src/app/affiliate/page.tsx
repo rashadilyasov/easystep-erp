@@ -44,7 +44,7 @@ export default function AffiliateDashboard() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-slate-900 mb-6">Affiliate Dashboard</h1>
+      <h1 className="text-2xl font-bold text-slate-900 mb-6">Satış ortağı paneli</h1>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
         <div className="p-6 bg-white rounded-2xl border border-slate-200 shadow-sm">

@@ -502,6 +502,30 @@ public class AdminController : ControllerBase
         }));
     }
 
+    [HttpGet("affiliate-stats")]
+    public async Task<IActionResult> GetAffiliateStats(CancellationToken ct = default)
+    {
+        var now = DateTime.UtcNow;
+        var monthStart = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+
+        var totalPartners = await _db.Affiliates.CountAsync(ct);
+        var totalPending = await _db.Affiliates.SumAsync(a => a.BalancePending, ct);
+        var totalPaid = await _db.Affiliates.SumAsync(a => a.BalanceTotal, ct);
+        var pendingCount = await _db.AffiliateCommissions.CountAsync(c => c.Status == AffiliateCommissionStatus.Pending, ct);
+        var thisMonthPaid = await _db.AffiliateCommissions
+            .Where(c => c.Status == AffiliateCommissionStatus.Paid && c.PaidAt >= monthStart)
+            .SumAsync(c => c.Amount, ct);
+
+        return Ok(new
+        {
+            totalPartners,
+            totalPending = Math.Round(totalPending, 2),
+            totalPaid = Math.Round(totalPaid, 2),
+            pendingCount,
+            thisMonthPaid = Math.Round(thisMonthPaid, 2),
+        });
+    }
+
     [HttpGet("affiliates")]
     public async Task<IActionResult> GetAffiliates(CancellationToken ct = default)
     {

@@ -364,12 +364,23 @@ export const api = {
           body: JSON.stringify(value),
         }),
     },
+    affiliateStats: () =>
+      apiFetch<{
+        totalPartners: number;
+        totalPending: number;
+        totalPaid: number;
+        pendingCount: number;
+        thisMonthPaid: number;
+      }>("/api/admin/affiliate-stats"),
     affiliates: () =>
       apiFetch<
         { id: string; userId: string; email: string; balanceTotal: number; balancePending: number; createdAt: string; activeCustomers: number }[]
       >("/api/admin/affiliates"),
     affiliateCommissions: (params?: { status?: string; affiliateId?: string }) => {
-      const search = new URLSearchParams(params as Record<string, string>).toString();
+      const sp = new URLSearchParams();
+      if (params?.status) sp.set("status", params.status);
+      if (params?.affiliateId) sp.set("affiliateId", params.affiliateId);
+      const search = sp.toString();
       return apiFetch<
         {
           id: string;

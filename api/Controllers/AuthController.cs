@@ -82,7 +82,7 @@ public class AuthController : ControllerBase
         {
             var (ok, token, errorCode) = await _auth.RegisterAffiliateAsync(req, ct);
             if (!ok)
-                return BadRequest(new { message = errorCode == "EmailExists" ? "Bu e-poçt artıq qeydiyyatdadır" : "Affiliate qeydiyyatı müvəqqəti olaraq mövcud deyil" });
+                return BadRequest(new { message = errorCode == "EmailExists" ? "Bu e-poçt artıq qeydiyyatdadır" : "Satış ortağı qeydiyyatı müvəqqəti olaraq mövcud deyil" });
 
             if (!string.IsNullOrEmpty(token))
             {
@@ -93,13 +93,13 @@ public class AuthController : ControllerBase
 <html><body style='font-family:Arial,sans-serif'>
 <h2>E-poçtunuzu təsdiqləyin</h2>
 <p>Salam,</p>
-<p>Easy Step ERP Affiliate hesabınızı aktivləşdirmək üçün aşağıdakı linkə keçid edin:</p>
+<p>Easy Step ERP satış ortağı hesabınızı aktivləşdirmək üçün aşağıdakı linkə keçid edin:</p>
 <p><a href='{verifyUrl}'>{verifyUrl}</a></p>
 <p>Link 24 saat ərzində keçərlidir.</p>
 <p>— Easy Step ERP<br/>hello@easysteperp.com</p>
 </body></html>";
                 var to = req.Email;
-                var subject = "Easy Step ERP - Affiliate e-poçt təsdiqi";
+                var subject = "Easy Step ERP - Satış ortağı e-poçt təsdiqi";
                 _ = Task.Run(async () =>
                 {
                     try { await _email.SendAsync(to, subject, html, CancellationToken.None); }
@@ -107,7 +107,7 @@ public class AuthController : ControllerBase
                 });
             }
 
-            return Ok(new { message = "Affiliate qeydiyyatı uğurla tamamlandı. E-poçtunuzu yoxlayın və təsdiq linkinə keçid edin." });
+            return Ok(new { message = "Satış ortağı qeydiyyatı uğurla tamamlandı. E-poçtunuzu yoxlayın və təsdiq linkinə keçid edin." });
         }
         catch (Exception)
         {

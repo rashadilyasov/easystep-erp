@@ -5,6 +5,16 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 
+const getInitialPromo = () => {
+  if (typeof window === "undefined") return "";
+  const s = window.sessionStorage.getItem("promoForRegister");
+  if (s) {
+    window.sessionStorage.removeItem("promoForRegister");
+    return s;
+  }
+  return "";
+};
+
 export default function RegisterForm() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -19,7 +29,7 @@ export default function RegisterForm() {
     taxId: "",
     country: "",
     city: "",
-    promoCode: "",
+    promoCode: getInitialPromo(),
     acceptTerms: false,
   });
 

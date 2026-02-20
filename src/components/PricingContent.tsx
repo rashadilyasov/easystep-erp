@@ -61,6 +61,7 @@ export default function PricingContent() {
       const res = await api.validatePromo(code);
       if (res.valid && res.discountPercent != null) {
         setPromoDiscount(res.discountPercent);
+        if (typeof window !== "undefined") window.sessionStorage.setItem("promoForRegister", code);
       } else {
         setPromoDiscount(null);
         setPromoError("Promo kod mövcud deyil və ya artıq istifadə olunub");

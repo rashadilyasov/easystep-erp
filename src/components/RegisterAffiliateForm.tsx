@@ -54,7 +54,7 @@ export default function RegisterAffiliateForm() {
       <div className="p-6 bg-green-50 border border-green-200 rounded-xl text-green-800 text-center">
         <p className="font-medium">Qeydiyyat uğurla tamamlandı.</p>
         <p className="text-sm mt-1">E-poçtunuzu yoxlayın və təsdiq linkinə keçid edin.</p>
-        <p className="text-sm mt-2">Təsdiq etdikdən sonra affiliate paneline daxil ola biləcəksiniz.</p>
+        <p className="text-sm mt-2">Təsdiq etdikdən sonra satış ortağı paneline daxil ola biləcəksiniz.</p>
       </div>
     );
   }

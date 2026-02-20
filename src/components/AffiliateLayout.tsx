@@ -6,7 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import Logo from "./Logo";
 
 const affiliateNav = [
-  { href: "/affiliate", label: "Dashboard" },
+  { href: "/affiliate", label: "Panel" },
   { href: "/affiliate/promo-codes", label: "Promo kodlar" },
   { href: "/affiliate/commissions", label: "Komissiyalar" },
 ];
@@ -20,7 +20,7 @@ export default function AffiliateLayout({ children }: { children: React.ReactNod
       <header className="bg-slate-800 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <Link href="/affiliate" className="text-xl font-bold">
-            Easy Step Affiliate
+            Easy Step Satış ortağı
           </Link>
           <div className="flex items-center gap-4">
             <Link href="/" className="text-slate-300 hover:text-white text-sm">

@@ -142,45 +142,61 @@ public class AdminController : ControllerBase
     [HttpGet("tenants/{tenantId:guid}")]
     public async Task<IActionResult> GetTenantDetail(Guid tenantId, CancellationToken ct)
     {
+        var tenant = await _db.Tenants.FindAsync(new object[] { tenantId }, ct);
+        if (tenant == null) return NotFound(new { message = "Tenant tapılmadı" });
+
+        List<object> usersList;
+        object? subscriptionData = null;
+        List<object> paymentsList;
+        List<object> ticketsList;
+
         try
         {
-            var tenant = await _db.Tenants.FindAsync(new object[] { tenantId }, ct);
-            if (tenant == null) return NotFound(new { message = "Tenant tapılmadı" });
-
-            var users = await _db.Users.Where(u => u.TenantId == tenantId)
+            usersList = (await _db.Users.Where(u => u.TenantId == tenantId)
                 .Select(u => new { u.Id, u.Email, u.EmailVerified, u.CreatedAt, u.LastLoginAt, u.Role })
-                .ToListAsync(ct);
+                .ToListAsync(ct))
+                .Select(u => (object)new { u.Id, u.Email, u.EmailVerified, u.CreatedAt, u.LastLoginAt, role = u.Role.ToString() }).ToList();
+        }
+        catch (Exception ex) { _logger.LogWarning(ex, "GetTenantDetail users failed"); usersList = new List<object>(); }
 
+        try
+        {
             var sub = await _db.Subscriptions.Include(s => s.Plan)
                 .Where(s => s.TenantId == tenantId && s.Status != SubscriptionStatus.Cancelled)
                 .OrderByDescending(s => s.EndDate).FirstOrDefaultAsync(ct);
+            if (sub?.Plan != null)
+                subscriptionData = new { name = sub.Plan.Name, status = sub.Status.ToString(), endDate = sub.EndDate.ToString("yyyy-MM-dd") };
+        }
+        catch (Exception ex) { _logger.LogWarning(ex, "GetTenantDetail subscription failed"); }
 
-            var payments = await _db.Payments.Where(p => p.TenantId == tenantId)
+        try
+        {
+            paymentsList = (await _db.Payments.Where(p => p.TenantId == tenantId)
                 .OrderByDescending(p => p.CreatedAt).Take(20)
                 .Select(p => new { p.Id, p.Amount, p.Currency, p.Status, p.Provider, p.CreatedAt })
-                .ToListAsync(ct);
+                .ToListAsync(ct))
+                .Select(p => (object)new { p.Id, p.Amount, p.Currency, status = p.Status.ToString(), p.Provider, date = p.CreatedAt.ToString("yyyy-MM-dd HH:mm") }).ToList();
+        }
+        catch (Exception ex) { _logger.LogWarning(ex, "GetTenantDetail payments failed"); paymentsList = new List<object>(); }
 
-            var tickets = await _db.Tickets.Where(t => t.TenantId == tenantId)
+        try
+        {
+            ticketsList = (await _db.Tickets.Where(t => t.TenantId == tenantId)
                 .OrderByDescending(t => t.CreatedAt).Take(10)
                 .Select(t => new { t.Id, t.Subject, t.Status, t.CreatedAt })
-                .ToListAsync(ct);
+                .ToListAsync(ct))
+                .Select(t => (object)new { t.Id, t.Subject, t.Status, date = t.CreatedAt.ToString("yyyy-MM-dd HH:mm") }).ToList();
+        }
+        catch (Exception ex) { _logger.LogWarning(ex, "GetTenantDetail tickets failed"); ticketsList = new List<object>(); }
 
-            return Ok(new
-            {
-                tenant = new { tenant.Id, tenant.Name, tenant.ContactPerson, tenant.TaxId, tenant.Country, tenant.City, tenant.CreatedAt },
-                users = users.Select(u => new { u.Id, u.Email, u.EmailVerified, u.CreatedAt, u.LastLoginAt, role = u.Role.ToString() }),
-                subscription = sub != null && sub.Plan != null ? new { name = sub.Plan.Name, status = sub.Status.ToString(), endDate = sub.EndDate.ToString("yyyy-MM-dd") } : (object?)null,
-                payments = payments.Select(p => new { p.Id, p.Amount, p.Currency, status = p.Status.ToString(), p.Provider, date = p.CreatedAt.ToString("yyyy-MM-dd HH:mm") }),
-                tickets = tickets.Select(t => new { t.Id, t.Subject, t.Status, date = t.CreatedAt.ToString("yyyy-MM-dd HH:mm") }),
-            });
-        }
-        catch (Exception ex)
+        return Ok(new
         {
-            _logger.LogError(ex, "GetTenantDetail failed for {TenantId}", tenantId);
-            if (_env.IsDevelopment())
-                return StatusCode(500, new { message = ex.Message, stack = ex.StackTrace });
-            return StatusCode(500, new { message = "Məlumat yüklənə bilmədi" });
-        }
+            tenant = new { tenant.Id, tenant.Name, tenant.ContactPerson, tenant.TaxId, tenant.Country, tenant.City, tenant.CreatedAt },
+            users = usersList,
+            subscription = subscriptionData,
+            payments = paymentsList,
+            tickets = ticketsList,
+        });
     }
 
     [HttpPatch("users/{userId:guid}")]

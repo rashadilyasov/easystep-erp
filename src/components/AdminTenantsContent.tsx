@@ -71,8 +71,9 @@ export default function AdminTenantsContent() {
     try {
       const d = await api.admin.tenantDetail(tenantId);
       setDetailModal(d);
-    } catch {
-      alert("Məlumat yüklənə bilmədi");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Məlumat yüklənə bilmədi";
+      alert(msg);
     } finally {
       setDetailLoading(false);
     }

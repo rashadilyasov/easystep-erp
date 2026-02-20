@@ -215,8 +215,20 @@ using (var scope = app.Services.CreateScope())
             await db.Database.MigrateAsync();
             try { await db.Database.ExecuteSqlRawAsync(@"CREATE TABLE IF NOT EXISTS ""RefreshTokens"" (""Id"" uuid NOT NULL, ""UserId"" uuid NOT NULL, ""TokenHash"" text NOT NULL, ""ExpiresAt"" timestamp with time zone NOT NULL, ""RevokedAt"" timestamp with time zone, ""CreatedAt"" timestamp with time zone NOT NULL, CONSTRAINT ""PK_RefreshTokens"" PRIMARY KEY (""Id""), CONSTRAINT ""FK_RefreshTokens_Users_UserId"" FOREIGN KEY (""UserId"") REFERENCES ""Users"" (""Id"") ON DELETE CASCADE)"); } catch { }
             try { await db.Database.ExecuteSqlRawAsync(@"CREATE TABLE IF NOT EXISTS ""PasswordResetTokens"" (""Id"" uuid NOT NULL, ""UserId"" uuid NOT NULL, ""TokenHash"" text NOT NULL, ""ExpiresAt"" timestamp with time zone NOT NULL, ""UsedAt"" timestamp with time zone, ""CreatedAt"" timestamp with time zone NOT NULL, CONSTRAINT ""PK_PasswordResetTokens"" PRIMARY KEY (""Id""), CONSTRAINT ""FK_PasswordResetTokens_Users_UserId"" FOREIGN KEY (""UserId"") REFERENCES ""Users"" (""Id"") ON DELETE CASCADE)"); } catch { }
-            try { await db.Database.ExecuteSqlRawAsync(@"ALTER TABLE ""Tenants"" ADD COLUMN IF NOT EXISTS ""PromoCodeId"" uuid NULL"); } catch { }
-            try { await db.Database.ExecuteSqlRawAsync(@"ALTER TABLE ""Payments"" ADD COLUMN IF NOT EXISTS ""DiscountAmount"" numeric(18,2) NOT NULL DEFAULT 0"); } catch { }
+            try
+            {
+                var hasPromo = await db.Database.SqlQueryRaw<int>(@"SELECT COUNT(*) FROM information_schema.columns WHERE table_schema='public' AND LOWER(table_name)='tenants' AND LOWER(column_name)='promocodeid'").FirstOrDefaultAsync();
+                if (hasPromo == 0)
+                    await db.Database.ExecuteSqlRawAsync(@"ALTER TABLE ""Tenants"" ADD COLUMN ""PromoCodeId"" uuid NULL");
+            }
+            catch { }
+            try
+            {
+                var hasDiscount = await db.Database.SqlQueryRaw<int>(@"SELECT COUNT(*) FROM information_schema.columns WHERE table_schema='public' AND LOWER(table_name)='payments' AND LOWER(column_name)='discountamount'").FirstOrDefaultAsync();
+                if (hasDiscount == 0)
+                    await db.Database.ExecuteSqlRawAsync(@"ALTER TABLE ""Payments"" ADD COLUMN ""DiscountAmount"" numeric(18,2) NOT NULL DEFAULT 0");
+            }
+            catch { }
             await DbInitializer.SeedAsync(db);
         }
         logger.LogInformation("DB migration and seed completed");

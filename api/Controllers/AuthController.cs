@@ -120,14 +120,20 @@ public class AuthController : ControllerBase
         {
             _logger.LogWarning(ex, "RegisterAffiliate DbUpdateException for {Email}", req.Email);
             var inner = ex.InnerException?.Message ?? ex.Message;
-            if (inner.Contains("Email", StringComparison.OrdinalIgnoreCase) || inner.Contains("IX_Users_Email", StringComparison.OrdinalIgnoreCase) || inner.Contains("unique", StringComparison.OrdinalIgnoreCase))
+            // PostgreSQL unique violation 23505, or message contains Email/unique
+            if (inner.Contains("23505") || inner.Contains("Email", StringComparison.OrdinalIgnoreCase)
+                || inner.Contains("IX_Users_Email", StringComparison.OrdinalIgnoreCase)
+                || inner.Contains("unique", StringComparison.OrdinalIgnoreCase)
+                || inner.Contains("duplicate key", StringComparison.OrdinalIgnoreCase))
                 return BadRequest(new { message = "Bu e-poçt artıq qeydiyyatdadır" });
             return StatusCode(500, new { message = "Qeydiyyat zamanı xəta baş verdi. Zəhmət olmasa yenidən cəhd edin." });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "RegisterAffiliate failed for {Email}", req.Email);
-            return StatusCode(500, new { message = "Qeydiyyat zamanı xəta baş verdi. Zəhmət olmasa yenidən cəhd edin." });
+            var msg = "Qeydiyyat zamanı xəta baş verdi. Zəhmət olmasa yenidən cəhd edin.";
+            var detail = ex.InnerException?.Message ?? ex.Message;
+            return StatusCode(500, new { message = msg, debug = detail });
         }
     }
 

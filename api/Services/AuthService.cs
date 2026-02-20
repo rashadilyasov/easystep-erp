@@ -184,6 +184,7 @@ public class AuthService
             return (false, null, "InvalidEmail");
         if ((req.Password ?? "").Length < 12)
             return (false, null, "PasswordTooShort");
+        var emailTrim = (req.Email ?? "").Trim();
         if (await _db.Users.AnyAsync(u => u.Email.ToLower() == emailLower, ct))
             return (false, null, "EmailExists");
 
@@ -196,8 +197,8 @@ public class AuthService
         {
             Id = Guid.NewGuid(),
             TenantId = affTenantId,
-            Email = req.Email.Trim(),
-            PasswordHash = HashPassword(req.Password),
+            Email = emailTrim,
+            PasswordHash = HashPassword(req.Password ?? ""),
             Role = UserRole.Affiliate,
             EmailVerified = false,
             TwoFactorEnabled = false,
@@ -215,7 +216,6 @@ public class AuthService
             UpdatedAt = DateTime.UtcNow,
         };
         _db.Affiliates.Add(affiliate);
-        await _db.SaveChangesAsync(ct);
 
         var token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(24)).Replace("+", "-").Replace("/", "_").TrimEnd('=');
         var expiryHours = int.Parse(_config["Auth:EmailVerificationExpiryHours"] ?? "24");
@@ -227,8 +227,8 @@ public class AuthService
             ExpiresAt = DateTime.UtcNow.AddHours(expiryHours),
             CreatedAt = DateTime.UtcNow,
         });
-        await _db.SaveChangesAsync(ct);
 
+        await _db.SaveChangesAsync(ct);
         return (true, token, null);
     }
 

@@ -62,7 +62,7 @@ export default function RegisterAffiliateForm() {
   return (
     <form className="space-y-4" onSubmit={handleSubmit}>
       {error && (
-        <div className="p-3 bg-red-50 text-red-700 rounded-xl text-sm">{error}</div>
+        <div className="p-3 bg-red-50 text-red-700 rounded-xl text-sm break-words whitespace-pre-wrap">{error}</div>
       )}
       <div>
         <label className="block text-sm font-medium text-slate-700 mb-2">Ad Soyad</label>

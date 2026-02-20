@@ -78,10 +78,11 @@ export async function apiFetch<T>(path: string, options: FetchOptions = {}): Pro
     if (!res.ok) {
       let msg = res.statusText;
       try {
-        const body = JSON.parse(text) as { message?: string; detail?: string; error?: string; title?: string; inner?: string };
+        const body = JSON.parse(text) as { message?: string; detail?: string; error?: string; title?: string; inner?: string; debug?: string };
         msg = body.message || body.detail || body.error || body.title || msg;
         if (body.error) msg += ` [${body.error}]`;
         if (body.inner) msg += ` (${body.inner})`;
+        if (body.debug) msg += ` — ${body.debug}`;
       } catch {
         const cleaned = text?.replace(/<[^>]*>/g, "").trim().slice(0, 200);
         if (cleaned && !cleaned.startsWith("<!")) msg = cleaned;

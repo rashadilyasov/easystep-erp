@@ -219,6 +219,19 @@ using (var scope = app.Services.CreateScope())
             try { await db.Database.ExecuteSqlRawAsync(@"DO $$ BEGIN ALTER TABLE tenants ADD COLUMN ""PromoCodeId"" uuid NULL; EXCEPTION WHEN duplicate_column OR undefined_table THEN NULL; END $$"); } catch { }
             try { await db.Database.ExecuteSqlRawAsync(@"DO $$ BEGIN ALTER TABLE ""Payments"" ADD COLUMN ""DiscountAmount"" numeric(18,2) NOT NULL DEFAULT 0; EXCEPTION WHEN duplicate_column THEN NULL; END $$"); } catch { }
             try { await db.Database.ExecuteSqlRawAsync(@"DO $$ BEGIN ALTER TABLE payments ADD COLUMN ""DiscountAmount"" numeric(18,2) NOT NULL DEFAULT 0; EXCEPTION WHEN duplicate_column OR undefined_table THEN NULL; END $$"); } catch { }
+            try
+            {
+                await db.Database.ExecuteSqlRawAsync(@"CREATE TABLE IF NOT EXISTS ""EmailVerificationTokens"" (""Id"" uuid NOT NULL, ""UserId"" uuid NOT NULL, ""TokenHash"" text NOT NULL, ""ExpiresAt"" timestamp with time zone NOT NULL, ""UsedAt"" timestamp with time zone, ""CreatedAt"" timestamp with time zone NOT NULL, CONSTRAINT ""PK_EmailVerificationTokens"" PRIMARY KEY (""Id""), CONSTRAINT ""FK_EmailVerificationTokens_Users_UserId"" FOREIGN KEY (""UserId"") REFERENCES ""Users"" (""Id"") ON DELETE CASCADE)");
+                await db.Database.ExecuteSqlRawAsync(@"CREATE INDEX IF NOT EXISTS ""IX_EmailVerificationTokens_UserId"" ON ""EmailVerificationTokens"" (""UserId"")");
+                await db.Database.ExecuteSqlRawAsync(@"CREATE INDEX IF NOT EXISTS ""IX_EmailVerificationTokens_ExpiresAt"" ON ""EmailVerificationTokens"" (""ExpiresAt"")");
+            }
+            catch { }
+            try
+            {
+                await db.Database.ExecuteSqlRawAsync(@"CREATE TABLE IF NOT EXISTS ""Affiliates"" (""Id"" uuid NOT NULL, ""UserId"" uuid NOT NULL, ""BalanceTotal"" numeric(18,2) NOT NULL, ""BalancePending"" numeric(18,2) NOT NULL, ""CreatedAt"" timestamp with time zone NOT NULL, ""UpdatedAt"" timestamp with time zone NOT NULL, CONSTRAINT ""PK_Affiliates"" PRIMARY KEY (""Id""), CONSTRAINT ""FK_Affiliates_Users_UserId"" FOREIGN KEY (""UserId"") REFERENCES ""Users"" (""Id"") ON DELETE CASCADE)");
+                await db.Database.ExecuteSqlRawAsync(@"CREATE UNIQUE INDEX IF NOT EXISTS ""IX_Affiliates_UserId"" ON ""Affiliates"" (""UserId"")");
+            }
+            catch { }
             await DbInitializer.SeedAsync(db);
         }
         logger.LogInformation("DB migration and seed completed");

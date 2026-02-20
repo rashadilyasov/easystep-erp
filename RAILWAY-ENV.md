@@ -31,6 +31,15 @@ Affiliate__DefaultCommissionPercent=5
 
 ---
 
+## Satış partnyoru qeydiyyat xətası
+
+Əgər "Qeydiyyat zamanı xəta baş verdi" mesajı alırsınızsa:
+1. **Railway Logs:** Deployments → son deployment → View Logs. `RegisterAffiliate failed for` axtarın — ətraflı xəta orada görünəcək
+2. **E-poçt artıq mövcuddur:** Eyni e-poçtla əvvəlcədən qeydiyyat olunubsa, "Bu e-poçt artıq qeydiyyatdadır" mesajı gəlir. Başqa e-poçt sınayın
+3. **Debug rejimi:** Railway Variables-a `ASPNETCORE_ENVIRONMENT=Development` əlavə edərək deploy etsəniz, formda ətraflı xəta mesajı görünəcək (test üçün)
+
+---
+
 ## 404/Profil sil işləməzsə — yoxlama
 
 1. **Railway Build:** Deployments → son deploy **Success** (yaşıl) olmalıdır. **Failed** varsa → logları açıb səbəbə baxın.

@@ -230,27 +230,28 @@ public class AdminController : ControllerBase
 
     private async Task<IActionResult> DeleteTenantCore(Guid tenantId, CancellationToken ct)
     {
-        var tenant = await _db.Tenants.FindAsync(new object[] { tenantId }, ct);
-        if (tenant == null) return NotFound(new { message = "Tenant tapılmadı" });
-        if (tenant.Name.Contains("System") || tenant.Name == "Affiliates")
+        var exists = await _db.Tenants.AnyAsync(t => t.Id == tenantId, ct);
+        if (!exists) return NotFound(new { message = "Tenant tapılmadı" });
+        var tenant = await _db.Tenants.Where(t => t.Id == tenantId).Select(t => new { t.Name }).FirstAsync(ct);
+        if (tenant?.Name?.Contains("System") == true || tenant?.Name == "Affiliates")
             return BadRequest(new { message = "Sistem tenantləri silinə bilməz" });
 
         var userIds = await _db.Users.Where(u => u.TenantId == tenantId).Select(u => u.Id).ToListAsync(ct);
-        await _db.RefreshTokens.Where(r => userIds.Contains(r.UserId)).ExecuteDeleteAsync(ct);
-        await _db.EmailVerificationTokens.Where(t => userIds.Contains(t.UserId)).ExecuteDeleteAsync(ct);
-        await _db.PasswordResetTokens.Where(t => userIds.Contains(t.UserId)).ExecuteDeleteAsync(ct);
-        await _db.EmailOtpCodes.Where(o => userIds.Contains(o.UserId)).ExecuteDeleteAsync(ct);
+        async Task TryDelete(Func<Task> act) { try { await act(); } catch { /* cədvəl yoxdursa keç */ } }
 
-        await _db.AffiliateCommissions.Where(c => c.TenantId == tenantId).ExecuteDeleteAsync(ct);
-        await _db.Invoices.Where(i => i.TenantId == tenantId).ExecuteDeleteAsync(ct);
-        await _db.Payments.Where(p => p.TenantId == tenantId).ExecuteDeleteAsync(ct);
-        await _db.Subscriptions.Where(s => s.TenantId == tenantId).ExecuteDeleteAsync(ct);
-        await _db.Tickets.Where(t => t.TenantId == tenantId).ExecuteDeleteAsync(ct);
-        await _db.Devices.Where(d => d.TenantId == tenantId).ExecuteDeleteAsync(ct);
-        await _db.Users.Where(u => u.TenantId == tenantId).ExecuteDeleteAsync(ct);
+        await TryDelete(() => _db.RefreshTokens.Where(r => userIds.Contains(r.UserId)).ExecuteDeleteAsync(ct));
+        await TryDelete(() => _db.EmailVerificationTokens.Where(t => userIds.Contains(t.UserId)).ExecuteDeleteAsync(ct));
+        await TryDelete(() => _db.PasswordResetTokens.Where(t => userIds.Contains(t.UserId)).ExecuteDeleteAsync(ct));
+        await TryDelete(() => _db.EmailOtpCodes.Where(o => userIds.Contains(o.UserId)).ExecuteDeleteAsync(ct));
+        await TryDelete(() => _db.AffiliateCommissions.Where(c => c.TenantId == tenantId).ExecuteDeleteAsync(ct));
+        await TryDelete(() => _db.Invoices.Where(i => i.TenantId == tenantId).ExecuteDeleteAsync(ct));
+        await TryDelete(() => _db.Payments.Where(p => p.TenantId == tenantId).ExecuteDeleteAsync(ct));
+        await TryDelete(() => _db.Subscriptions.Where(s => s.TenantId == tenantId).ExecuteDeleteAsync(ct));
+        await TryDelete(() => _db.Tickets.Where(t => t.TenantId == tenantId).ExecuteDeleteAsync(ct));
+        await TryDelete(() => _db.Devices.Where(d => d.TenantId == tenantId).ExecuteDeleteAsync(ct));
+        await TryDelete(() => _db.Users.Where(u => u.TenantId == tenantId).ExecuteDeleteAsync(ct));
+        await TryDelete(() => _db.Tenants.Where(t => t.Id == tenantId).ExecuteDeleteAsync(ct));
 
-        _db.Tenants.Remove(tenant);
-        await _db.SaveChangesAsync(ct);
         return Ok(new { message = "Tenant silindi" });
     }
 

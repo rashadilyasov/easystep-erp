@@ -314,11 +314,16 @@ export const api = {
       >("/api/admin/tenants"),
     payments: () => apiFetch<{ id: string; date: string; tenantName: string; amount: number; currency: string; status: string; provider: string; transactionId: string | null }[]>("/api/admin/payments"),
     deleteTenant: (tenantId: string) =>
-      apiFetch<{ message: string }>(`/api/admin/tenants/${tenantId}`, { method: "DELETE" }),
+      apiFetch<{ message: string }>(`/api/admin/tenants/${tenantId}/delete`, {
+        method: "POST",
+      }),
     extendSubscription: (tenantId: string, months?: number, planId?: string) =>
       apiFetch<{ message: string }>(`/api/admin/tenants/${tenantId}/extend`, {
         method: "POST",
-        body: JSON.stringify({ months: months ?? 0, planId: planId ?? null }),
+        body: JSON.stringify({
+          months: months ?? 0,
+          planId: planId || undefined,
+        }),
       }),
     verifyUserEmail: (userId: string) =>
       apiFetch<{ message: string }>(`/api/admin/users/${userId}/verify-email`, { method: "POST" }),

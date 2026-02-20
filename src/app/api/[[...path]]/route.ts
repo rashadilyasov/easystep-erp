@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 // Railway default — api.easysteperp.com DNS problemləri ola bilər
 const RAILWAY_FALLBACK = "https://2qz1te51.up.railway.app";
@@ -63,18 +64,23 @@ async function proxy(
     if (k.toLowerCase() === "host" || k.toLowerCase() === "connection") return;
     headers.set(k, v);
   });
+  if (method !== "GET" && method !== "HEAD" && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
 
   let body: string | undefined;
   if (method !== "GET" && method !== "HEAD") {
     body = await request.text();
   }
+  const hasBody = body != null && body.length > 0;
 
   try {
     const res = await fetch(url, {
       method,
       headers,
-      body: body ?? undefined,
+      body: hasBody ? body : undefined,
       signal: AbortSignal.timeout(25000),
+      cache: "no-store",
     });
     const data = await res.text();
     return new NextResponse(data, {

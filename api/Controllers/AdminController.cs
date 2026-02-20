@@ -228,6 +228,7 @@ public class AdminController : ControllerBase
         return Ok(new { message = "İstifadəçi silindi" });
     }
 
+    [HttpPost("tenants/{tenantId:guid}/delete")]
     [HttpDelete("tenants/{tenantId:guid}")]
     public async Task<IActionResult> DeleteTenant(Guid tenantId, CancellationToken ct)
     {

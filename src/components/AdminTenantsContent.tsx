@@ -117,7 +117,8 @@ export default function AdminTenantsContent() {
       refreshTenants();
       alert("Tenant silindi");
     } catch (e) {
-      alert(e instanceof Error ? e.message : "Xəta");
+      const msg = e instanceof Error ? e.message : "Xəta";
+      alert(msg.includes("405") ? "Server DELETE metodunu dəstəkləmir (405). Zəhmət olmasa API deploy yoxlanılsın." : msg);
     } finally {
       setDeletingTenant(false);
     }
@@ -126,12 +127,13 @@ export default function AdminTenantsContent() {
   const handleExtend = async (tenantId: string, months?: number, planId?: string) => {
     setExtending(tenantId);
     try {
-      await api.admin.extendSubscription(tenantId, months ?? extendMonths, planId ?? (extendPlanId || undefined));
+      await api.admin.extendSubscription(tenantId, months ?? extendMonths, planId || extendPlanId || undefined);
       const list = await api.admin.tenants();
       setTenants(list);
       setExtendModal(null);
-    } catch {
-      alert("Xəta baş verdi");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Xəta baş verdi";
+      alert(msg.includes("405") ? "Method Not Allowed (405) – API proxy və ya backend yoxlanılmalıdır." : msg);
     } finally {
       setExtending(null);
     }

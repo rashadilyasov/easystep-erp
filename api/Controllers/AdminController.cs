@@ -51,7 +51,10 @@ public class AdminController : ControllerBase
     [HttpGet("tenants")]
     public async Task<IActionResult> GetTenants(CancellationToken ct)
     {
+        var systemTenantId = Guid.Parse("b0000000-0000-0000-0000-000000000001");
+        var affiliatesTenantId = Guid.Parse("b0000000-0000-0000-0000-000000000002");
         var list = await _db.Tenants
+            .Where(t => t.Id != systemTenantId && t.Id != affiliatesTenantId)
             .Select(t => new { t.Id, t.Name, t.ContactPerson, t.CreatedAt })
             .ToListAsync(ct);
 

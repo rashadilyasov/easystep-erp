@@ -134,7 +134,7 @@ export default function AdminAffiliatesPage() {
   };
 
   const copyLink = () => {
-    const url = typeof window !== "undefined" ? `${window.location.origin}/register-affiliate` : "";
+    const url = typeof window !== "undefined" ? `${window.location.origin}/satis-partnyorlari` : "";
     navigator.clipboard.writeText(url);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -154,13 +154,13 @@ export default function AdminAffiliatesPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-slate-900 mb-6">Satış ortakları</h1>
+      <h1 className="text-2xl font-bold text-slate-900 mb-6">Satış Partnyorları</h1>
 
       {/* Statistik kartlar */}
       {!loading && stats && (
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-8">
           <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-            <p className="text-sm text-slate-500 mb-1">Satış ortağı sayı</p>
+            <p className="text-sm text-slate-500 mb-1">Satış partnyoru sayı</p>
             <p className="text-2xl font-bold text-slate-900">{stats.totalPartners}</p>
           </div>
           <div className="bg-amber-50 rounded-xl border border-amber-200 p-4 shadow-sm">
@@ -190,10 +190,10 @@ export default function AdminAffiliatesPage() {
       )}
 
       <div className="grid gap-6 lg:grid-cols-2 mb-8">
-        {/* Satış ortağı siyahısı */}
+        {/* Satış partnyoru siyahısı */}
         <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
           <div className="px-6 py-4 border-b border-slate-100 flex flex-wrap items-center gap-3">
-            <h2 className="font-semibold text-slate-900">Satış ortağı siyahısı</h2>
+            <h2 className="font-semibold text-slate-900">Satış partnyoru siyahısı</h2>
             <input
               type="search"
               placeholder="E-poçtla axtar..."
@@ -206,12 +206,12 @@ export default function AdminAffiliatesPage() {
             <div className="h-40 animate-pulse bg-slate-50" />
           ) : filteredList.length === 0 ? (
             <div className="p-12 text-center text-slate-500">
-              <p className="font-medium">Hələ satış ortağı yoxdur</p>
+              <p className="font-medium">Hələ satış partnyoru yoxdur</p>
               <p className="text-sm mt-2">
-                <a href="/register-affiliate" target="_blank" rel="noopener noreferrer" className="text-primary-600 hover:underline">
+                <a href="/satis-partnyorlari" target="_blank" rel="noopener noreferrer" className="text-primary-600 hover:underline">
                   Qeydiyyat linki
                 </a>{" "}
-                vasitəsilə yeni ortaklar qoşula bilər.
+                vasitəsilə yeni partnyorlar qoşula bilər.
               </p>
             </div>
           ) : (
@@ -294,7 +294,7 @@ export default function AdminAffiliatesPage() {
           ) : commissions.length === 0 ? (
             <div className="p-12 text-center text-slate-500">
               <p className="font-medium">Komissiya yoxdur</p>
-              <p className="text-sm mt-2">Satış ortakları müştəri cəlb etdikcə komissiyalar burada görünəcək.</p>
+              <p className="text-sm mt-2">Satış partnyorları müştəri cəlb etdikcə komissiyalar burada görünəcək.</p>
             </div>
           ) : (
             <div className="overflow-x-auto max-h-80 overflow-y-auto">
@@ -312,7 +312,7 @@ export default function AdminAffiliatesPage() {
                       )}
                     </th>
                     <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">Tarix</th>
-                    <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">Satış ortağı</th>
+                    <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">Satış partnyoru</th>
                     <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">Müştəri</th>
                     <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">Məbləğ</th>
                     <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">Əməliyyat</th>

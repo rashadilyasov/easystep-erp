@@ -59,8 +59,8 @@ export default function PublicHeader({ active }: { active?: NavItem }) {
       <Link href="/security" className={`py-2 lg:py-0 ${linkClass("security")}`} onClick={() => setMobileOpen(false)}>
         Təhlükəsizlik
       </Link>
-      <Link href="/register-affiliate" className={`py-2 lg:py-0 ${linkClass(null)}`} onClick={() => setMobileOpen(false)}>
-        Satış ortağı
+      <Link href="/satis-partnyorlari" className={`py-2 lg:py-0 ${linkClass(null)}`} onClick={() => setMobileOpen(false)}>
+        Satış Partnyorları
       </Link>
       {userRole ? (
         <>
@@ -71,7 +71,7 @@ export default function PublicHeader({ active }: { active?: NavItem }) {
           )}
           {userRole === "Affiliate" && (
             <Link href="/affiliate" className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-medium" onClick={() => setMobileOpen(false)}>
-              Satış ortağı paneli
+              Satış partnyoru paneli
             </Link>
           )}
           {(userRole === "CustomerAdmin" || userRole === "CustomerUser" || (userRole && !["SuperAdmin", "Affiliate"].includes(userRole))) && (

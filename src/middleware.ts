@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export const config = {
-  matcher: ["/login", "/register"],
+  matcher: ["/login", "/register", "/register-affiliate"],
 };
 
 export function middleware(request: NextRequest) {
@@ -23,6 +23,14 @@ export function middleware(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = "/";
     url.searchParams.set("auth", "register");
+    return NextResponse.redirect(url);
+  }
+
+  // /register-affiliate -> redirect to home with affiliate modal
+  if (pathname === "/register-affiliate") {
+    const url = request.nextUrl.clone();
+    url.pathname = "/";
+    url.searchParams.set("auth", "affiliate");
     return NextResponse.redirect(url);
   }
 

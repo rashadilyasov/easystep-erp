@@ -53,14 +53,15 @@ Web: http://localhost:3000
 | Customer Admin | Kabinet: billing, plan, istifadəçilər |
 | Customer User | Academy, support, yükləmə |
 | Super Admin | Admin panel |
-| Satış ortağı | Promo kodlar, komissiyalar, satış ortağı paneli |
+| Satış partnyoru | Promo kodlar, komissiyalar, satış partnyoru paneli |
 
-## Satış ortağı modulu
+## Satış partnyoru modulu
 
-- **Qeydiyyat:** `/register-affiliate` — satış ortağı kimi qeydiyyat
-- **Promo kodlar:** Hər satış ortağı unikal kodlar yaradır; hər kod yalnız 1 müştəri tərəfindən istifadə olunur
+- **İnformasiya səhifəsi:** `/satis-partnyorlari` — şərtlər, tələblər və qeydiyyat/daxil ol
+- **Qeydiyyat:** `/register-affiliate` → popup (satış partnyoru kimi qeydiyyat)
+- **Promo kodlar:** Hər satış partnyoru unikal kodlar yaradır; hər kod yalnız 1 müştəri tərəfindən istifadə olunur
 - **Müştəri:** `/register`-da promo kod daxil edir; qeydiyyatdan sonra ödənişlərdə endirim tətbiq olunur
-- **Komissiya:** Ödəniş uğurlu olanda satış ortağına PENDING komissiya yazılır; admin approve/payout edir
+- **Komissiya:** Ödəniş uğurlu olanda satış partnyoruna PENDING komissiya yazılır; admin approve/payout edir
 - **Təkrarlanan:** Müştəri hər ay ödəyəndə yenidən komissiya hesablanır
 - **Qiymətlər:** Promo kod daxil edərək endirimi önizləmək mümkündür
 

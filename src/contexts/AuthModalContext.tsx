@@ -8,13 +8,15 @@ import {
   type ReactNode,
 } from "react";
 
-type AuthModalMode = "login" | "register" | null;
+type AuthModalMode = "login" | "register" | "affiliate" | null;
 
 type AuthModalContextValue = {
   isOpen: boolean;
   mode: AuthModalMode;
-  openLogin: () => void;
+  loginRedirect: string | null;
+  openLogin: (redirect?: string) => void;
   openRegister: () => void;
+  openRegisterAffiliate: () => void;
   close: () => void;
 };
 
@@ -22,18 +24,34 @@ const AuthModalContext = createContext<AuthModalContextValue | null>(null);
 
 export function AuthModalProvider({ children }: { children: ReactNode }) {
   const [mode, setMode] = useState<AuthModalMode>(null);
+  const [loginRedirect, setLoginRedirect] = useState<string | null>(null);
 
-  const openLogin = useCallback(() => setMode("login"), []);
-  const openRegister = useCallback(() => setMode("register"), []);
-  const close = useCallback(() => setMode(null), []);
+  const openLogin = useCallback((redirect?: string) => {
+    if (redirect) setLoginRedirect(redirect);
+    setMode("login");
+  }, []);
+  const openRegister = useCallback(() => {
+    setLoginRedirect(null);
+    setMode("register");
+  }, []);
+  const openRegisterAffiliate = useCallback(() => {
+    setLoginRedirect(null);
+    setMode("affiliate");
+  }, []);
+  const close = useCallback(() => {
+    setMode(null);
+    setLoginRedirect(null);
+  }, []);
 
   return (
     <AuthModalContext.Provider
       value={{
         isOpen: mode !== null,
         mode,
+        loginRedirect,
         openLogin,
         openRegister,
+        openRegisterAffiliate,
         close,
       }}
     >
@@ -48,8 +66,10 @@ export function useAuthModal() {
     return {
       isOpen: false,
       mode: null as AuthModalMode,
-      openLogin: () => {},
+      loginRedirect: null as string | null,
+      openLogin: (_redirect?: string) => {},
       openRegister: () => {},
+      openRegisterAffiliate: () => {},
       close: () => {},
     };
   }

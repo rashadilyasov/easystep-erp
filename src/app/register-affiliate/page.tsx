@@ -4,8 +4,8 @@ import RegisterAffiliateForm from "@/components/RegisterAffiliateForm";
 import PublicHeader from "@/components/PublicHeader";
 
 export const metadata = {
-  title: "Satış ortağı qeydiyyatı | Easy Step ERP",
-  description: "Easy Step ERP satış ortağı proqramına qoşulun.",
+  title: "Satış partnyoru qeydiyyatı | Easy Step ERP",
+  description: "Easy Step ERP satış partnyoru proqramına qoşulun.",
 };
 
 export default function RegisterAffiliatePage() {
@@ -18,7 +18,7 @@ export default function RegisterAffiliatePage() {
             <Logo href="/" />
           </div>
           <div className="bg-white rounded-2xl shadow-xl border border-slate-200 p-8">
-            <h1 className="text-2xl font-bold text-slate-900 mb-2">Satış ortağı qeydiyyatı</h1>
+            <h1 className="text-2xl font-bold text-slate-900 mb-2">Satış partnyoru qeydiyyatı</h1>
             <p className="text-slate-600 text-sm mb-6">Promo kodlar yaradın və müştəri cəlb edərək komissiya qazanın.</p>
             <RegisterAffiliateForm />
           </div>

@@ -11,7 +11,7 @@ const adminNav = [
   { href: "/admin/payments", label: "Ödənişlər" },
   { href: "/admin/content", label: "Kontent" },
   { href: "/admin/site-content", label: "Səhifə kontenti" },
-  { href: "/admin/affiliates", label: "Satış ortakları" },
+  { href: "/admin/affiliates", label: "Satış Partnyorları" },
   { href: "/admin/audit", label: "Audit log" },
   { href: "/admin/security", label: "Təhlükəsizlik (2FA)" },
 ];

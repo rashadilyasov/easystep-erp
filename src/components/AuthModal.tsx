@@ -5,11 +5,12 @@ import { createPortal } from "react-dom";
 import { useAuthModal } from "@/contexts/AuthModalContext";
 import LoginForm from "./LoginForm";
 import RegisterForm from "./RegisterForm";
+import RegisterAffiliateForm from "./RegisterAffiliateForm";
 import Logo from "./Logo";
 
 export default function AuthModal() {
   const [mounted, setMounted] = useState(false);
-  const { isOpen, mode, close, openLogin, openRegister } = useAuthModal();
+  const { isOpen, mode, close, openLogin, openRegister, openRegisterAffiliate } = useAuthModal();
 
   useEffect(() => setMounted(true), []);
 
@@ -40,7 +41,13 @@ export default function AuthModal() {
 
   if (!mounted || !isOpen || !mode) return null;
 
-  const title = mode === "login" ? "Daxil ol" : "Qeydiyyat";
+  const title =
+    mode === "login"
+      ? "Daxil ol"
+      : mode === "affiliate"
+        ? "Satış partnyoru qeydiyyatı"
+        : "Qeydiyyat";
+  const description = mode === "affiliate" ? "Promo kodlar yaradın və müştəri cəlb edərək komissiya qazanın." : null;
 
   const content = (
     <div
@@ -73,12 +80,19 @@ export default function AuthModal() {
           <div className="flex justify-center mb-6">
             <Logo href="/" />
           </div>
-          <h2 id="auth-modal-title" className="text-2xl font-bold text-slate-900 mb-6">
+          <h2 id="auth-modal-title" className={`text-2xl font-bold text-slate-900 ${description ? "mb-2" : "mb-6"}`}>
             {title}
           </h2>
+          {description && <p className="text-slate-600 text-sm mb-6">{description}</p>}
 
           <Suspense fallback={<div className="h-48 bg-slate-100 rounded-xl animate-pulse" />}>
-            {mode === "login" ? <LoginForm /> : <RegisterForm />}
+            {mode === "login" ? (
+              <LoginForm />
+            ) : mode === "affiliate" ? (
+              <RegisterAffiliateForm />
+            ) : (
+              <RegisterForm />
+            )}
           </Suspense>
 
           <p className="mt-6 text-center text-slate-600">
@@ -98,7 +112,7 @@ export default function AuthModal() {
                 Artıq hesabınız var?{" "}
                 <button
                   type="button"
-                  onClick={openLogin}
+                  onClick={() => (mode === "affiliate" ? openLogin("/affiliate") : openLogin())}
                   className="text-primary-600 font-medium hover:underline"
                 >
                   Daxil ol

@@ -1,5 +1,6 @@
 using EasyStep.Erp.Api.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace EasyStep.Erp.Api.Controllers;
 
@@ -82,7 +83,13 @@ public class AuthController : ControllerBase
         {
             var (ok, token, errorCode) = await _auth.RegisterAffiliateAsync(req, ct);
             if (!ok)
-                return BadRequest(new { message = errorCode == "EmailExists" ? "Bu e-poçt artıq qeydiyyatdadır" : "Satış ortağı qeydiyyatı müvəqqəti olaraq mövcud deyil" });
+                return BadRequest(new { message = errorCode switch
+                {
+                    "EmailExists" => "Bu e-poçt artıq qeydiyyatdadır",
+                    "PasswordTooShort" => "Şifrə minimum 12 simvol olmalıdır",
+                    "InvalidEmail" => "E-poçt daxil edin",
+                    _ => "Satış partnyoru qeydiyyatı müvəqqəti olaraq mövcud deyil"
+                } });
 
             if (!string.IsNullOrEmpty(token))
             {
@@ -93,13 +100,13 @@ public class AuthController : ControllerBase
 <html><body style='font-family:Arial,sans-serif'>
 <h2>E-poçtunuzu təsdiqləyin</h2>
 <p>Salam,</p>
-<p>Easy Step ERP satış ortağı hesabınızı aktivləşdirmək üçün aşağıdakı linkə keçid edin:</p>
+<p>Easy Step ERP satış partnyoru hesabınızı aktivləşdirmək üçün aşağıdakı linkə keçid edin:</p>
 <p><a href='{verifyUrl}'>{verifyUrl}</a></p>
 <p>Link 24 saat ərzində keçərlidir.</p>
 <p>— Easy Step ERP<br/>hello@easysteperp.com</p>
 </body></html>";
                 var to = req.Email;
-                var subject = "Easy Step ERP - Satış ortağı e-poçt təsdiqi";
+                var subject = "Easy Step ERP - Satış partnyoru e-poçt təsdiqi";
                 _ = Task.Run(async () =>
                 {
                     try { await _email.SendAsync(to, subject, html, CancellationToken.None); }
@@ -107,11 +114,20 @@ public class AuthController : ControllerBase
                 });
             }
 
-            return Ok(new { message = "Satış ortağı qeydiyyatı uğurla tamamlandı. E-poçtunuzu yoxlayın və təsdiq linkinə keçid edin." });
+            return Ok(new { message = "Satış partnyoru qeydiyyatı uğurla tamamlandı. E-poçtunuzu yoxlayın və təsdiq linkinə keçid edin." });
         }
-        catch (Exception)
+        catch (DbUpdateException ex)
         {
-            return StatusCode(500, new { message = "Qeydiyyat zamanı xəta baş verdi." });
+            _logger.LogWarning(ex, "RegisterAffiliate DbUpdateException for {Email}", req.Email);
+            var inner = ex.InnerException?.Message ?? ex.Message;
+            if (inner.Contains("Email", StringComparison.OrdinalIgnoreCase) || inner.Contains("IX_Users_Email", StringComparison.OrdinalIgnoreCase) || inner.Contains("unique", StringComparison.OrdinalIgnoreCase))
+                return BadRequest(new { message = "Bu e-poçt artıq qeydiyyatdadır" });
+            return StatusCode(500, new { message = "Qeydiyyat zamanı xəta baş verdi. Zəhmət olmasa yenidən cəhd edin." });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "RegisterAffiliate failed for {Email}", req.Email);
+            return StatusCode(500, new { message = "Qeydiyyat zamanı xəta baş verdi. Zəhmət olmasa yenidən cəhd edin." });
         }
     }
 

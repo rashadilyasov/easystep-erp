@@ -11,17 +11,20 @@ export default function AuthModalFromUrl() {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const router = useRouter();
-  const { openLogin, openRegister } = useAuthModal();
+  const { openLogin, openRegister, openRegisterAffiliate } = useAuthModal();
   const processed = useRef(false);
 
   useEffect(() => {
     const auth = searchParams.get("auth");
-    if (auth !== "login" && auth !== "register") return;
+    if (auth !== "login" && auth !== "register" && auth !== "affiliate") return;
     if (processed.current) return;
     processed.current = true;
 
     if (auth === "login") {
-      openLogin();
+      const redirect = searchParams.get("redirect");
+      openLogin(redirect || undefined);
+    } else if (auth === "affiliate") {
+      openRegisterAffiliate();
     } else {
       openRegister();
     }
@@ -34,7 +37,7 @@ export default function AuthModalFromUrl() {
     const newUrl = pathname + (query ? `?${query}` : "");
     const id = setTimeout(() => router.replace(newUrl, { scroll: false }), 100);
     return () => clearTimeout(id);
-  }, [searchParams, pathname, router, openLogin, openRegister]);
+  }, [searchParams, pathname, router, openLogin, openRegister, openRegisterAffiliate]);
 
   return null;
 }

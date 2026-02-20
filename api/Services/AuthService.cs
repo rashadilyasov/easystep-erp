@@ -179,7 +179,12 @@ public class AuthService
 
     public async Task<(bool Ok, string? VerificationToken, string? ErrorCode)> RegisterAffiliateAsync(RegisterAffiliateRequest req, CancellationToken ct = default)
     {
-        if (await _db.Users.AnyAsync(u => u.Email == req.Email, ct))
+        var emailLower = (req.Email ?? "").Trim().ToLowerInvariant();
+        if (string.IsNullOrEmpty(emailLower))
+            return (false, null, "InvalidEmail");
+        if ((req.Password ?? "").Length < 12)
+            return (false, null, "PasswordTooShort");
+        if (await _db.Users.AnyAsync(u => u.Email.ToLower() == emailLower, ct))
             return (false, null, "EmailExists");
 
         var affTenantId = DbInitializer.AffiliatesTenantId;
@@ -191,7 +196,7 @@ public class AuthService
         {
             Id = Guid.NewGuid(),
             TenantId = affTenantId,
-            Email = req.Email,
+            Email = req.Email.Trim(),
             PasswordHash = HashPassword(req.Password),
             Role = UserRole.Affiliate,
             EmailVerified = false,

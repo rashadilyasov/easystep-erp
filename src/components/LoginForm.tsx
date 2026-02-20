@@ -9,7 +9,8 @@ import { api } from "@/lib/api";
 
 function LoginFormInner() {
   const searchParams = useSearchParams();
-  const redirect = searchParams.get("redirect") || "/cabinet";
+  const { close, loginRedirect } = useAuthModal();
+  const redirect = loginRedirect || searchParams.get("redirect") || "/cabinet";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [step, setStep] = useState<"credentials" | "2fa">("credentials");
@@ -18,7 +19,6 @@ function LoginFormInner() {
   const [viaEmail, setViaEmail] = useState(false);
   const [resendError, setResendError] = useState<string | null>(null);
   const { login, complete2FA, loading, error } = useAuth();
-  const { close } = useAuthModal();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

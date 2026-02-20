@@ -29,6 +29,15 @@ Affiliate__DefaultCommissionPercent=5
 
 > **Profil sil 404/405:** API yenilənəndən sonra Railway-də **Deployments** → **Redeploy** edin.
 
+---
+
+## 404/Profil sil işləməzsə — yoxlama
+
+1. **Railway Build:** Deployments → son deploy **Success** (yaşıl) olmalıdır. **Failed** varsa → logları açıb səbəbə baxın.
+2. **Root Directory:** Railway → API servisi → Settings → **Root Directory** = `api` olmalıdır.
+3. **API Health:** Brauzerdə açın: `https://SIZIN-RAILWAY-URL/api/Health` (məs. `https://2qz1te51.up.railway.app/api/Health`). `{"status":"ok"}` gəlməlidir. Əgər 404 gəlirsə — domain səhvdir və ya API işləmir.
+4. **Vercel API_URL:** Vercel → layihə → Settings → Environment Variables. `API_URL` və ya `NEXT_PUBLIC_API_URL` = Railway domain (trailing slash-siz). Sonra Vercel-da Redeploy.
+
 ## Cədvəl formatı
 
 | Name | Value |

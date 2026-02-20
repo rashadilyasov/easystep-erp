@@ -119,9 +119,9 @@ export default function AdminTenantsContent() {
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Xəta";
       const hint = msg.includes("404")
-        ? "Backend route tapılmadı. Railway-də API-ni redeploy edin."
+        ? "Backend route tapılmadı (404). /api/ping açıb apiBase və health yoxlayın. Railway: Root=api, Redeploy."
         : msg.includes("405")
-        ? "API metod uyğunsuzluğu. Railway-də son kod deploy olunub?"
+        ? "API metod uyğunsuzluğu (405). Railway-də son kod deploy olunub?"
         : msg;
       alert(hint);
     } finally {

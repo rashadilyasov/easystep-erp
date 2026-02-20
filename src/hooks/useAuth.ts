@@ -31,8 +31,15 @@ export function useAuth() {
         }
       } catch (e) {
         const msg = e instanceof Error ? e.message : "Xəta baş verdi";
-        const isConnError = /fetch|network|abort|vaxtı bitdi|failed to respond|çıxış yoxdur/i.test(msg);
-        setError(isConnError ? "Bağlantı xətası. İnterneti yoxlayın və bir az sonra yenidən cəhd edin." : msg);
+        const isBackendUnreachable = /Backend API-ya çıxış yoxdur|API_URL|502/i.test(msg);
+        const isConnError = /fetch|network|abort|vaxtı bitdi|failed to respond/i.test(msg) && !isBackendUnreachable;
+        setError(
+          isBackendUnreachable
+            ? "Backend API çatılmır. Vercel-də API_URL və Railway statusunu yoxlayın. /api/ping açın."
+            : isConnError
+              ? "Bağlantı xətası. İnterneti yoxlayın və bir az sonra yenidən cəhd edin."
+              : msg
+        );
       } finally {
         setLoading(false);
       }
@@ -53,8 +60,15 @@ export function useAuth() {
         return true;
       } catch (e) {
         const msg = e instanceof Error ? e.message : "Xəta baş verdi";
-        const isConnError = /fetch|network|abort|vaxtı bitdi|failed to respond|çıxış yoxdur/i.test(msg);
-        setError(isConnError ? "Bağlantı xətası. İnterneti yoxlayın və bir az sonra yenidən cəhd edin." : msg);
+        const isBackendUnreachable = /Backend API-ya çıxış yoxdur|API_URL|502/i.test(msg);
+        const isConnError = /fetch|network|abort|vaxtı bitdi|failed to respond/i.test(msg) && !isBackendUnreachable;
+        setError(
+          isBackendUnreachable
+            ? "Backend API çatılmır. Vercel API_URL və Railway yoxlayın. /api/ping açın."
+            : isConnError
+              ? "Bağlantı xətası. İnterneti yoxlayın və bir az sonra yenidən cəhd edin."
+              : msg
+        );
         return false;
       } finally {
         setLoading(false);

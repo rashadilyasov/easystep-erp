@@ -8,19 +8,25 @@ export const dynamic = "force-dynamic";
 
 const RAILWAY_FALLBACK = "https://2qz1te51.up.railway.app";
 
-function getApiBase(): string {
+function getApiBases(): string[] {
+  const bases: string[] = [];
   const url = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL;
   if (url) {
     const u = url.replace(/\/$/, "").trim();
-    return u.startsWith("http") ? u : `https://${u}`;
+    bases.push(u.startsWith("http") ? u : `https://${u}`);
   }
-  return process.env.VERCEL ? (process.env.RAILWAY_PUBLIC_URL || RAILWAY_FALLBACK) : "http://localhost:5000";
+  if (process.env.VERCEL) {
+    const pub = process.env.RAILWAY_PUBLIC_URL;
+    if (pub && !bases.includes(pub.replace(/\/$/, ""))) bases.push(pub.replace(/\/$/, ""));
+    if (!bases.includes(RAILWAY_FALLBACK)) bases.push(RAILWAY_FALLBACK);
+  }
+  if (bases.length === 0) bases.push("http://localhost:5000");
+  return bases;
 }
 
 async function proxyReq(request: NextRequest, segment: string[], method: string) {
   const pathSegment = segment?.join("/") ?? "";
-  const apiBase = getApiBase();
-  const url = `${apiBase}/api/admin/${pathSegment}${request.nextUrl.search}`;
+  const path = `/api/admin/${pathSegment}${request.nextUrl.search}`;
 
   const headers = new Headers();
   request.headers.forEach((v, k) => {
@@ -31,30 +37,35 @@ async function proxyReq(request: NextRequest, segment: string[], method: string)
     headers.set("Content-Type", "application/json");
   }
 
-  let body: string | undefined;
-  if (method !== "GET" && method !== "HEAD") body = await request.text();
+  const body = method !== "GET" && method !== "HEAD" ? await request.text() : undefined;
+  const bases = getApiBases();
 
-  try {
-    const res = await fetch(url, {
-      method,
-      headers,
-      body: body ?? undefined,
-      signal: AbortSignal.timeout(35000),
-      cache: "no-store",
-    });
-    const data = await res.text();
-    return new NextResponse(data, {
-      status: res.status,
-      headers: { "Content-Type": res.headers.get("Content-Type") || "application/json" },
-    });
-  } catch (e) {
-    const err = e instanceof Error ? e : new Error(String(e));
-    console.error("[Admin Proxy]", err.message, { url: url.replace(/[?].*/, "") });
-    return NextResponse.json(
-      { message: "Backend API-ya çıxış yoxdur. API_URL və Railway yoxlayın." },
-      { status: 502 }
-    );
+  for (const base of bases) {
+    const url = `${base}${path}`;
+    try {
+      const res = await fetch(url, {
+        method,
+        headers,
+        body: body ?? undefined,
+        signal: AbortSignal.timeout(25000),
+        cache: "no-store",
+      });
+      const data = await res.text();
+      return new NextResponse(data, {
+        status: res.status,
+        headers: { "Content-Type": res.headers.get("Content-Type") || "application/json" },
+      });
+    } catch (e) {
+      if (typeof console !== "undefined" && console.error) {
+        console.error("[Admin Proxy]", (e instanceof Error ? e : new Error(String(e))).message, { base: base.replace(/\/$/, "") });
+      }
+    }
   }
+
+  return NextResponse.json(
+    { message: "Backend API-ya çıxış yoxdur. API_URL və Railway yoxlayın." },
+    { status: 502 }
+  );
 }
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ segment?: string[] }> }) {

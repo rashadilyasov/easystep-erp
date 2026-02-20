@@ -103,7 +103,14 @@ function LoginFormInner() {
   return (
     <form className="space-y-4" onSubmit={handleSubmit}>
       {error && (
-        <div className="p-3 bg-red-50 text-red-700 rounded-xl text-sm leading-relaxed">{error}</div>
+        <div className="p-3 bg-red-50 text-red-700 rounded-xl text-sm leading-relaxed">
+          {error}
+          {(error.includes("API") || error.includes("Backend") || error.includes("/api/ping")) && (
+            <a href="/api/ping" target="_blank" rel="noopener noreferrer" className="block mt-2 text-primary-600 hover:underline text-xs">
+              API statusunu yoxlayın →
+            </a>
+          )}
+        </div>
       )}
       <div>
         <label className="block text-sm font-medium text-slate-700 mb-2">E-poçt</label>

@@ -36,7 +36,8 @@ Affiliate__DefaultCommissionPercent=5
 1. **Railway Build:** Deployments → son deploy **Success** (yaşıl) olmalıdır. **Failed** varsa → logları açıb səbəbə baxın.
 2. **Root Directory:** Railway → API servisi → Settings → **Root Directory** = `api` olmalıdır.
 3. **API Health:** Brauzerdə açın: `https://SIZIN-RAILWAY-URL/api/Health` (məs. `https://2qz1te51.up.railway.app/api/Health`). `{"status":"ok"}` gəlməlidir. Əgər 404 gəlirsə — domain səhvdir və ya API işləmir.
-4. **Vercel API_URL:** Vercel → layihə → Settings → Environment Variables. `API_URL` və ya `NEXT_PUBLIC_API_URL` = Railway domain (trailing slash-siz). Sonra Vercel-da Redeploy.
+4. **Vercel API_URL:** Vercel → layihə → Settings → Environment Variables. `API_URL` və ya `NEXT_PUBLIC_API_URL` = `https://api.easysteperp.com` (və ya Railway URL `https://xxxx.up.railway.app`). Sonra Vercel-da **Redeploy**.
+5. **Login işləmirsə:** `www.easysteperp.com/api/ping` açın — health, login, adminTenants statusunu göstərər. Əgər health/ok deyilsə — Railway API işləmir.
 
 ## Cədvəl formatı
 

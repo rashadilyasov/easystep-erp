@@ -314,9 +314,7 @@ export const api = {
       >("/api/admin/tenants"),
     payments: () => apiFetch<{ id: string; date: string; tenantName: string; amount: number; currency: string; status: string; provider: string; transactionId: string | null }[]>("/api/admin/payments"),
     deleteTenant: (tenantId: string) =>
-      apiFetch<{ message: string }>(`/api/admin/tenants/${tenantId}/delete`, {
-        method: "POST",
-      }),
+      apiFetch<{ message: string }>(`/api/admin/tenants/${tenantId}/remove`, { method: "POST" }),
     extendSubscription: (tenantId: string, months?: number, planId?: string) =>
       apiFetch<{ message: string }>(`/api/admin/tenants/${tenantId}/extend`, {
         method: "POST",

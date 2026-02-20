@@ -220,6 +220,7 @@ public class AdminController : ControllerBase
         return await DeleteTenantCore(req.TenantId.Value, ct);
     }
 
+    [HttpPost("tenants/{tenantId:guid}/remove")]
     [HttpPost("tenants/{tenantId:guid}/delete")]
     [HttpDelete("tenants/{tenantId:guid}")]
     public async Task<IActionResult> DeleteTenant(Guid tenantId, CancellationToken ct)

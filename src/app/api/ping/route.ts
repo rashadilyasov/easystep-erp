@@ -76,17 +76,28 @@ export async function GET() {
     results.login = { error: e instanceof Error ? e.message : String(e) };
   }
 
-  // 4. Admin tenants + delete-route (auth tələb olunur)
+  // 4. Admin tenants (auth tələb olunur)
   if (accessToken) {
     try {
       const tenantsRes = await fetch(`${base}/api/admin/tenants`, {
-        headers: { Authorization: `Bearer ${accessToken}` },
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
         signal: AbortSignal.timeout(10000),
+        cache: "no-store",
       });
-      results.adminTenants = { status: tenantsRes.status, ok: tenantsRes.ok };
+      const body = await tenantsRes.text().catch(() => "");
+      results.adminTenants = {
+        status: tenantsRes.status,
+        ok: tenantsRes.ok,
+        ...(tenantsRes.status === 401 && body ? { body401: body.slice(0, 300) } : {}),
+      };
     } catch (e) {
       results.adminTenants = { error: e instanceof Error ? e.message : String(e) };
     }
+  } else {
+    results.adminTenants = { error: "No accessToken from login" };
   }
 
   return NextResponse.json(results, { status: 200 });

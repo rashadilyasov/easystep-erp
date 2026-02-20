@@ -314,7 +314,7 @@ export const api = {
       >("/api/admin/tenants"),
     payments: () => apiFetch<{ id: string; date: string; tenantName: string; amount: number; currency: string; status: string; provider: string; transactionId: string | null }[]>("/api/admin/payments"),
     deleteTenant: (tenantId: string) =>
-      apiFetch<{ message: string }>("/api/admin/tenants/delete", {
+      apiFetch<{ message: string }>("/api/admin/delete-tenant", {
         method: "POST",
         body: JSON.stringify({ tenantId }),
       }),

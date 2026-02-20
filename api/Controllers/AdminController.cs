@@ -30,6 +30,9 @@ public class AdminController : ControllerBase
         _logger = logger;
     }
 
+    private static readonly Guid SystemTenantId = Guid.Parse("b0000000-0000-0000-0000-000000000001");
+    private static readonly Guid AffiliatesTenantId = Guid.Parse("b0000000-0000-0000-0000-000000000002");
+
     [HttpGet("stats")]
     public async Task<IActionResult> GetStats(CancellationToken ct = default)
     {
@@ -40,7 +43,7 @@ public class AdminController : ControllerBase
         var revenueThisMonth = 0m;
         var openTickets = 0;
 
-        try { totalTenants = await _db.Tenants.CountAsync(ct); } catch { /* ignore */ }
+        try { totalTenants = await _db.Tenants.CountAsync(t => t.Id != SystemTenantId && t.Id != AffiliatesTenantId, ct); } catch { /* ignore */ }
         try { activeSubs = await _db.Subscriptions.CountAsync(s => s.Status == SubscriptionStatus.Active && s.EndDate > now, ct); } catch { /* ignore */ }
         try { revenueThisMonth = await _db.Payments.Where(p => p.Status == PaymentStatus.Succeeded && p.CreatedAt >= monthStart).SumAsync(p => p.Amount, ct); } catch { /* ignore */ }
         try { openTickets = await _db.Tickets.CountAsync(t => t.Status == TicketStatus.Open || t.Status == TicketStatus.InProgress, ct); } catch { /* ignore */ }
@@ -51,10 +54,8 @@ public class AdminController : ControllerBase
     [HttpGet("tenants")]
     public async Task<IActionResult> GetTenants(CancellationToken ct)
     {
-        var systemTenantId = Guid.Parse("b0000000-0000-0000-0000-000000000001");
-        var affiliatesTenantId = Guid.Parse("b0000000-0000-0000-0000-000000000002");
         var list = await _db.Tenants
-            .Where(t => t.Id != systemTenantId && t.Id != affiliatesTenantId)
+            .Where(t => t.Id != SystemTenantId && t.Id != AffiliatesTenantId)
             .Select(t => new { t.Id, t.Name, t.ContactPerson, t.CreatedAt })
             .ToListAsync(ct);
 

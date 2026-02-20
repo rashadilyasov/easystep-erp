@@ -76,28 +76,37 @@ export async function GET() {
     results.login = { error: e instanceof Error ? e.message : String(e) };
   }
 
-  // 4. Admin tenants (auth tələb olunur)
+  // 4. Admin tenants: birbaşa backend + proxy vasitəsilə
+  const origin = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://www.easysteperp.com";
   if (accessToken) {
     try {
-      const tenantsRes = await fetch(`${base}/api/admin/tenants`, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
-        },
+      const directRes = await fetch(`${base}/api/admin/tenants`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
         signal: AbortSignal.timeout(10000),
         cache: "no-store",
       });
-      const body = await tenantsRes.text().catch(() => "");
-      results.adminTenants = {
-        status: tenantsRes.status,
-        ok: tenantsRes.ok,
-        ...(tenantsRes.status === 401 && body ? { body401: body.slice(0, 300) } : {}),
+      const directBody = await directRes.text().catch(() => "");
+      results.adminTenantsDirect = {
+        status: directRes.status,
+        ok: directRes.ok,
+        ...(directRes.status === 401 && directBody ? { body401: directBody.slice(0, 200) } : {}),
       };
     } catch (e) {
-      results.adminTenants = { error: e instanceof Error ? e.message : String(e) };
+      results.adminTenantsDirect = { error: e instanceof Error ? e.message : String(e) };
+    }
+    try {
+      const proxyRes = await fetch(`${origin}/api/admin/tenants`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+        signal: AbortSignal.timeout(15000),
+        cache: "no-store",
+      });
+      results.adminTenantsViaProxy = { status: proxyRes.status, ok: proxyRes.ok };
+    } catch (e) {
+      results.adminTenantsViaProxy = { error: e instanceof Error ? e.message : String(e) };
     }
   } else {
-    results.adminTenants = { error: "No accessToken from login" };
+    results.adminTenantsDirect = { error: "No token" };
+    results.adminTenantsViaProxy = { error: "No token" };
   }
 
   return NextResponse.json(results, { status: 200 });

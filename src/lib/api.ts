@@ -313,10 +313,19 @@ export const api = {
         }[]
       >("/api/admin/tenants"),
     payments: () => apiFetch<{ id: string; date: string; tenantName: string; amount: number; currency: string; status: string; provider: string; transactionId: string | null }[]>("/api/admin/payments"),
-    deleteTenant: (tenantId: string) =>
-      apiFetch<{ message: string }>(`/api/admin/tenants/${tenantId}/delete`, {
-        method: "POST",
-      }),
+    deleteTenant: async (tenantId: string) => {
+      try {
+        return await apiFetch<{ message: string }>(`/api/admin/tenants/${tenantId}/delete`, {
+          method: "POST",
+        });
+      } catch (e) {
+        const err = e as Error & { message?: string };
+        if (err?.message?.includes("404")) {
+          return await apiFetch<{ message: string }>(`/api/admin/tenants/${tenantId}`, { method: "DELETE" });
+        }
+        throw e;
+      }
+    },
     extendSubscription: (tenantId: string, months?: number, planId?: string) =>
       apiFetch<{ message: string }>(`/api/admin/tenants/${tenantId}/extend`, {
         method: "POST",

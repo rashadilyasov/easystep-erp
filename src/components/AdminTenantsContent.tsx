@@ -118,7 +118,12 @@ export default function AdminTenantsContent() {
       alert("Tenant silindi");
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Xəta";
-      alert(msg.includes("405") ? "Server DELETE metodunu dəstəkləmir (405). Zəhmət olmasa API deploy yoxlanılsın." : msg);
+      const hint = msg.includes("404")
+        ? "Backend route tapılmadı. Railway-də API-ni redeploy edin."
+        : msg.includes("405")
+        ? "API metod uyğunsuzluğu. Railway-də son kod deploy olunub?"
+        : msg;
+      alert(hint);
     } finally {
       setDeletingTenant(false);
     }

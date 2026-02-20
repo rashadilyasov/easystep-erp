@@ -27,6 +27,8 @@ Affiliate__DefaultCommissionPercent=5
 > **Vacib:** `__` (iki alt xətt) — bir alt xətt `_` işləməz.
 > `${{Postgres.DATABASE_URL}}` — Railway-də Postgres **Add Reference** etdikdə avtomatik yaranır.
 
+> **Profil sil 404/405:** API yenilənəndən sonra Railway-də **Deployments** → **Redeploy** edin.
+
 ## Cədvəl formatı
 
 | Name | Value |

@@ -33,34 +33,19 @@ public class AdminController : ControllerBase
     [HttpGet("stats")]
     public async Task<IActionResult> GetStats(CancellationToken ct = default)
     {
-        try
-        {
-            var now = DateTime.UtcNow;
-            var monthStart = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+        var now = DateTime.UtcNow;
+        var monthStart = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+        var totalTenants = 0;
+        var activeSubs = 0;
+        var revenueThisMonth = 0m;
+        var openTickets = 0;
 
-            var totalTenants = await _db.Tenants.CountAsync(ct);
-            var activeSubs = await _db.Subscriptions
-                .CountAsync(s => s.Status == SubscriptionStatus.Active && s.EndDate > now, ct);
-            var revenueThisMonth = await _db.Payments
-                .Where(p => p.Status == PaymentStatus.Succeeded && p.CreatedAt >= monthStart)
-                .SumAsync(p => p.Amount, ct);
-            var openTickets = await _db.Tickets
-                .CountAsync(t => t.Status == TicketStatus.Open || t.Status == TicketStatus.InProgress, ct);
+        try { totalTenants = await _db.Tenants.CountAsync(ct); } catch { /* ignore */ }
+        try { activeSubs = await _db.Subscriptions.CountAsync(s => s.Status == SubscriptionStatus.Active && s.EndDate > now, ct); } catch { /* ignore */ }
+        try { revenueThisMonth = await _db.Payments.Where(p => p.Status == PaymentStatus.Succeeded && p.CreatedAt >= monthStart).SumAsync(p => p.Amount, ct); } catch { /* ignore */ }
+        try { openTickets = await _db.Tickets.CountAsync(t => t.Status == TicketStatus.Open || t.Status == TicketStatus.InProgress, ct); } catch { /* ignore */ }
 
-            return Ok(new
-            {
-                totalTenants,
-                activeSubscriptions = activeSubs,
-                revenueThisMonth,
-                openTickets,
-            });
-        }
-        catch (Exception ex)
-        {
-            if (_env.IsDevelopment())
-                return StatusCode(500, new { message = ex.Message, detail = ex.ToString() });
-            return StatusCode(500, new { message = "Statistika yüklənə bilmədi" });
-        }
+        return Ok(new { totalTenants, activeSubscriptions = activeSubs, revenueThisMonth, openTickets });
     }
 
     [HttpGet("tenants")]

@@ -59,7 +59,7 @@ export default function AdminDashboard() {
             </p>
             {errorMsg && <p className="text-xs text-amber-700 mt-2 font-mono break-all">{errorMsg}</p>}
             <a
-              href="/api/health"
+              href="/api/ping"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-block mt-2 text-xs text-primary-600 hover:underline"

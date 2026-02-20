@@ -171,6 +171,8 @@ app.UseCors();
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.MapGet("/", () => Results.Json(new { service = "Easy Step ERP API", status = "ok", docs = "/swagger" }));
 app.MapControllers();
 
 // Migrations + seed — FOREGROUND (login işləməzdən əvvəl DB hazır olmalıdır)

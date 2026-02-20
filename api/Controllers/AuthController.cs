@@ -401,7 +401,13 @@ public class AuthController : ControllerBase
 <p>Əgər bu tələb sizdən gəlməyibsə, bu e-poçtu nəzərə almayın.</p>
 <p>— Easy Step ERP</p>
 </body></html>";
-            await _email.SendAsync(req.Email, "Easy Step ERP - Şifrə sıfırlama", html, ct);
+            var to = req.Email;
+            var subject = "Easy Step ERP - Şifrə sıfırlama";
+            _ = Task.Run(async () =>
+            {
+                try { await _email.SendAsync(to, subject, html, CancellationToken.None); }
+                catch (Exception ex) { _logger.LogError(ex, "Background forgot-password email failed for {To}", to); }
+            });
         }
         return Ok(new { message = "Şifrə sıfırlama linki e-poçtunuza göndərildi." });
     }

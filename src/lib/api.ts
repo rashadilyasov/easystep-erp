@@ -285,6 +285,23 @@ export const api = {
       }),
     verifyUserEmail: (userId: string) =>
       apiFetch<{ message: string }>(`/api/admin/users/${userId}/verify-email`, { method: "POST" }),
+    resendVerificationEmail: (userId: string) =>
+      apiFetch<{ message: string }>(`/api/admin/users/${userId}/resend-verification-email`, { method: "POST" }),
+    tenantDetail: (tenantId: string) =>
+      apiFetch<{
+        tenant: { id: string; name: string; contactPerson: string; taxId?: string; country?: string; city?: string; createdAt: string };
+        users: { id: string; email: string; emailVerified: boolean; createdAt: string; lastLoginAt?: string; role: string }[];
+        subscription: { name: string; status: string; endDate: string } | null;
+        payments: { id: string; amount: number; currency: string; status: string; provider: string; date: string }[];
+        tickets: { id: string; subject: string; status: string; date: string }[];
+      }>(`/api/admin/tenants/${tenantId}`),
+    updateUser: (userId: string, data: { email?: string; phone?: string }) =>
+      apiFetch<{ message: string }>(`/api/admin/users/${userId}`, {
+        method: "PATCH",
+        body: JSON.stringify(data),
+      }),
+    deleteUser: (userId: string) =>
+      apiFetch<{ message: string }>(`/api/admin/users/${userId}`, { method: "DELETE" }),
     plans: () =>
       apiFetch<{ id: string; name: string; durationMonths: number; price: number; currency: string; maxDevices: number | null; isActive: boolean; createdAt: string }[]>(
         "/api/admin/plans"

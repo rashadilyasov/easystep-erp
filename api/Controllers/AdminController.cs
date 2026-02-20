@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using EasyStep.Erp.Api.Data;
 using EasyStep.Erp.Api.Entities;
+using EasyStep.Erp.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -14,11 +15,19 @@ public class AdminController : ControllerBase
 {
     private readonly ApplicationDbContext _db;
     private readonly IWebHostEnvironment _env;
+    private readonly AuthService _auth;
+    private readonly IEmailService _email;
+    private readonly IConfiguration _config;
+    private readonly ILogger<AdminController> _logger;
 
-    public AdminController(ApplicationDbContext db, IWebHostEnvironment env)
+    public AdminController(ApplicationDbContext db, IWebHostEnvironment env, AuthService auth, IEmailService email, IConfiguration config, ILogger<AdminController> logger)
     {
         _db = db;
         _env = env;
+        _auth = auth;
+        _email = email;
+        _config = config;
+        _logger = logger;
     }
 
     [HttpGet("stats")]
@@ -61,6 +70,7 @@ public class AdminController : ControllerBase
             .Select(t => new { t.Id, t.Name, t.ContactPerson, t.CreatedAt })
             .ToListAsync(ct);
 
+        var tenantIds = list.Select(t => t.Id).ToList();
         var subs = await _db.Subscriptions
             .Include(s => s.Plan)
             .Where(s => s.Status != SubscriptionStatus.Cancelled)
@@ -68,11 +78,11 @@ public class AdminController : ControllerBase
             .ToListAsync(ct);
 
         var users = await _db.Users
-            .Where(u => list.Select(t => t.Id).Contains(u.TenantId))
+            .Where(u => tenantIds.Contains(u.TenantId))
             .Select(u => new { u.Id, u.TenantId, u.Email, u.EmailVerified, u.CreatedAt })
             .ToListAsync(ct);
 
-        var usersByTenant = users.GroupBy(u => u.TenantId).ToDictionary(g => g.Key, g => g.ToList());
+        var usersByTenant = list.ToDictionary(t => t.Id, t => users.Where(u => u.TenantId == t.Id).ToList());
         var subByTenant = subs.GroupBy(s => s.TenantId).ToDictionary(g => g.Key, g => g.First());
 
         return Ok(list.Select(t => new
@@ -84,9 +94,7 @@ public class AdminController : ControllerBase
             subscription = subByTenant.TryGetValue(t.Id, out var sub)
                 ? new { planName = sub.Plan.Name, status = sub.Status.ToString(), endDate = sub.EndDate.ToString("yyyy-MM-dd") }
                 : (object?)null,
-            users = usersByTenant.TryGetValue(t.Id, out var ulist)
-                ? ulist.Select(u => new { u.Id, u.Email, u.EmailVerified, createdAt = u.CreatedAt.ToString("yyyy-MM-dd") })
-                : Array.Empty<object>(),
+            users = usersByTenant[t.Id].Select(u => new { u.Id, u.Email, u.EmailVerified, createdAt = u.CreatedAt.ToString("yyyy-MM-dd") }),
         }));
     }
 
@@ -98,6 +106,100 @@ public class AdminController : ControllerBase
         user.EmailVerified = true;
         await _db.SaveChangesAsync(ct);
         return Ok(new { message = "E-poçt təsdiqləndi" });
+    }
+
+    [HttpPost("users/{userId:guid}/resend-verification-email")]
+    public async Task<IActionResult> ResendVerificationEmail(Guid userId, CancellationToken ct)
+    {
+        var user = await _db.Users.FindAsync(new object[] { userId }, ct);
+        if (user == null) return NotFound(new { message = "İstifadəçi tapılmadı" });
+        var token = await _auth.CreateEmailVerificationTokenForUserAsync(userId, ct);
+        if (token == null) return StatusCode(500, new { message = "Token yaradıla bilmədi" });
+
+        var baseUrl = _config["App:BaseUrl"] ?? "https://www.easysteperp.com";
+        var verifyUrl = $"{baseUrl}/verify-email?token={Uri.EscapeDataString(token)}";
+        var html = $@"
+<!DOCTYPE html>
+<html><body style='font-family:Arial,sans-serif'>
+<h2>E-poçtunuzu təsdiqləyin</h2>
+<p>Salam,</p>
+<p>Easy Step ERP hesabınızı aktivləşdirmək üçün aşağıdakı linkə keçid edin:</p>
+<p><a href='{verifyUrl}'>{verifyUrl}</a></p>
+<p>Link 24 saat ərzində keçərlidir.</p>
+<p>— Easy Step ERP</p>
+</body></html>";
+
+        var to = user.Email;
+        var subject = "Easy Step ERP - E-poçt təsdiqi";
+        _ = Task.Run(async () =>
+        {
+            try { await _email.SendAsync(to, subject, html, CancellationToken.None); }
+            catch (Exception ex) { _logger.LogError(ex, "Resend verification email failed for {To}", to); }
+        });
+        return Ok(new { message = "Təsdiq linki e-poçtuna göndərildi" });
+    }
+
+    [HttpGet("tenants/{tenantId:guid}")]
+    public async Task<IActionResult> GetTenantDetail(Guid tenantId, CancellationToken ct)
+    {
+        var tenant = await _db.Tenants.FindAsync(new object[] { tenantId }, ct);
+        if (tenant == null) return NotFound(new { message = "Tenant tapılmadı" });
+
+        var users = await _db.Users.Where(u => u.TenantId == tenantId)
+            .Select(u => new { u.Id, u.Email, u.EmailVerified, u.CreatedAt, u.LastLoginAt, u.Role })
+            .ToListAsync(ct);
+
+        var sub = await _db.Subscriptions.Include(s => s.Plan)
+            .Where(s => s.TenantId == tenantId && s.Status != SubscriptionStatus.Cancelled)
+            .OrderByDescending(s => s.EndDate).FirstOrDefaultAsync(ct);
+
+        var payments = await _db.Payments.Where(p => p.TenantId == tenantId)
+            .OrderByDescending(p => p.CreatedAt).Take(20)
+            .Select(p => new { p.Id, p.Amount, p.Currency, p.Status, p.Provider, p.CreatedAt })
+            .ToListAsync(ct);
+
+        var tickets = await _db.Tickets.Where(t => t.TenantId == tenantId)
+            .OrderByDescending(t => t.CreatedAt).Take(10)
+            .Select(t => new { t.Id, t.Subject, t.Status, t.CreatedAt })
+            .ToListAsync(ct);
+
+        return Ok(new
+        {
+            tenant = new { tenant.Id, tenant.Name, tenant.ContactPerson, tenant.TaxId, tenant.Country, tenant.City, tenant.CreatedAt },
+            users = users.Select(u => new { u.Id, u.Email, u.EmailVerified, u.CreatedAt, u.LastLoginAt, role = u.Role.ToString() }),
+            subscription = sub != null ? new { name = sub.Plan.Name, status = sub.Status.ToString(), endDate = sub.EndDate.ToString("yyyy-MM-dd") } : (object?)null,
+            payments = payments.Select(p => new { p.Id, p.Amount, p.Currency, status = p.Status.ToString(), p.Provider, date = p.CreatedAt.ToString("yyyy-MM-dd HH:mm") }),
+            tickets = tickets.Select(t => new { t.Id, t.Subject, t.Status, date = t.CreatedAt.ToString("yyyy-MM-dd HH:mm") }),
+        });
+    }
+
+    [HttpPatch("users/{userId:guid}")]
+    public async Task<IActionResult> UpdateUser(Guid userId, [FromBody] AdminUpdateUserRequest req, CancellationToken ct)
+    {
+        var user = await _db.Users.FindAsync(new object[] { userId }, ct);
+        if (user == null) return NotFound(new { message = "İstifadəçi tapılmadı" });
+        if (req.Email != null)
+        {
+            if (await _db.Users.AnyAsync(u => u.Email == req.Email && u.Id != userId, ct))
+                return BadRequest(new { message = "Bu e-poçt artıq istifadə olunur" });
+            user.Email = req.Email.Trim();
+        }
+        if (req.Phone != null) user.Phone = req.Phone.Trim();
+        await _db.SaveChangesAsync(ct);
+        return Ok(new { message = "İstifadəçi yeniləndi" });
+    }
+
+    [HttpDelete("users/{userId:guid}")]
+    public async Task<IActionResult> DeleteUser(Guid userId, CancellationToken ct)
+    {
+        var user = await _db.Users.Include(u => u.Tenant).FirstOrDefaultAsync(u => u.Id == userId, ct);
+        if (user == null) return NotFound(new { message = "İstifadəçi tapılmadı" });
+        if (user.Role == UserRole.SuperAdmin)
+            return BadRequest(new { message = "SuperAdmin silinə bilməz" });
+
+        _db.Users.Remove(user);
+        await _db.SaveChangesAsync(ct);
+        return Ok(new { message = "İstifadəçi silindi" });
     }
 
     [HttpPost("tenants/{id:guid}/extend")]
@@ -350,6 +452,7 @@ public class AdminController : ControllerBase
 }
 
 public record ExtendRequest(int Months = 0, Guid? PlanId = null);
+public record AdminUpdateUserRequest(string? Email, string? Phone);
 public record UpdateTicketStatusRequest(string Status);
 public record CreatePlanRequest(string Name, int DurationMonths, decimal Price, string? Currency = "AZN", int? MaxDevices = null);
 public record UpdatePlanRequest(string? Name, int? DurationMonths, decimal? Price, string? Currency, int? MaxDevices, bool? IsActive);

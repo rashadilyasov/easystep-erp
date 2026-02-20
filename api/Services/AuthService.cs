@@ -188,6 +188,26 @@ public class AuthService
         return true;
     }
 
+    /// <summary>Yeni e-poçt təsdiq tokenu yaradır (admin təkrar göndərmə üçün).</summary>
+    public async Task<string?> CreateEmailVerificationTokenForUserAsync(Guid userId, CancellationToken ct = default)
+    {
+        var user = await _db.Users.FindAsync(new object[] { userId }, ct);
+        if (user == null) return null;
+
+        var token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(24)).Replace("+", "-").Replace("/", "_").TrimEnd('=');
+        var expiryHours = int.Parse(_config["Auth:EmailVerificationExpiryHours"] ?? "24");
+        _db.EmailVerificationTokens.Add(new EmailVerificationToken
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            TokenHash = HashPasswordResetToken(token),
+            ExpiresAt = DateTime.UtcNow.AddHours(expiryHours),
+            CreatedAt = DateTime.UtcNow,
+        });
+        await _db.SaveChangesAsync(ct);
+        return token;
+    }
+
     public async Task UpdateLastLoginAsync(Guid userId, CancellationToken ct = default)
     {
         var user = await _db.Users.FindAsync(new object[] { userId }, ct);

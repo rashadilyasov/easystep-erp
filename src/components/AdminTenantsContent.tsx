@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/api";
 
 type TenantUser = { id: string; email: string; emailVerified: boolean; createdAt: string };
@@ -16,6 +16,14 @@ type Tenant = {
 
 type Plan = { id: string; name: string; durationMonths: number; price: number; currency: string; isActive: boolean };
 
+type TenantDetail = {
+  tenant: { id: string; name: string; contactPerson: string; taxId?: string; country?: string; city?: string; createdAt: string };
+  users: { id: string; email: string; emailVerified: boolean; createdAt: string; lastLoginAt?: string; role: string }[];
+  subscription: { name: string; status: string; endDate: string } | null;
+  payments: { id: string; amount: number; currency: string; status: string; provider: string; date: string }[];
+  tickets: { id: string; subject: string; status: string; date: string }[];
+};
+
 export default function AdminTenantsContent() {
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [plans, setPlans] = useState<Plan[]>([]);
@@ -25,6 +33,13 @@ export default function AdminTenantsContent() {
   const [extendMonths, setExtendMonths] = useState(1);
   const [extendPlanId, setExtendPlanId] = useState<string>("");
   const [verifying, setVerifying] = useState<string | null>(null);
+  const [resending, setResending] = useState<string | null>(null);
+  const [detailModal, setDetailModal] = useState<TenantDetail | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [editingUser, setEditingUser] = useState<{ id: string; email: string; phone?: string } | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
+
+  const refreshTenants = useCallback(() => api.admin.tenants().then(setTenants), []);
 
   useEffect(() => {
     Promise.all([api.admin.tenants(), api.admin.plans()])
@@ -37,6 +52,58 @@ export default function AdminTenantsContent() {
       .catch(() => setTenants([]))
       .finally(() => setLoading(false));
   }, []);
+
+  const handleResendVerification = async (userId: string) => {
+    setResending(userId);
+    try {
+      await api.admin.resendVerificationEmail(userId);
+      alert("Təsdiq linki e-poçtuna göndərildi");
+    } catch {
+      alert("Xəta baş verdi");
+    } finally {
+      setResending(null);
+    }
+  };
+
+  const openDetailModal = async (tenantId: string) => {
+    setDetailLoading(true);
+    setDetailModal(null);
+    try {
+      const d = await api.admin.tenantDetail(tenantId);
+      setDetailModal(d);
+    } catch {
+      alert("Məlumat yüklənə bilmədi");
+    } finally {
+      setDetailLoading(false);
+    }
+  };
+
+  const handleUpdateUser = async (userId: string, email?: string, phone?: string) => {
+    if (!email?.trim()) return;
+    try {
+      await api.admin.updateUser(userId, { email: email.trim(), phone: phone?.trim() });
+      const d = await api.admin.tenantDetail(detailModal!.tenant.id);
+      setDetailModal(d);
+      setEditingUser(null);
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Xəta");
+    }
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    if (!confirm("İstifadəçini silmək istədiyinizə əminsiniz?")) return;
+    setDeleting(userId);
+    try {
+      await api.admin.deleteUser(userId);
+      const d = await api.admin.tenantDetail(detailModal!.tenant.id);
+      setDetailModal(d);
+      refreshTenants();
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Xəta");
+    } finally {
+      setDeleting(null);
+    }
+  };
 
   const handleExtend = async (tenantId: string, months?: number, planId?: string) => {
     setExtending(tenantId);
@@ -56,8 +123,11 @@ export default function AdminTenantsContent() {
     setVerifying(userId);
     try {
       await api.admin.verifyUserEmail(userId);
-      const list = await api.admin.tenants();
-      setTenants(list);
+      await refreshTenants();
+      if (detailModal) {
+        const d = await api.admin.tenantDetail(detailModal.tenant.id);
+        setDetailModal(d);
+      }
     } catch {
       alert("Xəta baş verdi");
     } finally {
@@ -100,7 +170,15 @@ export default function AdminTenantsContent() {
           ) : (
             tenants.map((t) => (
               <tr key={t.id} className="border-t border-slate-200">
-                <td className="px-4 py-3 font-medium">{t.name}</td>
+                <td className="px-4 py-3">
+                  <button
+                    type="button"
+                    onClick={() => openDetailModal(t.id)}
+                    className="font-medium text-primary-600 hover:underline text-left"
+                  >
+                    {t.name}
+                  </button>
+                </td>
                 <td className="px-4 py-3">
                   <div className="space-y-1">
                     {(t.users ?? []).map((u) => (
@@ -109,14 +187,24 @@ export default function AdminTenantsContent() {
                         {u.emailVerified ? (
                           <span className="text-xs text-green-600">✓</span>
                         ) : (
-                          <button
-                            type="button"
-                            onClick={() => handleVerifyEmail(u.id)}
-                            disabled={verifying === u.id}
-                            className="text-xs px-2 py-0.5 bg-amber-100 text-amber-800 rounded hover:bg-amber-200 disabled:opacity-50"
-                          >
-                            {verifying === u.id ? "..." : "Təsdiqlə"}
-                          </button>
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => handleVerifyEmail(u.id)}
+                              disabled={verifying === u.id}
+                              className="text-xs px-2 py-0.5 bg-green-100 text-green-800 rounded hover:bg-green-200 disabled:opacity-50"
+                            >
+                              {verifying === u.id ? "..." : "Təsdiqlə"}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleResendVerification(u.id)}
+                              disabled={resending === u.id}
+                              className="text-xs px-2 py-0.5 bg-amber-100 text-amber-800 rounded hover:bg-amber-200 disabled:opacity-50"
+                            >
+                              {resending === u.id ? "..." : "Mail göndər"}
+                            </button>
+                          </>
                         )}
                       </div>
                     ))}
@@ -207,6 +295,129 @@ export default function AdminTenantsContent() {
                 Ləğv
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {(detailLoading || detailModal) && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-auto shadow-xl">
+            {detailLoading ? (
+              <div className="h-64 animate-pulse bg-slate-100 rounded-xl" />
+            ) : detailModal ? (
+              <>
+                <div className="flex justify-between items-start mb-4">
+                  <h3 className="font-semibold text-slate-900 text-lg">{detailModal.tenant.name}</h3>
+                  <button onClick={() => setDetailModal(null)} className="text-slate-500 hover:text-red-500">✕</button>
+                </div>
+                <div className="grid gap-4 text-sm">
+                  <div>
+                    <h4 className="font-medium text-slate-700 mb-2">İstifadəçilər</h4>
+                    <div className="space-y-2">
+                      {detailModal.users.map((u) => (
+                        <div key={u.id} className="flex items-center gap-2 flex-wrap p-2 bg-slate-50 rounded-lg">
+                          {editingUser?.id === u.id ? (
+                            <>
+                              <input
+                                type="email"
+                                value={editingUser.email}
+                                onChange={(e) => setEditingUser((x) => x ? { ...x, email: e.target.value } : null)}
+                                className="flex-1 min-w-[180px] px-2 py-1 border rounded"
+                              />
+                              <button
+                                onClick={() => handleUpdateUser(u.id, editingUser.email)}
+                                className="px-2 py-1 bg-primary-600 text-white rounded text-xs"
+                              >
+                                Saxla
+                              </button>
+                              <button onClick={() => setEditingUser(null)} className="px-2 py-1 border rounded text-xs">
+                                Ləğv
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <span className="text-slate-800">{u.email}</span>
+                              {u.emailVerified ? <span className="text-green-600 text-xs">✓</span> : (
+                                <>
+                                  <button
+                                    onClick={() => handleVerifyEmail(u.id)}
+                                    disabled={verifying === u.id}
+                                    className="text-xs px-2 py-0.5 bg-green-100 text-green-800 rounded"
+                                  >
+                                    {verifying === u.id ? "..." : "Təsdiqlə"}
+                                  </button>
+                                  <button
+                                    onClick={() => handleResendVerification(u.id)}
+                                    disabled={resending === u.id}
+                                    className="text-xs px-2 py-0.5 bg-amber-100 text-amber-800 rounded"
+                                  >
+                                    {resending === u.id ? "..." : "Mail göndər"}
+                                  </button>
+                                </>
+                              )}
+                              {u.role !== "SuperAdmin" && (
+                                <>
+                                  <button
+                                    onClick={() => setEditingUser({ id: u.id, email: u.email })}
+                                    className="text-xs px-2 py-0.5 text-primary-600 hover:underline"
+                                  >
+                                    Edit
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteUser(u.id)}
+                                    disabled={deleting === u.id}
+                                    className="text-xs px-2 py-0.5 bg-red-100 text-red-800 rounded disabled:opacity-50"
+                                  >
+                                    {deleting === u.id ? "..." : "Sil"}
+                                  </button>
+                                </>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  {detailModal.subscription && (
+                    <div>
+                      <h4 className="font-medium text-slate-700 mb-1">Abunə</h4>
+                      <p>{detailModal.subscription.name} — {detailModal.subscription.status} — bitmə: {new Date(detailModal.subscription.endDate).toLocaleDateString("az-AZ")}</p>
+                      <button
+                        onClick={() => { setDetailModal(null); openExtendModal({ id: detailModal.tenant.id, name: detailModal.tenant.name, contactPerson: "", createdAt: "", subscription: null }); }}
+                        className="mt-1 text-primary-600 text-xs hover:underline"
+                      >
+                        Abunə uzat
+                      </button>
+                    </div>
+                  )}
+                  {detailModal.payments.length > 0 && (
+                    <div>
+                      <h4 className="font-medium text-slate-700 mb-1">Ödənişlər (son 20)</h4>
+                      <div className="max-h-32 overflow-auto space-y-1 text-xs">
+                        {detailModal.payments.map((p) => (
+                          <div key={p.id} className="flex justify-between">
+                            <span>{p.date} — {p.amount} {p.currency}</span>
+                            <span className={p.status === "Succeeded" ? "text-green-600" : "text-slate-600"}>{p.status}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {detailModal.tickets.length > 0 && (
+                    <div>
+                      <h4 className="font-medium text-slate-700 mb-1">Biletlər (son 10)</h4>
+                      <div className="space-y-1 text-xs">
+                        {detailModal.tickets.map((t) => (
+                          <div key={t.id} className="flex justify-between">
+                            <span>{t.subject}</span>
+                            <span>{t.status} — {t.date}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </>
+            ) : null}
           </div>
         </div>
       )}

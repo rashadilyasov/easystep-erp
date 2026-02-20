@@ -3,12 +3,15 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 
+type TenantUser = { id: string; email: string; emailVerified: boolean; createdAt: string };
+
 type Tenant = {
   id: string;
   name: string;
   contactPerson: string;
   createdAt: string;
   subscription: { planName: string; status: string; endDate: string } | null;
+  users?: TenantUser[];
 };
 
 type Plan = { id: string; name: string; durationMonths: number; price: number; currency: string; isActive: boolean };
@@ -21,6 +24,7 @@ export default function AdminTenantsContent() {
   const [extendModal, setExtendModal] = useState<{ tenantId: string; tenantName: string } | null>(null);
   const [extendMonths, setExtendMonths] = useState(1);
   const [extendPlanId, setExtendPlanId] = useState<string>("");
+  const [verifying, setVerifying] = useState<string | null>(null);
 
   useEffect(() => {
     Promise.all([api.admin.tenants(), api.admin.plans()])
@@ -48,6 +52,19 @@ export default function AdminTenantsContent() {
     }
   };
 
+  const handleVerifyEmail = async (userId: string) => {
+    setVerifying(userId);
+    try {
+      await api.admin.verifyUserEmail(userId);
+      const list = await api.admin.tenants();
+      setTenants(list);
+    } catch {
+      alert("Xəta baş verdi");
+    } finally {
+      setVerifying(null);
+    }
+  };
+
   const openExtendModal = (t: Tenant) => {
     setExtendModal({ tenantId: t.id, tenantName: t.name });
     setExtendMonths(t.subscription?.planName?.includes("12") ? 12 : t.subscription?.planName?.includes("6") ? 6 : t.subscription?.planName?.includes("3") ? 3 : 1);
@@ -66,6 +83,7 @@ export default function AdminTenantsContent() {
         <thead className="bg-slate-50">
           <tr>
             <th className="text-left px-4 py-3 font-medium text-slate-700">Şirkət</th>
+            <th className="text-left px-4 py-3 font-medium text-slate-700">İstifadəçilər</th>
             <th className="text-left px-4 py-3 font-medium text-slate-700">Plan</th>
             <th className="text-left px-4 py-3 font-medium text-slate-700">Status</th>
             <th className="text-left px-4 py-3 font-medium text-slate-700">Bitmə</th>
@@ -75,7 +93,7 @@ export default function AdminTenantsContent() {
         <tbody>
           {tenants.length === 0 ? (
             <tr>
-              <td colSpan={5} className="px-4 py-8 text-center text-slate-500">
+              <td colSpan={6} className="px-4 py-8 text-center text-slate-500">
                 Tenant tapılmadı
               </td>
             </tr>
@@ -83,6 +101,28 @@ export default function AdminTenantsContent() {
             tenants.map((t) => (
               <tr key={t.id} className="border-t border-slate-200">
                 <td className="px-4 py-3 font-medium">{t.name}</td>
+                <td className="px-4 py-3">
+                  <div className="space-y-1">
+                    {(t.users ?? []).map((u) => (
+                      <div key={u.id} className="flex items-center gap-2 flex-wrap">
+                        <span className="text-slate-700">{u.email}</span>
+                        {u.emailVerified ? (
+                          <span className="text-xs text-green-600">✓</span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleVerifyEmail(u.id)}
+                            disabled={verifying === u.id}
+                            className="text-xs px-2 py-0.5 bg-amber-100 text-amber-800 rounded hover:bg-amber-200 disabled:opacity-50"
+                          >
+                            {verifying === u.id ? "..." : "Təsdiqlə"}
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                    {(t.users ?? []).length === 0 && <span className="text-slate-400">—</span>}
+                  </div>
+                </td>
                 <td className="px-4 py-3">{t.subscription?.planName ?? "-"}</td>
                 <td className="px-4 py-3">
                   {t.subscription ? (

@@ -67,9 +67,13 @@ public class AdminController : ControllerBase
             .OrderByDescending(s => s.EndDate)
             .ToListAsync(ct);
 
-        var subByTenant = subs
-            .GroupBy(s => s.TenantId)
-            .ToDictionary(g => g.Key, g => g.First());
+        var users = await _db.Users
+            .Where(u => list.Select(t => t.Id).Contains(u.TenantId))
+            .Select(u => new { u.Id, u.TenantId, u.Email, u.EmailVerified, u.CreatedAt })
+            .ToListAsync(ct);
+
+        var usersByTenant = users.GroupBy(u => u.TenantId).ToDictionary(g => g.Key, g => g.ToList());
+        var subByTenant = subs.GroupBy(s => s.TenantId).ToDictionary(g => g.Key, g => g.First());
 
         return Ok(list.Select(t => new
         {
@@ -80,7 +84,20 @@ public class AdminController : ControllerBase
             subscription = subByTenant.TryGetValue(t.Id, out var sub)
                 ? new { planName = sub.Plan.Name, status = sub.Status.ToString(), endDate = sub.EndDate.ToString("yyyy-MM-dd") }
                 : (object?)null,
+            users = usersByTenant.TryGetValue(t.Id, out var ulist)
+                ? ulist.Select(u => new { u.Id, u.Email, u.EmailVerified, createdAt = u.CreatedAt.ToString("yyyy-MM-dd") })
+                : Array.Empty<object>(),
         }));
+    }
+
+    [HttpPost("users/{userId:guid}/verify-email")]
+    public async Task<IActionResult> VerifyUserEmail(Guid userId, CancellationToken ct)
+    {
+        var user = await _db.Users.FindAsync(new object[] { userId }, ct);
+        if (user == null) return NotFound(new { message = "İstifadəçi tapılmadı" });
+        user.EmailVerified = true;
+        await _db.SaveChangesAsync(ct);
+        return Ok(new { message = "E-poçt təsdiqləndi" });
     }
 
     [HttpPost("tenants/{id:guid}/extend")]

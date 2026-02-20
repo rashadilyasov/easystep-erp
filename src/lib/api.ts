@@ -266,13 +266,25 @@ export const api = {
         body: JSON.stringify({ status }),
       }),
     contacts: () => apiFetch<{ id: string; name: string; email: string; message: string; date: string }[]>("/api/admin/contacts"),
-    tenants: () => apiFetch<{ id: string; name: string; contactPerson: string; createdAt: string; subscription: { planName: string; status: string; endDate: string } | null }[]>("/api/admin/tenants"),
+    tenants: () =>
+      apiFetch<
+        {
+          id: string;
+          name: string;
+          contactPerson: string;
+          createdAt: string;
+          subscription: { planName: string; status: string; endDate: string } | null;
+          users: { id: string; email: string; emailVerified: boolean; createdAt: string }[];
+        }[]
+      >("/api/admin/tenants"),
     payments: () => apiFetch<{ id: string; date: string; tenantName: string; amount: number; currency: string; status: string; provider: string; transactionId: string | null }[]>("/api/admin/payments"),
     extendSubscription: (tenantId: string, months?: number, planId?: string) =>
       apiFetch<{ message: string }>(`/api/admin/tenants/${tenantId}/extend`, {
         method: "POST",
         body: JSON.stringify({ months: months ?? 0, planId: planId ?? null }),
       }),
+    verifyUserEmail: (userId: string) =>
+      apiFetch<{ message: string }>(`/api/admin/users/${userId}/verify-email`, { method: "POST" }),
     plans: () =>
       apiFetch<{ id: string; name: string; durationMonths: number; price: number; currency: string; maxDevices: number | null; isActive: boolean; createdAt: string }[]>(
         "/api/admin/plans"

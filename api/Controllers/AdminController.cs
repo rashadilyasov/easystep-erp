@@ -550,52 +550,66 @@ public class AdminController : ControllerBase
     [HttpGet("affiliate-stats")]
     public async Task<IActionResult> GetAffiliateStats(CancellationToken ct = default)
     {
-        var now = DateTime.UtcNow;
-        var monthStart = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
-
-        var totalPartners = await _db.Affiliates.CountAsync(ct);
-        var totalPending = await _db.Affiliates.SumAsync(a => a.BalancePending, ct);
-        var totalPaid = await _db.Affiliates.SumAsync(a => a.BalanceTotal, ct);
-        var pendingCount = await _db.AffiliateCommissions.CountAsync(c => c.Status == AffiliateCommissionStatus.Pending, ct);
-        var thisMonthPaid = await _db.AffiliateCommissions
-            .Where(c => c.Status == AffiliateCommissionStatus.Paid && c.PaidAt >= monthStart)
-            .SumAsync(c => c.Amount, ct);
-
-        return Ok(new
+        try
         {
-            totalPartners,
-            totalPending = Math.Round(totalPending, 2),
-            totalPaid = Math.Round(totalPaid, 2),
-            pendingCount,
-            thisMonthPaid = Math.Round(thisMonthPaid, 2),
-        });
+            var now = DateTime.UtcNow;
+            var monthStart = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+
+            var totalPartners = await _db.Affiliates.CountAsync(ct);
+            var totalPending = await _db.Affiliates.SumAsync(a => a.BalancePending, ct);
+            var totalPaid = await _db.Affiliates.SumAsync(a => a.BalanceTotal, ct);
+            var pendingCount = await _db.AffiliateCommissions.CountAsync(c => c.Status == AffiliateCommissionStatus.Pending, ct);
+            var thisMonthPaid = await _db.AffiliateCommissions
+                .Where(c => c.Status == AffiliateCommissionStatus.Paid && c.PaidAt >= monthStart)
+                .SumAsync(c => c.Amount, ct);
+
+            return Ok(new
+            {
+                totalPartners,
+                totalPending = Math.Round(totalPending, 2),
+                totalPaid = Math.Round(totalPaid, 2),
+                pendingCount,
+                thisMonthPaid = Math.Round(thisMonthPaid, 2),
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "GetAffiliateStats failed");
+            return Ok(new { totalPartners = 0, totalPending = 0m, totalPaid = 0m, pendingCount = 0, thisMonthPaid = 0m });
+        }
     }
 
     [HttpGet("affiliates")]
     public async Task<IActionResult> GetAffiliates(CancellationToken ct = default)
     {
-        var list = await _db.Affiliates
-            .Include(a => a.User)
-            .OrderByDescending(a => a.CreatedAt)
-            .Select(a => new
-            {
-                a.Id,
-                a.UserId,
-                email = a.User.Email,
-                emailVerified = a.User.EmailVerified,
-                a.IsApproved,
-                a.BalanceTotal,
-                a.BalancePending,
-                a.BalanceBonus,
-                createdAt = a.User.CreatedAt,
-            })
-            .ToListAsync(ct);
-        var promoCounts = await _db.PromoCodes
-            .Where(p => p.Status == PromoCodeStatus.Used)
-            .GroupBy(p => p.AffiliateId)
-            .Select(g => new { AffiliateId = g.Key, Count = g.Count() })
-            .ToDictionaryAsync(x => x.AffiliateId, x => x.Count, ct);
-        return Ok(list.Select(a => new
+        try
+        {
+            var list = await _db.Affiliates
+                .AsNoTracking()
+                .Include(a => a.User)
+                .OrderByDescending(a => a.CreatedAt)
+                .Select(a => new
+                {
+                    a.Id,
+                    a.UserId,
+                    email = a.User.Email,
+                    emailVerified = a.User.EmailVerified,
+                    a.IsApproved,
+                    a.BalanceTotal,
+                    a.BalancePending,
+                    a.BalanceBonus,
+                    createdAt = a.User.CreatedAt,
+                })
+                .ToListAsync(ct);
+            var affiliateIds = list.Select(a => a.Id).ToList();
+            var promoCounts = affiliateIds.Count > 0
+                ? await _db.PromoCodes
+                    .Where(p => p.Status == PromoCodeStatus.Used && affiliateIds.Contains(p.AffiliateId))
+                    .GroupBy(p => p.AffiliateId)
+                    .Select(g => new { AffiliateId = g.Key, Count = g.Count() })
+                    .ToDictionaryAsync(x => x.AffiliateId, x => x.Count, ct)
+                : new Dictionary<Guid, int>();
+            return Ok(list.Select(a => new
         {
             a.Id,
             a.UserId,
@@ -608,6 +622,12 @@ public class AdminController : ControllerBase
             createdAt = a.createdAt.ToString("dd.MM.yyyy"),
             activeCustomers = promoCounts.GetValueOrDefault(a.Id, 0),
         }));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "GetAffiliates failed");
+            return Ok(Array.Empty<object>());
+        }
     }
 
     [HttpPost("affiliates/{id:guid}/approve")]
@@ -636,6 +656,8 @@ public class AdminController : ControllerBase
     [HttpGet("promo-codes")]
     public async Task<IActionResult> GetPromoCodes([FromQuery] Guid? affiliateId, [FromQuery] string? status, [FromQuery] int limit = 200, CancellationToken ct = default)
     {
+        try
+        {
         var query = _db.PromoCodes
             .Include(p => p.Affiliate).ThenInclude(a => a.User)
             .Include(p => p.Tenant)
@@ -673,11 +695,19 @@ public class AdminController : ControllerBase
             p.affiliateEmail,
             p.tenantName,
         }));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "GetPromoCodes failed");
+            return Ok(Array.Empty<object>());
+        }
     }
 
     [HttpGet("affiliate-commissions")]
     public async Task<IActionResult> GetAffiliateCommissions([FromQuery] string? status, [FromQuery] Guid? affiliateId, [FromQuery] int limit = 100, CancellationToken ct = default)
     {
+        try
+        {
         var query = _db.AffiliateCommissions
             .Include(c => c.Affiliate).ThenInclude(a => a.User)
             .Include(c => c.Tenant)
@@ -718,6 +748,12 @@ public class AdminController : ControllerBase
             c.affiliateEmail,
             c.tenantName,
         }));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "GetAffiliateCommissions failed");
+            return Ok(Array.Empty<object>());
+        }
     }
 
     [HttpPost("affiliate-commissions/{id:guid}/approve")]
@@ -784,6 +820,8 @@ public class AdminController : ControllerBase
     [HttpGet("affiliate-bonuses")]
     public async Task<IActionResult> GetAffiliateBonuses([FromQuery] Guid? affiliateId, [FromQuery] int? year, [FromQuery] int? month, [FromQuery] string? status, [FromQuery] int limit = 100, CancellationToken ct = default)
     {
+        try
+        {
         var query = _db.AffiliateBonuses.Include(b => b.Affiliate).ThenInclude(a => a.User).AsQueryable();
         if (affiliateId.HasValue) query = query.Where(b => b.AffiliateId == affiliateId.Value);
         if (year.HasValue) query = query.Where(b => b.Year == year.Value);
@@ -809,6 +847,12 @@ public class AdminController : ControllerBase
             approvedAt = b.ApprovedAt?.ToString("dd.MM.yyyy"),
             paidAt = b.PaidAt?.ToString("dd.MM.yyyy"),
         }));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "GetAffiliateBonuses failed");
+            return Ok(Array.Empty<object>());
+        }
     }
 
     [HttpPost("affiliate-bonuses/calculate")]

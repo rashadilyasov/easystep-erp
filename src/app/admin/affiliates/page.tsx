@@ -274,6 +274,13 @@ export default function AdminAffiliatesPage() {
           <p className="font-medium">Məlumat yüklənmədi</p>
           <p className="mt-1">{loadError}</p>
           <p className="mt-2 text-amber-700">Railway deploy və /api/ping yoxlayın. Təsdiq gözləyən partnyorlar üçün E-poçt təsdiqi gözləyənlər səhifəsinə baxın.</p>
+          <button
+            type="button"
+            onClick={() => { setLoadError(null); load(); }}
+            className="mt-3 px-4 py-2 bg-amber-100 hover:bg-amber-200 rounded-lg text-sm font-medium"
+          >
+            Yenilə
+          </button>
         </div>
       )}
 

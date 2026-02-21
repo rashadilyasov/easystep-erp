@@ -156,11 +156,18 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Exception handler — JSON qaytarır (UseExceptionHandler path/handler tələb edir)
+// Exception handler — JSON qaytarır, xətanı loglayır
 app.UseExceptionHandler(errorApp =>
 {
     errorApp.Run(async context =>
     {
+        var ex = context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerPathFeature>()?.Error
+            ?? context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>()?.Error;
+        if (ex != null)
+        {
+            var logger = context.RequestServices.GetService<ILogger<Program>>();
+            logger?.LogError(ex, "Unhandled exception: {Path}", context.Request.Path);
+        }
         context.Response.StatusCode = 500;
         context.Response.ContentType = "application/json";
         await context.Response.WriteAsJsonAsync(new { message = "Xəta baş verdi. Zəhmət olmasa bir az sonra yenidən cəhd edin." });

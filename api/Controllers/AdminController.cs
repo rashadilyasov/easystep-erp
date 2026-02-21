@@ -470,7 +470,7 @@ public class AdminController : ControllerBase
         var now = DateTime.UtcNow.ToString("yyyy-MM-dd");
         var item = new { id, title = req.Title ?? "", body = req.Body ?? "", publishedAt = now, active = true };
         list.Insert(0, System.Text.Json.JsonSerializer.SerializeToElement(item));
-        var json = System.Text.Json.JsonSerializer.Serialize(list.Select(x => x is System.Text.Json.JsonElement je ? System.Text.Json.JsonSerializer.Deserialize<object>(je) : x)));
+        var json = System.Text.Json.JsonSerializer.Serialize(list.Select(x => x is System.Text.Json.JsonElement je ? System.Text.Json.JsonSerializer.Deserialize<object>(je) : x));
         if (sc != null) { sc.Value = json; sc.UpdatedAt = DateTime.UtcNow; }
         else _db.SiteContents.Add(new SiteContent { Id = Guid.NewGuid(), Key = "content:announcements", Value = json, UpdatedAt = DateTime.UtcNow });
         await _db.SaveChangesAsync(ct);
@@ -1111,3 +1111,5 @@ public record AdminUpdateUserRequest(string? Email, string? Phone);
 public record UpdateTicketStatusRequest(string Status);
 public record CreatePlanRequest(string Name, int DurationMonths, decimal Price, string? Currency = "AZN", int? MaxDevices = null);
 public record UpdatePlanRequest(string? Name, int? DurationMonths, decimal? Price, string? Currency, int? MaxDevices, bool? IsActive);
+public record CreateAnnouncementRequest(string? Title, string? Body);
+public record CreateAcademyMaterialRequest(string? Title, string? Url);

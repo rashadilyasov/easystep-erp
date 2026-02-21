@@ -3,6 +3,7 @@ using EasyStep.Erp.Api.Data;
 using EasyStep.Erp.Api.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 
 namespace EasyStep.Erp.Api.Controllers;
@@ -10,6 +11,7 @@ namespace EasyStep.Erp.Api.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
+[EnableRateLimiting("support")]
 public class SupportController : ControllerBase
 {
     private readonly ApplicationDbContext _db;
@@ -43,6 +45,10 @@ public class SupportController : ControllerBase
         var tenantId = GetTenantId();
         var userId = GetUserId();
         if (tenantId == null || userId == null) return Unauthorized();
+        if (string.IsNullOrWhiteSpace(req?.Subject) || string.IsNullOrWhiteSpace(req?.Body))
+            return BadRequest(new { message = "Mövzu və təsvir vacibdir" });
+        if ((req.Subject?.Length ?? 0) > 500 || (req.Body?.Length ?? 0) > 10000)
+            return BadRequest(new { message = "Mətn həddindən artıq uzundur" });
 
         var ticket = new Ticket
         {
@@ -59,6 +65,22 @@ public class SupportController : ControllerBase
         await _db.SaveChangesAsync(ct);
 
         return Ok(new { id = ticket.Id, message = "Bilet açıldı" });
+    }
+
+    private static readonly HashSet<string> AllowedExtensions = new(StringComparer.OrdinalIgnoreCase)
+        { ".pdf", ".doc", ".docx", ".txt", ".log", ".png", ".jpg", ".jpeg" };
+
+    private static string SanitizeFileName(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return "fayl";
+        var baseName = Path.GetFileName(name);
+        if (string.IsNullOrEmpty(baseName)) return "fayl";
+        baseName = baseName.Replace("..", "").Trim();
+        if (baseName.Length > 128) baseName = baseName[..128];
+        var ext = Path.GetExtension(baseName);
+        if (string.IsNullOrEmpty(ext) || !AllowedExtensions.Contains(ext))
+            baseName = Path.GetFileNameWithoutExtension(baseName) + ".bin";
+        return string.IsNullOrWhiteSpace(baseName) ? "fayl" : baseName;
     }
 
     [HttpPost("tickets/{ticketId:guid}/attachments")]
@@ -83,15 +105,21 @@ public class SupportController : ControllerBase
             if (f.Length == 0 || f.Length > maxFileSize)
                 return BadRequest(new { message = "Hər fayl 5MB-dan kiçik olmalıdır" });
 
+            var ext = Path.GetExtension(f.FileName ?? "");
+            if (string.IsNullOrEmpty(ext) || !AllowedExtensions.Contains(ext))
+                return BadRequest(new { message = $"Fayl tipi icazə verilmir. İcazəli: {string.Join(", ", AllowedExtensions)}" });
+
             using var ms = new MemoryStream();
             await f.CopyToAsync(ms, ct);
             var content = ms.ToArray();
+
+            var safeName = SanitizeFileName(f.FileName);
 
             _db.TicketAttachments.Add(new TicketAttachment
             {
                 Id = Guid.NewGuid(),
                 TicketId = ticketId,
-                FileName = f.FileName ?? "fayl",
+                FileName = safeName,
                 ContentType = f.ContentType ?? "application/octet-stream",
                 Content = content,
                 CreatedAt = DateTime.UtcNow,

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using EasyStep.Erp.Api.Entities;
 using EasyStep.Erp.Api.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 

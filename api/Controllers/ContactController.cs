@@ -3,6 +3,7 @@ using EasyStep.Erp.Api.Data;
 using EasyStep.Erp.Api.Entities;
 using EasyStep.Erp.Api.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace EasyStep.Erp.Api.Controllers;
 
@@ -22,8 +23,14 @@ public class ContactController : ControllerBase
     }
 
     [HttpPost]
+    [EnableRateLimiting("contact")]
     public async Task<IActionResult> Submit([FromBody] ContactRequest req, CancellationToken ct)
     {
+        if (string.IsNullOrWhiteSpace(req?.Name) || string.IsNullOrWhiteSpace(req?.Email))
+            return BadRequest(new { message = "Ad və e-poçt vacibdir" });
+        if ((req.Name?.Length ?? 0) > 200 || (req.Email?.Length ?? 0) > 256 || (req.Message?.Length ?? 0) > 5000)
+            return BadRequest(new { message = "Mətn həddindən artıq uzundur" });
+
         _db.ContactMessages.Add(new ContactMessage
         {
             Id = Guid.NewGuid(),

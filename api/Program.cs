@@ -66,7 +66,11 @@ builder.Services.AddScoped<ITemplatedEmailService, TemplatedEmailService>();
 builder.Services.AddControllers();
 
 // JWT — Jwt:Key (Jwt__Key) və Jwt_Key formatlarını dəstəkləyir
-var jwtKey = builder.Configuration["Jwt:Key"] ?? builder.Configuration["Jwt_Key"] ?? "easystep-erp-secret-key-min-32-chars!!";
+var jwtKey = builder.Configuration["Jwt:Key"] ?? builder.Configuration["Jwt_Key"] ?? "";
+var defaultKey = "easystep-erp-secret-key-min-32-chars!!";
+if (string.IsNullOrEmpty(jwtKey) || jwtKey.Length < 32) jwtKey = defaultKey;
+if (builder.Environment.IsProduction() && jwtKey == defaultKey)
+    throw new InvalidOperationException("Production-də Jwt__Key təyin edilməlidir (min 32 simvol). RAILWAY-ENV.md-ə baxın.");
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -116,6 +120,16 @@ builder.Services.AddRateLimiter(options =>
         opt.Window = TimeSpan.FromMinutes(5);
         opt.PermitLimit = 10;
     });
+    options.AddFixedWindowLimiter("contact", opt =>
+    {
+        opt.Window = TimeSpan.FromMinutes(1);
+        opt.PermitLimit = 3;
+    });
+    options.AddFixedWindowLimiter("support", opt =>
+    {
+        opt.Window = TimeSpan.FromMinutes(5);
+        opt.PermitLimit = 20;
+    });
 });
 
 // CORS — Cors:Origins + vercel.app, localhost, 127.0.0.1
@@ -136,10 +150,11 @@ static bool IsAllowedOrigin(string? origin)
 {
     if (string.IsNullOrEmpty(origin)) return false;
     if (origin == "http://localhost:3000" || origin == "http://127.0.0.1:3000") return true;
-    if (origin.StartsWith("https://", StringComparison.OrdinalIgnoreCase) &&
-        (origin.Contains("easysteperp.com", StringComparison.OrdinalIgnoreCase) ||
-         origin.EndsWith(".vercel.app", StringComparison.OrdinalIgnoreCase)))
-        return true;
+    if (origin.StartsWith("http://", StringComparison.OrdinalIgnoreCase) && !origin.StartsWith("http://localhost") && !origin.StartsWith("http://127.0.0.1"))
+        return false;
+    if (origin.Equals("https://easysteperp.com", StringComparison.OrdinalIgnoreCase)) return true;
+    if (origin.Equals("https://www.easysteperp.com", StringComparison.OrdinalIgnoreCase)) return true;
+    if (origin.EndsWith(".vercel.app", StringComparison.OrdinalIgnoreCase)) return true;
     return false;
 }
 var corsOrigins = GetCorsOrigins(builder.Configuration);
@@ -180,6 +195,16 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.Use(async (context, next) =>
+{
+    context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+    context.Response.Headers["X-Frame-Options"] = "DENY";
+    context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+    if (!app.Environment.IsDevelopment())
+        context.Response.Headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload";
+    await next();
+});
 
 app.UseCors();
 app.UseRateLimiter();

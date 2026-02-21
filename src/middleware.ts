@@ -2,8 +2,21 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export const config = {
-  matcher: ["/login", "/register", "/register-affiliate"],
+  matcher: [
+    "/login",
+    "/register",
+    "/register-affiliate",
+    "/((?!_next/static|_next/image|favicon.ico|icon.svg|apple-icon|api).*)",
+  ],
 };
+
+function addSecurityHeaders(response: NextResponse) {
+  response.headers.set("X-Frame-Options", "DENY");
+  response.headers.set("X-Content-Type-Options", "nosniff");
+  response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  response.headers.set("X-DNS-Prefetch-Control", "on");
+  return response;
+}
 
 export function middleware(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
@@ -15,7 +28,7 @@ export function middleware(request: NextRequest) {
     url.pathname = "/";
     url.searchParams.set("auth", "login");
     if (redirect) url.searchParams.set("redirect", redirect);
-    return NextResponse.redirect(url);
+    return addSecurityHeaders(NextResponse.redirect(url));
   }
 
   // /register -> redirect to home with modal param
@@ -23,7 +36,7 @@ export function middleware(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = "/";
     url.searchParams.set("auth", "register");
-    return NextResponse.redirect(url);
+    return addSecurityHeaders(NextResponse.redirect(url));
   }
 
   // /register-affiliate -> redirect to home with affiliate modal
@@ -31,8 +44,9 @@ export function middleware(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = "/";
     url.searchParams.set("auth", "affiliate");
-    return NextResponse.redirect(url);
+    return addSecurityHeaders(NextResponse.redirect(url));
   }
 
-  return NextResponse.next();
+  const response = NextResponse.next();
+  return addSecurityHeaders(response);
 }

@@ -14,6 +14,7 @@ const adminNav = [
   { href: "/admin/affiliates", label: "Satış Partnyorları" },
   { href: "/admin/audit", label: "Audit log" },
   { href: "/admin/security", label: "Təhlükəsizlik (2FA)" },
+  { href: "/admin/email-settings", label: "E-poçt ayarları" },
 ];
 
 export default function AdminLayout({

@@ -365,6 +365,27 @@ export const api = {
       }),
     deletePlan: (planId: string) =>
       apiFetch<{ message: string }>(`/api/admin/plans/${planId}`, { method: "DELETE" }),
+    emailSettings: () =>
+      apiFetch<{ host: string; port: number; user: string; password: string; from: string; useSsl: boolean }>("/api/admin/email-settings"),
+    putEmailSettings: (data: { host: string; port: number; user: string; password?: string; from: string; useSsl: boolean }) =>
+      apiFetch<{ message: string }>("/api/admin/email-settings", {
+        method: "PUT",
+        body: JSON.stringify(data),
+      }),
+    emailTemplates: () =>
+      apiFetch<{ key: string; label: string }[]>("/api/admin/email-templates"),
+    getEmailTemplate: (key: string) =>
+      apiFetch<{ subject: string; body: string }>(`/api/admin/email-templates/by-key?key=${encodeURIComponent(key)}`),
+    putEmailTemplate: (key: string, data: { subject: string; body: string }) =>
+      apiFetch<{ message: string }>(`/api/admin/email-templates/by-key?key=${encodeURIComponent(key)}`, {
+        method: "PUT",
+        body: JSON.stringify(data),
+      }),
+    bulkSendEmail: (data: { emails: string[]; subject: string; body: string }) =>
+      apiFetch<{ message: string; sent: number; failed: number }>("/api/admin/email-bulk-send", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
     siteContent: {
       list: () =>
         apiFetch<{ key: string; value: string; updatedAt: string }[]>("/api/admin/site-content"),

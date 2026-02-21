@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using EasyStep.Erp.Api.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -33,7 +34,7 @@ public class AffiliateBonusBackgroundService : BackgroundService
                 using var scope = _sp.CreateScope();
                 var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
                 var affiliateService = scope.ServiceProvider.GetRequiredService<AffiliateService>();
-                var email = scope.ServiceProvider.GetRequiredService<IEmailService>();
+                var templatedEmail = scope.ServiceProvider.GetRequiredService<ITemplatedEmailService>();
 
                 var affiliates = await db.Affiliates
                     .Include(a => a.User)
@@ -59,10 +60,15 @@ public class AffiliateBonusBackgroundService : BackgroundService
                         {
                             try
                             {
-                                await email.SendAsync(
+                                await templatedEmail.SendTemplatedAsync(
                                     aff.User.Email,
-                                    $"Easy Step ERP - Bonus xəbərdarlığı ({year}-{month:D2})",
-                                    $"<p>Salam.</p><p>Keçən ay ({year}-{month:D2}) {customerCount} müştəri ilə ödəniş aldınız. Bonus üçün minimum 5 müştəri tələb olunur. Bu ay daha çox müştəri cəlb etməyə çalışın.</p>",
+                                    EmailTemplateKeys.BonusReminder,
+                                    new Dictionary<string, string>
+                                    {
+                                        ["year"] = year.ToString(),
+                                        ["month"] = month.ToString("D2"),
+                                        ["customerCount"] = customerCount.ToString(),
+                                    },
                                     stoppingToken);
                             }
                             catch { /* ignore */ }

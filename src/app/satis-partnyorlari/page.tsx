@@ -10,7 +10,7 @@ export default function SatisPartnyorlariPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
-      <PublicHeader active={null} />
+      <PublicHeader active="partners" />
 
       <main className="pt-24 pb-16 px-4">
         <div className="max-w-3xl mx-auto">
@@ -22,59 +22,62 @@ export default function SatisPartnyorlariPage() {
           </p>
 
           <div className="bg-white rounded-2xl shadow-xl border border-slate-200 p-8 mb-12">
-            <h2 className="text-xl font-bold text-slate-900 mb-6 text-center">Partnyor Qaydaları və Bonus Mexanizmi</h2>
+            <h2 className="text-xl font-bold text-slate-900 mb-2 text-center">Satış Partnyoru Programı — Qaydalar və Müqavilə Şərtləri</h2>
+            <p className="text-sm text-slate-500 text-center mb-6">
+              Bu səhifə satış partnyorları üçün nəzərdə tutulub. Müştəri şərtlərindən fərqli olaraq partnyor münasibətləri, komissiya və bonus hüquqlarını müəyyən edir.
+            </p>
 
             <div className="space-y-8 text-slate-600">
               <section>
-                <h3 className="font-semibold text-slate-900 mb-3">1️⃣ Hər Müştəri Üçün Unikal Promo Kod</h3>
+                <h3 className="font-semibold text-slate-900 mb-3">1. Promo Kod İstifadəsi və Komissiya Haqları</h3>
                 <ul className="space-y-2 pl-4">
-                  <li>• Hər partnyor hər yeni müştəri üçün unikal promo kod yaradır.</li>
-                  <li>• Hər promo kod yalnız bir müştəri tərəfindən istifadə oluna bilər.</li>
-                  <li>• Promo kod müştəri üçün 1 il müddətində endirim təmin edir.</li>
-                  <li>• Partnyor üçün həmin kod üzrə komissiya müştəri ilə əməkdaşlıq bitənə qədər aktivdir.</li>
+                  <li>• Hər satış partnyoru öz promo kodlarını yalnız cəlb etdiyi müştərilər üçün yarada bilər. Bir kod — bir müştəri prinsipi tətbiq olunur.</li>
+                  <li>• Promo kod vasitəsilə qeydiyyat olan müştəriyə 1 il müddətində endirim təmin olunur.</li>
+                  <li>• Partnyorun komissiya hüququ həmin müştərinin aktiv abunə müddəti ilə məhdudlaşır.</li>
                 </ul>
               </section>
 
               <section>
-                <h3 className="font-semibold text-slate-900 mb-3">2️⃣ Minimum Müştəri Şərti (Bonus)</h3>
+                <h3 className="font-semibold text-slate-900 mb-3">2. Aylıq Bonus — Minimum Müştəri Şərti</h3>
                 <ul className="space-y-2 pl-4">
-                  <li>• Bonus almaq üçün ay ərzində ən azı 5 müştəri ödəniş etməlidir.</li>
-                  <li>• Bu müştərilər fərqli promo kodlarla ola bilər.</li>
-                  <li>• Ayın sonunda admin paneli aktiv müştəriləri yoxlayır və bonusu təsdiqləyir.</li>
-                  <li>• 5-dən az müştəri olduqda bonus növbəti ay üçün saxlanılır.</li>
+                  <li>• Bonus ödənişi üçün təqvim ayı ərzində ən azı 5 fərqli müştərinin ödəniş etməsi tələb olunur.</li>
+                  <li>• Müştəri sayının yoxlanması və bonus təsdiqi ayın sonunda sistem tərəfindən aparılır.</li>
+                  <li>• Şərt yerinə yetirilməzsə, bonus növbəti ay üçün nəzərdə tutulmur; əvvəlki ayın nəticələri saxlanılmır.</li>
                 </ul>
               </section>
 
               <section>
-                <h3 className="font-semibold text-slate-900 mb-3">3️⃣ Hesab və Təhlükəsizlik</h3>
+                <h3 className="font-semibold text-slate-900 mb-3">3. Partnyor Hesabı və Təhlükəsizlik Tələbləri</h3>
                 <ul className="space-y-2 pl-4">
-                  <li>• Etibarlı e-poçt ünvanı tələb olunur; şifrə minimum 12 simvollu və güclü olmalıdır.</li>
-                  <li>• Hər partnyor hesabını qorumaq və şəxsi məlumatlarını düzgün saxlamaq öhdəliyinə malikdir.</li>
+                  <li>• Qeydiyyat üçün doğrulanabilir e-poçt ünvanı və minimum 12 simvoldan ibarət güclü şifrə (böyük/kiçik hərf və rəqəm) tələb olunur.</li>
+                  <li>• Partnyor hesabının təhlükəsizliyini təmin etməyə və şəxsi məlumatlarının düzgünlüyünü saxlamağa öz öhdəliyini götürür.</li>
                 </ul>
               </section>
 
               <section>
-                <h3 className="font-semibold text-slate-900 mb-3">4️⃣ Qaydaların Qəbul Edilməsi</h3>
+                <h3 className="font-semibold text-slate-900 mb-3">4. Hüquqi Müqavilə və Qaydaların Qəbulu</h3>
                 <ul className="space-y-2 pl-4">
-                  <li>• Partnyor qeydiyyat zamanı <Link href="/terms" className="text-primary-600 hover:underline">Şərtlər</Link> və <Link href="/privacy" className="text-primary-600 hover:underline">Məxfilik Siyasətini</Link> qəbul etməlidir.</li>
-                  <li>• Bu siyasətə riayət etmək partnyorun öhdəliyidir.</li>
+                  <li>• Satış partnyoru qeydiyyatı zamanı <Link href="/terms" className="text-primary-600 hover:underline font-medium">Ümumi İstifadə Şərtləri</Link> və <Link href="/privacy" className="text-primary-600 hover:underline font-medium">Məxfilik Siyasətini</Link> qəbul etməklə bu proqrama daxil olur.</li>
+                  <li>• Əlavə olaraq satış partnyoru kimi <strong>Satış Partnyoru Proqramı Qaydalarını</strong> (bu səhifədə təqdim olunanları) və komissiya/bonus şərtlərini qəbul etmiş sayılır.</li>
+                  <li>• Bu qaydalara uyğunluq partnyorun hüquqi öhdəliyidir. Pozuntular müqavilənin pozulması kimi qiymətləndirilə bilər.</li>
                 </ul>
               </section>
 
               <section>
-                <h3 className="font-semibold text-slate-900 mb-3">5️⃣ Komissiya və Ödəniş</h3>
+                <h3 className="font-semibold text-slate-900 mb-3">5. Komissiya və Ödəniş — Hüquqi Aspektlər</h3>
                 <ul className="space-y-2 pl-4">
-                  <li>• Müştəri ödəniş etdikdən sonra komissiya hesablanır.</li>
-                  <li>• Ödəniş və təsdiqləmə prosesi admin tərəfindən idarə olunur.</li>
-                  <li>• Partnyor yalnız həqiqi satışlar üçün komissiya və bonus ala bilər.</li>
+                  <li>• Komissiya yalnız müştərinin ödənişi tamamlandıqdan və təsdiqləndikdən sonra hesablanır.</li>
+                  <li>• Ödənişlərin edilməsi və təsdiqi operator (Easy Step ERP) tərəfindən idarə olunur.</li>
+                  <li>• Partnyor yalnız həqiqi, təsdiqlənmiş satışlar üçün komissiya və bonus hüququ qazanır. Saxta və ya sui-istifadə hallarında hüquqlar ləğv edilə bilər.</li>
                 </ul>
               </section>
 
               <section>
-                <h3 className="font-semibold text-slate-900 mb-3">6️⃣ Qadağan Olunmuş Fəaliyyətlər</h3>
+                <h3 className="font-semibold text-slate-900 mb-3">6. Qadağan Olunmuş Fəaliyyətlər və Məsuliyyət</h3>
                 <ul className="space-y-2 pl-4">
-                  <li>• Aldadıcı məlumat vermək, spam göndərmək və qeyri-qanuni təbliğat qəti qadağandır.</li>
-                  <li>• Bütün fəaliyyətlər admin paneli vasitəsilə izlənir.</li>
+                  <li>• Aldadıcı məlumat vermək, saxta müştəri yaratmaq, spam və ya qeyri-qanuni təbliğat aparmaq qəti qadağandır.</li>
+                  <li>• Bütün partnyor fəaliyyətləri izlənir. Sui-istifadə aşkarlandıqda hesab dayandırıla və komissiya/bonus ödənişləri saxlanıla bilər.</li>
+                  <li>• Bu qaydalar Azərbaycan Respublikasının mövcud qanunvericiliyinə uyğun tətbiq olunur.</li>
                 </ul>
               </section>
             </div>

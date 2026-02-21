@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using EasyStep.Erp.Api.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -11,14 +12,16 @@ public class AuthController : ControllerBase
     private readonly AuthService _auth;
     private readonly AuditService _audit;
     private readonly IEmailService _email;
+    private readonly ITemplatedEmailService _templatedEmail;
     private readonly IConfiguration _config;
     private readonly ILogger<AuthController> _logger;
 
-    public AuthController(AuthService auth, AuditService audit, IEmailService email, IConfiguration config, ILogger<AuthController> logger)
+    public AuthController(AuthService auth, AuditService audit, IEmailService email, ITemplatedEmailService templatedEmail, IConfiguration config, ILogger<AuthController> logger)
     {
         _auth = auth;
         _audit = audit;
         _email = email;
+        _templatedEmail = templatedEmail;
         _config = config;
         _logger = logger;
     }
@@ -40,22 +43,10 @@ public class AuthController : ControllerBase
             {
                 var baseUrl = _config["App:BaseUrl"] ?? "https://www.easysteperp.com";
                 var verifyUrl = $"{baseUrl}/verify-email?token={Uri.EscapeDataString(token)}";
-                var html = $@"
-<!DOCTYPE html>
-<html><body style='font-family:Arial,sans-serif'>
-<h2>E-poçtunuzu təsdiqləyin</h2>
-<p>Salam,</p>
-<p>Easy Step ERP hesabınızı aktivləşdirmək üçün aşağıdakı linkə keçid edin:</p>
-<p><a href='{verifyUrl}'>{verifyUrl}</a></p>
-<p>Link 24 saat ərzində keçərlidir.</p>
-<p>Əgər bu qeydiyyat sizdən gəlməyibsə, bu e-poçtu nəzərə almayın.</p>
-<p>— Easy Step ERP<br/>hello@easysteperp.com</p>
-</body></html>";
                 var to = req.Email;
-                var subject = "Easy Step ERP - E-poçt təsdiqi";
                 _ = Task.Run(async () =>
                 {
-                    try { await _email.SendAsync(to, subject, html, CancellationToken.None); }
+                    try { await _templatedEmail.SendTemplatedAsync(to, EmailTemplateKeys.Verification, new Dictionary<string, string> { ["verifyUrl"] = verifyUrl }, CancellationToken.None); }
                     catch (Exception ex) { _logger.LogError(ex, "Background email send failed for {To}", to); }
                 });
             }
@@ -98,21 +89,10 @@ public class AuthController : ControllerBase
             {
                 var baseUrl = _config["App:BaseUrl"] ?? "https://www.easysteperp.com";
                 var verifyUrl = $"{baseUrl}/verify-email?token={Uri.EscapeDataString(token)}";
-                var html = $@"
-<!DOCTYPE html>
-<html><body style='font-family:Arial,sans-serif'>
-<h2>E-poçtunuzu təsdiqləyin</h2>
-<p>Salam,</p>
-<p>Easy Step ERP satış partnyoru hesabınızı aktivləşdirmək üçün aşağıdakı linkə keçid edin:</p>
-<p><a href='{verifyUrl}'>{verifyUrl}</a></p>
-<p>Link 24 saat ərzində keçərlidir.</p>
-<p>— Easy Step ERP<br/>hello@easysteperp.com</p>
-</body></html>";
                 var to = req.Email;
-                var subject = "Easy Step ERP - Satış partnyoru e-poçt təsdiqi";
                 _ = Task.Run(async () =>
                 {
-                    try { await _email.SendAsync(to, subject, html, CancellationToken.None); }
+                    try { await _templatedEmail.SendTemplatedAsync(to, EmailTemplateKeys.AffiliateVerification, new Dictionary<string, string> { ["verifyUrl"] = verifyUrl }, CancellationToken.None); }
                     catch (Exception ex) { _logger.LogError(ex, "Background email send failed for affiliate {To}", to); }
                 });
             }
@@ -168,17 +148,7 @@ public class AuthController : ControllerBase
                 var code = await _auth.CreateAndStoreEmailOtpAsync(user.Id, ct);
                 if (!string.IsNullOrEmpty(code))
                 {
-                    var html = $@"
-<!DOCTYPE html>
-<html><body style='font-family:Arial,sans-serif'>
-<h2>Daxil olma kodu</h2>
-<p>Salam,</p>
-<p>Easy Step ERP daxil olma kodunuz: <strong>{code}</strong></p>
-<p>Kod 10 dəqiqə ərzində keçərlidir.</p>
-<p>Əgər bu tələb sizdən gəlməyibsə, bu e-poçtu nəzərə almayın.</p>
-<p>— Easy Step ERP<br/>hello@easysteperp.com</p>
-</body></html>";
-                    await _email.SendAsync(user.Email, "Easy Step ERP - Daxil olma kodu", html, ct);
+                                await _templatedEmail.SendTemplatedAsync(user.Email, EmailTemplateKeys.LoginOtp, new Dictionary<string, string> { ["code"] = code }, ct);
                 }
                 return Ok(new { requires2FA = true, pendingToken, message = "E-poçtunuza göndərilən 6 rəqəmli kodu daxil edin.", viaEmail = true });
             }
@@ -238,18 +208,7 @@ public class AuthController : ControllerBase
             await _auth.SaveChangesAsync(ct);
             var code = await _auth.CreateAndStoreEmailOtpAsync(user.Id, ct);
             if (!string.IsNullOrEmpty(code))
-            {
-                var html = $@"
-<!DOCTYPE html>
-<html><body style='font-family:Arial,sans-serif'>
-<h2>2FA təsdiq kodu</h2>
-<p>Salam,</p>
-<p>Easy Step ERP 2FA aktivləşdirmə kodunuz: <strong>{code}</strong></p>
-<p>Kodu quraşdırma səhifəsində daxil edin.</p>
-<p>— Easy Step ERP<br/>hello@easysteperp.com</p>
-</body></html>";
-                await _email.SendAsync(user.Email, "Easy Step ERP - 2FA təsdiq kodu", html, ct);
-            }
+                await _templatedEmail.SendTemplatedAsync(user.Email, EmailTemplateKeys.TwoFaConfirm, new Dictionary<string, string> { ["code"] = code }, ct);
             return Ok(new { viaEmail = true, message = "Kod e-poçtunuza göndərildi. Kodu daxil edin." });
         }
 
@@ -277,17 +236,7 @@ public class AuthController : ControllerBase
         if (string.IsNullOrEmpty(code))
             return StatusCode(500, new { message = "Kod yaradıla bilmədi." });
 
-        var html = $@"
-<!DOCTYPE html>
-<html><body style='font-family:Arial,sans-serif'>
-<h2>Daxil olma kodu</h2>
-<p>Salam,</p>
-<p>Easy Step ERP daxil olma kodunuz: <strong>{code}</strong></p>
-<p>Kod 10 dəqiqə ərzində keçərlidir.</p>
-<p>Əgər bu tələb sizdən gəlməyibsə, bu e-poçtu nəzərə almayın.</p>
-<p>— Easy Step ERP<br/>hello@easysteperp.com</p>
-</body></html>";
-        await _email.SendAsync(user.Email, "Easy Step ERP - Daxil olma kodu", html, ct);
+        await _templatedEmail.SendTemplatedAsync(user.Email, EmailTemplateKeys.LoginOtp, new Dictionary<string, string> { ["code"] = code }, ct);
 
         return Ok(new { message = "Kod e-poçtunuza göndərildi." });
     }
@@ -333,15 +282,7 @@ public class AuthController : ControllerBase
         if (string.IsNullOrEmpty(code))
             return StatusCode(500, new { message = "Kod yaradıla bilmədi." });
 
-        var html = $@"
-<!DOCTYPE html>
-<html><body style='font-family:Arial,sans-serif'>
-<h2>2FA söndürmə kodu</h2>
-<p>Salam,</p>
-<p>2FA söndürmək üçün kodunuz: <strong>{code}</strong></p>
-<p>— Easy Step ERP<br/>hello@easysteperp.com</p>
-</body></html>";
-        await _email.SendAsync(user.Email, "Easy Step ERP - 2FA söndürmə kodu", html, ct);
+        await _templatedEmail.SendTemplatedAsync(user.Email, EmailTemplateKeys.TwoFaDisable, new Dictionary<string, string> { ["code"] = code }, ct);
 
         return Ok(new { message = "Kod e-poçtunuza göndərildi." });
     }
@@ -464,21 +405,10 @@ public class AuthController : ControllerBase
         {
             var baseUrl = _config["App:BaseUrl"] ?? "http://localhost:3000";
             var resetUrl = $"{baseUrl}/reset-password?token={Uri.EscapeDataString(token)}";
-            var html = $@"
-<!DOCTYPE html>
-<html><body style='font-family:Arial,sans-serif'>
-<h2>Şifrə sıfırlama</h2>
-<p>Şifrənizi sıfırlamaq üçün aşağıdakı linkə keçid edin:</p>
-<p><a href='{resetUrl}'>{resetUrl}</a></p>
-<p>Link 1 saat ərzində keçərlidir.</p>
-<p>Əgər bu tələb sizdən gəlməyibsə, bu e-poçtu nəzərə almayın.</p>
-<p>— Easy Step ERP</p>
-</body></html>";
             var to = req.Email;
-            var subject = "Easy Step ERP - Şifrə sıfırlama";
             _ = Task.Run(async () =>
             {
-                try { await _email.SendAsync(to, subject, html, CancellationToken.None); }
+                try { await _templatedEmail.SendTemplatedAsync(to, EmailTemplateKeys.PasswordReset, new Dictionary<string, string> { ["resetUrl"] = resetUrl }, CancellationToken.None); }
                 catch (Exception ex) { _logger.LogError(ex, "Background forgot-password email failed for {To}", to); }
             });
         }

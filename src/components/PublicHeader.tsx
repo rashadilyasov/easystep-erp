@@ -6,7 +6,7 @@ import Logo from "./Logo";
 import { useAuthModal } from "@/contexts/AuthModalContext";
 import { api } from "@/lib/api";
 
-type NavItem = "features" | "pricing" | "contact" | "security" | null;
+type NavItem = "features" | "pricing" | "contact" | "security" | "partners" | null;
 
 export default function PublicHeader({ active }: { active?: NavItem }) {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -59,7 +59,7 @@ export default function PublicHeader({ active }: { active?: NavItem }) {
       <Link href="/security" className={`py-2 lg:py-0 ${linkClass("security")}`} onClick={() => setMobileOpen(false)}>
         Təhlükəsizlik
       </Link>
-      <Link href="/satis-partnyorlari" className={`py-2 lg:py-0 ${linkClass(null)}`} onClick={() => setMobileOpen(false)}>
+      <Link href="/satis-partnyorlari" className={`py-2 lg:py-0 ${linkClass("partners")}`} onClick={() => setMobileOpen(false)}>
         Satış Partnyorları
       </Link>
       {userRole ? (
@@ -84,7 +84,7 @@ export default function PublicHeader({ active }: { active?: NavItem }) {
         <>
           <button
             type="button"
-            className={`py-2 lg:py-0 bg-transparent border-none cursor-pointer font-inherit ${linkClass(null)}`}
+            className="py-2 lg:py-0 bg-transparent border-none cursor-pointer font-inherit text-slate-600 hover:text-slate-900 transition-colors duration-200"
             onClick={handleOpenLogin}
             data-auth-trigger="login"
           >

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Security.Claims;
 using EasyStep.Erp.Api.Data;
 using EasyStep.Erp.Api.Entities;
@@ -21,8 +22,11 @@ public class AdminController : ControllerBase
     private readonly ILogger<AdminController> _logger;
     private readonly AffiliateService _affiliateService;
     private readonly AuditService _audit;
+    private readonly EmailSettingsService _emailSettings;
+    private readonly EmailTemplateService _emailTemplates;
+    private readonly ITemplatedEmailService _templatedEmail;
 
-    public AdminController(ApplicationDbContext db, IWebHostEnvironment env, AuthService auth, IEmailService email, IConfiguration config, ILogger<AdminController> logger, AffiliateService affiliateService, AuditService audit)
+    public AdminController(ApplicationDbContext db, IWebHostEnvironment env, AuthService auth, IEmailService email, ITemplatedEmailService templatedEmail, IConfiguration config, ILogger<AdminController> logger, AffiliateService affiliateService, AuditService audit, EmailSettingsService emailSettings, EmailTemplateService emailTemplates)
     {
         _db = db;
         _env = env;
@@ -32,6 +36,9 @@ public class AdminController : ControllerBase
         _logger = logger;
         _affiliateService = affiliateService;
         _audit = audit;
+        _emailSettings = emailSettings;
+        _emailTemplates = emailTemplates;
+        _templatedEmail = templatedEmail;
     }
 
     private Guid? GetAdminUserId() =>
@@ -114,22 +121,10 @@ public class AdminController : ControllerBase
 
         var baseUrl = _config["App:BaseUrl"] ?? "https://www.easysteperp.com";
         var verifyUrl = $"{baseUrl}/verify-email?token={Uri.EscapeDataString(token)}";
-        var html = $@"
-<!DOCTYPE html>
-<html><body style='font-family:Arial,sans-serif'>
-<h2>E-poçtunuzu təsdiqləyin</h2>
-<p>Salam,</p>
-<p>Easy Step ERP hesabınızı aktivləşdirmək üçün aşağıdakı linkə keçid edin:</p>
-<p><a href='{verifyUrl}'>{verifyUrl}</a></p>
-<p>Link 24 saat ərzində keçərlidir.</p>
-<p>— Easy Step ERP</p>
-</body></html>";
-
         var to = user.Email;
-        var subject = "Easy Step ERP - E-poçt təsdiqi";
         _ = Task.Run(async () =>
         {
-            try { await _email.SendAsync(to, subject, html, CancellationToken.None); }
+            try { await _templatedEmail.SendTemplatedAsync(to, EmailTemplateKeys.Verification, new Dictionary<string, string> { ["verifyUrl"] = verifyUrl }, CancellationToken.None); }
             catch (Exception ex) { _logger.LogError(ex, "Resend verification email failed for {To}", to); }
         });
         return Ok(new { message = "Təsdiq linki e-poçtuna göndərildi" });
@@ -592,8 +587,10 @@ public class AdminController : ControllerBase
         try
         {
             var email = aff.User?.Email;
+            var baseUrl = _config["App:BaseUrl"] ?? "https://www.easysteperp.com";
+            var panelUrl = $"{baseUrl}/affiliate";
             if (!string.IsNullOrEmpty(email))
-                await _email.SendAsync(email, "Easy Step ERP - Partnyor təsdiqi", "<p>Salam.</p><p>Satış partnyoru qeydiyyatınız təsdiqləndi. İndi promo kodlar yarada və panelə daxil ola bilərsiniz: <a href=\"https://easysteperp.com/affiliate\">easysteperp.com/affiliate</a></p>", ct);
+                await _templatedEmail.SendTemplatedAsync(email, EmailTemplateKeys.AffiliateApproved, new Dictionary<string, string> { ["affiliatePanelUrl"] = panelUrl }, ct);
         }
         catch { /* ignore email errors */ }
         return Ok(new { message = "Partnyor təsdiqləndi" });
@@ -820,7 +817,88 @@ public class AdminController : ControllerBase
         return Ok(new { message = "Bonus ödənildi" });
     }
 
+    // --- E-poçt ayarları və şablonlar ---
+    [HttpGet("email-settings")]
+    public async Task<IActionResult> GetEmailSettings(CancellationToken ct = default)
+    {
+        var s = await _emailSettings.GetSmtpForAdminAsync(ct);
+        return Ok(s);
+    }
+
+    [HttpPut("email-settings")]
+    public async Task<IActionResult> PutEmailSettings([FromBody] EmailSettingsRequest req, CancellationToken ct = default)
+    {
+        var config = new SmtpConfig
+        {
+            Host = req.Host ?? "",
+            Port = req.Port > 0 ? req.Port : 587,
+            User = req.User ?? "",
+            From = req.From ?? "hello@easysteperp.com",
+            UseSsl = req.UseSsl,
+        };
+        await _emailSettings.SaveSmtpAsync(config, req.Password, ct);
+        return Ok(new { message = "SMTP ayarları saxlanıldı" });
+    }
+
+    [HttpGet("email-templates")]
+    public IActionResult ListEmailTemplates()
+    {
+        var list = new[]
+        {
+            (EmailTemplateKeys.Verification, "E-poçt təsdiqi (müştəri qeydiyyatı)"),
+            (EmailTemplateKeys.AffiliateVerification, "Partnyor e-poçt təsdiqi"),
+            (EmailTemplateKeys.PasswordReset, "Şifrə sıfırlama"),
+            (EmailTemplateKeys.LoginOtp, "2FA daxil olma kodu"),
+            (EmailTemplateKeys.TwoFaConfirm, "2FA təsdiq kodu"),
+            (EmailTemplateKeys.TwoFaDisable, "2FA söndürmə kodu"),
+            (EmailTemplateKeys.AffiliateApproved, "Partnyor təsdiqi"),
+            (EmailTemplateKeys.BonusReminder, "Bonus xəbərdarlığı"),
+            (EmailTemplateKeys.PaymentConfirm, "Ödəniş təsdiqi"),
+            (EmailTemplateKeys.Notification, "Ümumi bildiriş"),
+        };
+        return Ok(list.Select(x => new { key = x.Item1, label = x.Item2 }));
+    }
+
+    [HttpGet("email-templates/by-key")]
+    public async Task<IActionResult> GetEmailTemplate([FromQuery] string key, CancellationToken ct = default)
+    {
+        if (string.IsNullOrEmpty(key)) return BadRequest();
+        var t = await _emailTemplates.GetRawTemplateAsync(key, ct);
+        return Ok(t ?? new { subject = "", body = "" });
+    }
+
+    [HttpPut("email-templates/by-key")]
+    public async Task<IActionResult> PutEmailTemplate([FromQuery] string key, [FromBody] EmailTemplateRequest req, CancellationToken ct = default)
+    {
+        if (string.IsNullOrEmpty(key) || req == null) return BadRequest();
+        await _emailTemplates.SaveTemplateAsync(key, req.Subject ?? "", req.Body ?? "", ct);
+        return Ok(new { message = "Şablon saxlanıldı" });
+    }
+
+    [HttpPost("email-bulk-send")]
+    public async Task<IActionResult> BulkSendEmail([FromBody] BulkEmailRequest req, CancellationToken ct = default)
+    {
+        if (req?.Emails == null || req.Emails.Count == 0)
+            return BadRequest(new { message = "Ən azı bir e-poçt daxil edin" });
+        if (string.IsNullOrWhiteSpace(req.Subject))
+            return BadRequest(new { message = "Mövzu tələb olunur" });
+        if (string.IsNullOrWhiteSpace(req.Body))
+            return BadRequest(new { message = "Mətn tələb olunur" });
+
+        var sent = 0;
+        var failed = 0;
+        foreach (var to in req.Emails.Where(e => !string.IsNullOrWhiteSpace(e)).Select(e => e!.Trim()).Distinct())
+        {
+            var ok = await _email.SendAsync(to, req.Subject.Trim(), req.Body, ct);
+            if (ok) sent++; else failed++;
+        }
+        return Ok(new { message = $"{sent} e-poçt göndərildi", sent, failed });
+    }
 }
+
+public record EmailSettingsRequest(string? Host, int Port, string? User, string? Password, string? From, bool UseSsl = true);
+public record EmailTemplateRequest(string? Subject, string? Body);
+public record BulkEmailRequest(List<string>? Emails, string? Subject, string? Body);
 
 public record DeleteTenantRequest(Guid? TenantId);
 public record PayoutBatchRequest(Guid[]? CommissionIds);

@@ -20,14 +20,16 @@ public class BillingController : ControllerBase
     private readonly IConfiguration _config;
     private readonly Services.AuditService _audit;
     private readonly AffiliateService _affiliate;
+    private readonly ITemplatedEmailService _templatedEmail;
 
-    public BillingController(ApplicationDbContext db, IPaymentProvider payment, IConfiguration config, Services.AuditService audit, AffiliateService affiliate)
+    public BillingController(ApplicationDbContext db, IPaymentProvider payment, IConfiguration config, Services.AuditService audit, AffiliateService affiliate, ITemplatedEmailService templatedEmail)
     {
         _db = db;
         _payment = payment;
         _config = config;
         _audit = audit;
         _affiliate = affiliate;
+        _templatedEmail = templatedEmail;
     }
 
     [HttpGet]
@@ -310,6 +312,24 @@ table{{width:100%;border-collapse:collapse}} td{{padding:8px;border-bottom:1px s
                 await _affiliate.CreateCommissionForPaymentAsync(payment, ct);
             }
             catch { /* commission creation failed – log but don't fail webhook */ }
+
+            try
+            {
+                var tenant = await _db.Tenants.Include(t => t.Users).FirstOrDefaultAsync(t => t.Id == payment.TenantId, ct);
+                var plan = payment.PlanId != null ? await _db.Plans.FindAsync(new object[] { payment.PlanId.Value }, ct) : null;
+                var toEmail = tenant?.Users.OrderBy(u => u.CreatedAt).FirstOrDefault()?.Email;
+                if (!string.IsNullOrEmpty(toEmail))
+                {
+                    await _templatedEmail.SendTemplatedAsync(toEmail, EmailTemplateKeys.PaymentConfirm, new Dictionary<string, string>
+                    {
+                        ["tenantName"] = tenant?.Name ?? "",
+                        ["amount"] = payment.Amount.ToString("F2"),
+                        ["currency"] = payment.Currency ?? "AZN",
+                        ["planName"] = plan?.Name ?? "—",
+                    }, ct);
+                }
+            }
+            catch { /* email failed – don't fail webhook */ }
         }
         else if (status == "CANCELED" || status == "DECLINED" || status == "EXPIRED")
         {

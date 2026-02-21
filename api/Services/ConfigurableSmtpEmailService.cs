@@ -1,0 +1,76 @@
+using System.Net;
+using System.Net.Mail;
+using Microsoft.Extensions.Configuration;
+
+namespace EasyStep.Erp.Api.Services;
+
+/// <summary>SMTP ayarlarını əvvəlcə DB-dən (Admin paneldən), sonra appsettings-dən oxuyur.</summary>
+public class ConfigurableSmtpEmailService : IEmailService
+{
+    private readonly EmailSettingsService _emailSettings;
+    private readonly IConfiguration _config;
+    private readonly ILogger<ConfigurableSmtpEmailService> _log;
+
+    public ConfigurableSmtpEmailService(EmailSettingsService emailSettings, IConfiguration config, ILogger<ConfigurableSmtpEmailService> log)
+    {
+        _emailSettings = emailSettings;
+        _config = config;
+        _log = log;
+    }
+
+    public async Task<bool> SendAsync(string to, string subject, string htmlBody, CancellationToken ct = default)
+    {
+        SmtpConfig? smtp = await _emailSettings.GetSmtpFromDbAsync(ct);
+        if (smtp == null || string.IsNullOrEmpty(smtp.Host))
+        {
+            smtp = FromConfig();
+        }
+
+        if (smtp == null || string.IsNullOrEmpty(smtp.Host) || string.IsNullOrEmpty(smtp.User))
+        {
+            _log.LogWarning("SMTP not configured. Skipping email to {To}", to);
+            return true;
+        }
+
+        try
+        {
+            using var client = new SmtpClient(smtp.Host, smtp.Port)
+            {
+                EnableSsl = smtp.Port == 465 || smtp.UseSsl,
+                Credentials = new NetworkCredential(smtp.User, smtp.Password ?? ""),
+            };
+            var msg = new MailMessage
+            {
+                From = new MailAddress(smtp.From, "Easy Step ERP"),
+                Subject = subject,
+                Body = htmlBody,
+                IsBodyHtml = true,
+            };
+            msg.To.Add(to);
+            await client.SendMailAsync(msg, ct);
+            _log.LogInformation("Email sent to {To}", to);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _log.LogError(ex, "Failed to send email to {To}", to);
+            return false;
+        }
+    }
+
+    private SmtpConfig? FromConfig()
+    {
+        var host = _config["Smtp:Host"];
+        if (string.IsNullOrEmpty(host)) return null;
+        var port = int.Parse(_config["Smtp:Port"] ?? "587");
+        return new SmtpConfig
+        {
+            Host = host,
+            Port = port,
+            User = _config["Smtp:User"] ?? "",
+            Password = _config["Smtp:Password"],
+            From = _config["Smtp:From"] ?? "hello@easysteperp.com",
+            UseSsl = port == 465 || bool.Parse(_config["Smtp:UseSsl"] ?? "true"),
+        };
+    }
+}

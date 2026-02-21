@@ -57,7 +57,10 @@ builder.Services.AddScoped<AffiliateAbuseService>();
 builder.Services.AddHostedService<AffiliateBonusBackgroundService>();
 builder.Services.AddHttpClient();
 builder.Services.AddScoped<IPaymentProvider, PayriffService>();
-builder.Services.AddScoped<IEmailService, SmtpEmailService>();
+builder.Services.AddScoped<EmailSettingsService>();
+builder.Services.AddScoped<EmailTemplateService>();
+builder.Services.AddScoped<IEmailService, ConfigurableSmtpEmailService>();
+builder.Services.AddScoped<ITemplatedEmailService, TemplatedEmailService>();
 
 // Controllers
 builder.Services.AddControllers();

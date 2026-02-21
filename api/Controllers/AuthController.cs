@@ -46,11 +46,17 @@ public class AuthController : ControllerBase
                 var verifyUrl = $"{baseUrl}/verify-email?token={Uri.EscapeDataString(token)}";
                 var to = req.Email;
                 var userName = req.ContactPerson?.Trim() ?? "Müştəri";
-                _ = Task.Run(async () =>
+                try
                 {
-                    try { await _templatedEmail.SendTemplatedAsync(to, EmailTemplateKeys.Verification, new Dictionary<string, string> { ["verifyUrl"] = verifyUrl, ["userName"] = userName }, CancellationToken.None); }
-                    catch (Exception ex) { _logger.LogError(ex, "Background email send failed for {To}", to); }
-                });
+                    var sent = await _templatedEmail.SendTemplatedAsync(to, EmailTemplateKeys.Verification, new Dictionary<string, string> { ["verifyUrl"] = verifyUrl, ["userName"] = userName }, ct);
+                    if (!sent)
+                        return StatusCode(500, new { message = "Təsdiq e-poçtu göndərilə bilmədi. E-poçt ayarlarını yoxlayın (Admin → E-poçt ayarları)." });
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Verification email failed for {To}", to);
+                    return StatusCode(500, new { message = "Təsdiq e-poçtu göndərilə bilmədi. E-poçt ayarlarını yoxlayın." });
+                }
             }
 
             return Ok(new { message = "Qeydiyyat uğurla tamamlandı. E-poçtunuzu yoxlayın və təsdiq linkinə keçid edin." });
@@ -93,11 +99,17 @@ public class AuthController : ControllerBase
                 var verifyUrl = $"{baseUrl}/verify-email?token={Uri.EscapeDataString(token)}";
                 var to = req.Email;
                 var userName = req.FullName?.Trim() ?? "Partnyor";
-                _ = Task.Run(async () =>
+                try
                 {
-                    try { await _templatedEmail.SendTemplatedAsync(to, EmailTemplateKeys.AffiliateVerification, new Dictionary<string, string> { ["verifyUrl"] = verifyUrl, ["userName"] = userName }, CancellationToken.None); }
-                    catch (Exception ex) { _logger.LogError(ex, "Background email send failed for affiliate {To}", to); }
-                });
+                    var sent = await _templatedEmail.SendTemplatedAsync(to, EmailTemplateKeys.AffiliateVerification, new Dictionary<string, string> { ["verifyUrl"] = verifyUrl, ["userName"] = userName }, ct);
+                    if (!sent)
+                        return StatusCode(500, new { message = "Təsdiq e-poçtu göndərilə bilmədi. E-poçt ayarlarını yoxlayın (Admin → E-poçt ayarları)." });
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Affiliate verification email failed for {To}", to);
+                    return StatusCode(500, new { message = "Təsdiq e-poçtu göndərilə bilmədi. E-poçt ayarlarını yoxlayın." });
+                }
             }
 
             return Ok(new { message = "Satış partnyoru qeydiyyatı uğurla tamamlandı. E-poçtunuzu yoxlayın və təsdiq linkinə keçid edin." });

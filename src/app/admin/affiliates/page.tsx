@@ -7,6 +7,7 @@ type Affiliate = {
   id: string;
   userId: string;
   email: string;
+  emailVerified: boolean;
   isApproved: boolean;
   balanceTotal: number;
   balancePending: number;
@@ -138,6 +139,28 @@ export default function AdminAffiliatesPage() {
   const handleApproveAffiliate = async (id: string) => {
     try {
       await api.admin.approveAffiliate(id);
+      load();
+    } catch {
+      alert("Xəta baş verdi");
+    }
+  };
+
+  const handleResendVerification = async (userId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await api.admin.resendVerificationEmail(userId);
+      alert("Təsdiq linki göndərildi");
+      load();
+    } catch {
+      alert("E-poçt göndərilə bilmədi. SMTP ayarlarını yoxlayın.");
+    }
+  };
+
+  const handleVerifyEmail = async (userId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await api.admin.verifyUserEmail(userId);
+      alert("E-poçt təsdiqləndi");
       load();
     } catch {
       alert("Xəta baş verdi");
@@ -307,6 +330,7 @@ export default function AdminAffiliatesPage() {
                 <thead className="bg-slate-50 sticky top-0">
                   <tr>
                     <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">E-poçt</th>
+                    <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">E-poçt təsdiqi</th>
                     <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">Status</th>
                     <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">Müştərilər</th>
                     <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">Gözləyir</th>
@@ -325,6 +349,13 @@ export default function AdminAffiliatesPage() {
                     >
                       <td className="px-6 py-3 text-sm">{a.email}</td>
                       <td className="px-6 py-3 text-sm">
+                        {a.emailVerified ? (
+                          <span className="text-green-600">Təsdiqlənib</span>
+                        ) : (
+                          <span className="text-amber-600">Təsdiq gözləyir</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-3 text-sm">
                         {a.isApproved ? (
                           <span className="text-green-600">Təsdiqlənib</span>
                         ) : (
@@ -335,7 +366,25 @@ export default function AdminAffiliatesPage() {
                       <td className="px-6 py-3 text-sm text-amber-700">{a.balancePending.toFixed(2)} ₼</td>
                       <td className="px-6 py-3 text-sm text-green-700">{a.balanceTotal.toFixed(2)} ₼</td>
                       <td className="px-6 py-3" onClick={(e) => e.stopPropagation()}>
-                        {!a.isApproved && (
+                        {!a.emailVerified && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={(e) => handleResendVerification(a.userId, e)}
+                              className="text-xs px-2 py-1 mr-1 bg-slate-100 text-slate-800 rounded hover:bg-slate-200"
+                            >
+                              Təsdiq göndər
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => handleVerifyEmail(a.userId, e)}
+                              className="text-xs px-2 py-1 bg-green-100 text-green-800 rounded hover:bg-green-200"
+                            >
+                              Təsdiqlə
+                            </button>
+                          </>
+                        )}
+                        {a.emailVerified && !a.isApproved && (
                           <button
                             type="button"
                             onClick={() => handleApproveAffiliate(a.id)}

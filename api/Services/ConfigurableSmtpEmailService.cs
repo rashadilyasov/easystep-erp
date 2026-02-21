@@ -28,8 +28,8 @@ public class ConfigurableSmtpEmailService : IEmailService
 
         if (smtp == null || string.IsNullOrEmpty(smtp.Host) || string.IsNullOrEmpty(smtp.User))
         {
-            _log.LogWarning("SMTP not configured. Skipping email to {To}", to);
-            return true;
+            _log.LogWarning("SMTP not configured. Email to {To} NOT sent.", to);
+            return false;
         }
 
         var fromAddr = !string.IsNullOrWhiteSpace(from) ? from.Trim() : smtp.From;

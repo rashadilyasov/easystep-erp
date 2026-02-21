@@ -124,11 +124,10 @@ public class AdminController : ControllerBase
         var to = user.Email;
         var userName = (user.Tenant?.ContactPerson ?? "").Trim();
         if (string.IsNullOrEmpty(userName)) userName = user.Role == UserRole.Affiliate ? "Partnyor" : "Müştəri";
-        _ = Task.Run(async () =>
-        {
-            try { await _templatedEmail.SendTemplatedAsync(to, EmailTemplateKeys.Verification, new Dictionary<string, string> { ["verifyUrl"] = verifyUrl, ["userName"] = userName }, CancellationToken.None); }
-            catch (Exception ex) { _logger.LogError(ex, "Resend verification email failed for {To}", to); }
-        });
+        var templateKey = user.Role == UserRole.Affiliate ? EmailTemplateKeys.AffiliateVerification : EmailTemplateKeys.Verification;
+        var sent = await _templatedEmail.SendTemplatedAsync(to, templateKey, new Dictionary<string, string> { ["verifyUrl"] = verifyUrl, ["userName"] = userName }, ct);
+        if (!sent)
+            return StatusCode(500, new { message = "E-poçt göndərilə bilmədi. SMTP ayarlarını yoxlayın (E-poçt ayarları)." });
         return Ok(new { message = "Təsdiq linki e-poçtuna göndərildi" });
     }
 
@@ -549,6 +548,7 @@ public class AdminController : ControllerBase
                 a.Id,
                 a.UserId,
                 email = a.User.Email,
+                emailVerified = a.User.EmailVerified,
                 a.IsApproved,
                 a.BalanceTotal,
                 a.BalancePending,
@@ -566,6 +566,7 @@ public class AdminController : ControllerBase
             a.Id,
             a.UserId,
             a.email,
+            emailVerified = a.emailVerified,
             isApproved = a.IsApproved,
             balanceTotal = a.BalanceTotal,
             balancePending = a.BalancePending,

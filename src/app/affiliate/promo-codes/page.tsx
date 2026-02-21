@@ -26,8 +26,9 @@ export default function AffiliatePromoCodesPage() {
     try {
       await api.affiliate.createPromoCode();
       load();
-    } catch {
-      alert("Promo kod yaradıla bilmədi");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Promo kod yaradıla bilmədi";
+      alert(msg);
     } finally {
       setCreating(false);
     }

@@ -28,19 +28,26 @@ type DashboardData = {
 export default function AffiliateDashboard() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(() => {
     setLoading(true);
+    setError(null);
     api.affiliate
       .dashboard()
-      .then(setData)
-      .catch(() => setData(null))
+      .then((d) => {
+        setData(d ?? null);
+      })
+      .catch((e) => {
+        setData(null);
+        setError(e instanceof Error ? e.message : "Məlumat yüklənmədi");
+      })
       .finally(() => setLoading(false));
   }, []);
 
   useEffect(() => load(), [load]);
 
-  if (loading || !data) {
+  if (loading && !data) {
     return (
       <div>
         <h1 className="text-2xl font-bold text-slate-900 mb-6">Dashboard</h1>
@@ -51,6 +58,26 @@ export default function AffiliateDashboard() {
               <div className="h-8 bg-slate-200 rounded w-16" />
             </div>
           ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div>
+        <h1 className="text-2xl font-bold text-slate-900 mb-6">Dashboard</h1>
+        <div className="p-6 bg-amber-50 border border-amber-200 rounded-2xl text-amber-800">
+          <p className="font-medium">Məlumat yüklənmədi</p>
+          <p className="mt-1 text-sm">{error}</p>
+          <button
+            type="button"
+            onClick={load}
+            disabled={loading}
+            className="mt-4 px-4 py-2 bg-amber-100 hover:bg-amber-200 rounded-lg font-medium"
+          >
+            Yenilə
+          </button>
         </div>
       </div>
     );

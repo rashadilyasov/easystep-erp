@@ -40,6 +40,8 @@ public class AffiliateController : ControllerBase
         var aff = await GetAffiliateAsync(ct);
         if (aff == null) return Unauthorized();
 
+        try
+        {
         var activeCustomers = await _db.PromoCodes
             .CountAsync(p => p.AffiliateId == aff.Id && p.Status == PromoCodeStatus.Used, ct);
 
@@ -57,8 +59,9 @@ public class AffiliateController : ControllerBase
 
         var lastMonthStart = monthStart.AddMonths(-1);
         var lastMonthCommissions = await _db.AffiliateCommissions
+            .Include(c => c.Tenant)
             .Where(c => c.AffiliateId == aff.Id && c.CreatedAt >= lastMonthStart && c.CreatedAt < monthStart)
-            .Select(c => new { c.Amount, c.Status, c.CreatedAt, TenantName = c.Tenant.Name })
+            .Select(c => new { c.Amount, c.Status, c.CreatedAt, TenantName = c.Tenant != null ? c.Tenant.Name : (string?)null })
             .ToListAsync(ct);
 
         var thisMonthBonus = await _db.AffiliateBonuses
@@ -109,6 +112,11 @@ public class AffiliateController : ControllerBase
                 p.tenantName,
             }),
         });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Panel məlumatları yüklənə bilmədi. Bir az sonra yenidən cəhd edin.", debug = ex.Message });
+        }
     }
 
     [HttpGet("promo-codes")]
@@ -142,14 +150,16 @@ public class AffiliateController : ControllerBase
         var aff = await GetAffiliateAsync(ct);
         if (aff == null) return Unauthorized();
         if (!aff.IsApproved)
-            return BadRequest(new { message = "Qeydiyyatınız hələ admin tərəfindən təsdiqlənməyib. Promo kod yaratmaq üçün təsdiq gözləyin." });
+            return BadRequest(new { message = "Qeydiyyatınız hələ admin tərəfindən təsdiqlənməyib. Promo kod yaratmaq üçün admin panelində təsdiq gözləyin." });
 
+        try
+        {
         var promo = await _affiliate.CreatePromoCodeAsync(
             aff.Id,
             req?.DiscountPercent,
             req?.CommissionPercent,
             ct);
-        if (promo == null) return BadRequest(new { message = "Promo kod yaradıla bilmədi" });
+        if (promo == null) return BadRequest(new { message = "Promo kod yaradıla bilmədi. Admin təsdiqini yoxlayın." });
 
         var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         await _audit.LogAsync("PromoCodeCreated", Guid.TryParse(userId, out var uid) ? uid : null, aff.User?.Email, metadata: $"code={promo.Code} affiliateId={aff.Id}", ct: ct);
@@ -163,6 +173,14 @@ public class AffiliateController : ControllerBase
             status = promo.Status.ToString(),
             message = "Promo kod uğurla yaradıldı",
         });
+        }
+        catch (Microsoft.EntityFrameworkCore.DbUpdateException ex)
+        {
+            var inner = ex.InnerException?.Message ?? ex.Message;
+            if (inner.Contains("23505") || inner.Contains("unique", StringComparison.OrdinalIgnoreCase) || inner.Contains("IX_PromoCodes_Code", StringComparison.OrdinalIgnoreCase))
+                return BadRequest(new { message = "Bu kod artıq mövcuddur. Yenidən cəhd edin." });
+            return BadRequest(new { message = "Promo kod yaradıla bilmədi. Bir az sonra yenidən cəhd edin." });
+        }
     }
 
     [HttpGet("commissions")]

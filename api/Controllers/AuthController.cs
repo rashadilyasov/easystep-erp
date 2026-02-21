@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using EasyStep.Erp.Api.Entities;
 using EasyStep.Erp.Api.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -44,9 +45,10 @@ public class AuthController : ControllerBase
                 var baseUrl = _config["App:BaseUrl"] ?? "https://www.easysteperp.com";
                 var verifyUrl = $"{baseUrl}/verify-email?token={Uri.EscapeDataString(token)}";
                 var to = req.Email;
+                var userName = req.ContactPerson?.Trim() ?? "Müştəri";
                 _ = Task.Run(async () =>
                 {
-                    try { await _templatedEmail.SendTemplatedAsync(to, EmailTemplateKeys.Verification, new Dictionary<string, string> { ["verifyUrl"] = verifyUrl }, CancellationToken.None); }
+                    try { await _templatedEmail.SendTemplatedAsync(to, EmailTemplateKeys.Verification, new Dictionary<string, string> { ["verifyUrl"] = verifyUrl, ["userName"] = userName }, CancellationToken.None); }
                     catch (Exception ex) { _logger.LogError(ex, "Background email send failed for {To}", to); }
                 });
             }
@@ -90,9 +92,10 @@ public class AuthController : ControllerBase
                 var baseUrl = _config["App:BaseUrl"] ?? "https://www.easysteperp.com";
                 var verifyUrl = $"{baseUrl}/verify-email?token={Uri.EscapeDataString(token)}";
                 var to = req.Email;
+                var userName = req.FullName?.Trim() ?? "Partnyor";
                 _ = Task.Run(async () =>
                 {
-                    try { await _templatedEmail.SendTemplatedAsync(to, EmailTemplateKeys.AffiliateVerification, new Dictionary<string, string> { ["verifyUrl"] = verifyUrl }, CancellationToken.None); }
+                    try { await _templatedEmail.SendTemplatedAsync(to, EmailTemplateKeys.AffiliateVerification, new Dictionary<string, string> { ["verifyUrl"] = verifyUrl, ["userName"] = userName }, CancellationToken.None); }
                     catch (Exception ex) { _logger.LogError(ex, "Background email send failed for affiliate {To}", to); }
                 });
             }
@@ -148,7 +151,9 @@ public class AuthController : ControllerBase
                 var code = await _auth.CreateAndStoreEmailOtpAsync(user.Id, ct);
                 if (!string.IsNullOrEmpty(code))
                 {
-                                await _templatedEmail.SendTemplatedAsync(user.Email, EmailTemplateKeys.LoginOtp, new Dictionary<string, string> { ["code"] = code }, ct);
+                    var userName = (tenant?.ContactPerson ?? "").Trim();
+                    if (string.IsNullOrEmpty(userName)) userName = user.Role == UserRole.Affiliate ? "Partnyor" : "Müştəri";
+                    await _templatedEmail.SendTemplatedAsync(user.Email, EmailTemplateKeys.LoginOtp, new Dictionary<string, string> { ["code"] = code, ["userName"] = userName }, ct);
                 }
                 return Ok(new { requires2FA = true, pendingToken, message = "E-poçtunuza göndərilən 6 rəqəmli kodu daxil edin.", viaEmail = true });
             }
@@ -208,7 +213,12 @@ public class AuthController : ControllerBase
             await _auth.SaveChangesAsync(ct);
             var code = await _auth.CreateAndStoreEmailOtpAsync(user.Id, ct);
             if (!string.IsNullOrEmpty(code))
-                await _templatedEmail.SendTemplatedAsync(user.Email, EmailTemplateKeys.TwoFaConfirm, new Dictionary<string, string> { ["code"] = code }, ct);
+            {
+                var userWithTenant = await _auth.GetUserWithTenantByIdAsync(id, ct);
+                var userName = (userWithTenant?.tenant?.ContactPerson ?? "").Trim();
+                if (string.IsNullOrEmpty(userName)) userName = "İstifadəçi";
+                await _templatedEmail.SendTemplatedAsync(user.Email, EmailTemplateKeys.TwoFaConfirm, new Dictionary<string, string> { ["code"] = code, ["userName"] = userName }, ct);
+            }
             return Ok(new { viaEmail = true, message = "Kod e-poçtunuza göndərildi. Kodu daxil edin." });
         }
 
@@ -236,7 +246,10 @@ public class AuthController : ControllerBase
         if (string.IsNullOrEmpty(code))
             return StatusCode(500, new { message = "Kod yaradıla bilmədi." });
 
-        await _templatedEmail.SendTemplatedAsync(user.Email, EmailTemplateKeys.LoginOtp, new Dictionary<string, string> { ["code"] = code }, ct);
+        var userWithTenant = await _auth.GetUserWithTenantByIdAsync(user.Id, ct);
+        var userName = (userWithTenant?.tenant?.ContactPerson ?? "").Trim();
+        if (string.IsNullOrEmpty(userName)) userName = user.Role == UserRole.Affiliate ? "Partnyor" : "İstifadəçi";
+        await _templatedEmail.SendTemplatedAsync(user.Email, EmailTemplateKeys.LoginOtp, new Dictionary<string, string> { ["code"] = code, ["userName"] = userName }, ct);
 
         return Ok(new { message = "Kod e-poçtunuza göndərildi." });
     }
@@ -282,7 +295,10 @@ public class AuthController : ControllerBase
         if (string.IsNullOrEmpty(code))
             return StatusCode(500, new { message = "Kod yaradıla bilmədi." });
 
-        await _templatedEmail.SendTemplatedAsync(user.Email, EmailTemplateKeys.TwoFaDisable, new Dictionary<string, string> { ["code"] = code }, ct);
+        var userWithTenant = await _auth.GetUserWithTenantByIdAsync(id, ct);
+        var userName = (userWithTenant?.tenant?.ContactPerson ?? "").Trim();
+        if (string.IsNullOrEmpty(userName)) userName = "İstifadəçi";
+        await _templatedEmail.SendTemplatedAsync(user.Email, EmailTemplateKeys.TwoFaDisable, new Dictionary<string, string> { ["code"] = code, ["userName"] = userName }, ct);
 
         return Ok(new { message = "Kod e-poçtunuza göndərildi." });
     }
@@ -406,9 +422,12 @@ public class AuthController : ControllerBase
             var baseUrl = _config["App:BaseUrl"] ?? "http://localhost:3000";
             var resetUrl = $"{baseUrl}/reset-password?token={Uri.EscapeDataString(token)}";
             var to = req.Email;
+            var userWithTenant = await _auth.GetUserWithTenantByEmailAsync(req.Email, ct);
+            var userName = (userWithTenant?.tenant?.ContactPerson ?? "").Trim();
+            if (string.IsNullOrEmpty(userName)) userName = "Müştəri";
             _ = Task.Run(async () =>
             {
-                try { await _templatedEmail.SendTemplatedAsync(to, EmailTemplateKeys.PasswordReset, new Dictionary<string, string> { ["resetUrl"] = resetUrl }, CancellationToken.None); }
+                try { await _templatedEmail.SendTemplatedAsync(to, EmailTemplateKeys.PasswordReset, new Dictionary<string, string> { ["resetUrl"] = resetUrl, ["userName"] = userName }, CancellationToken.None); }
                 catch (Exception ex) { _logger.LogError(ex, "Background forgot-password email failed for {To}", to); }
             });
         }

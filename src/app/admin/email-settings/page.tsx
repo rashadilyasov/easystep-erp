@@ -165,7 +165,7 @@ export default function AdminEmailSettingsPage() {
             {selectedTemplate ? (
               <>
                 <h3 className="font-semibold text-slate-900 mb-4">Redaktə: {templates.find((t) => t.key === selectedTemplate)?.label}</h3>
-                <p className="text-xs text-slate-500 mb-2">Placeholder-lər: {"{{verifyUrl}}"} {"{{resetUrl}}"} {"{{code}}"} {"{{affiliatePanelUrl}}"} {"{{tenantName}}"} {"{{amount}}"} {"{{currency}}"} {"{{planName}}"} {"{{message}}"} {"{{year}}"} {"{{month}}"} {"{{customerCount}}"}</p>
+                <p className="text-xs text-slate-500 mb-2">Placeholder-lər: {"{{userName}}"} {"{{verifyUrl}}"} {"{{resetUrl}}"} {"{{code}}"} {"{{affiliatePanelUrl}}"} {"{{tenantName}}"} {"{{amount}}"} {"{{currency}}"} {"{{planName}}"} {"{{message}}"} {"{{year}}"} {"{{month}}"} {"{{customerCount}}"}</p>
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">Göndərən (From)</label>

@@ -320,9 +320,11 @@ table{{width:100%;border-collapse:collapse}} td{{padding:8px;border-bottom:1px s
                 var toEmail = tenant?.Users.OrderBy(u => u.CreatedAt).FirstOrDefault()?.Email;
                 if (!string.IsNullOrEmpty(toEmail))
                 {
+                    var userName = (tenant?.ContactPerson ?? "").Trim();
+                    if (string.IsNullOrEmpty(userName)) userName = tenant?.Name ?? "Müştəri";
                     await _templatedEmail.SendTemplatedAsync(toEmail, EmailTemplateKeys.PaymentConfirm, new Dictionary<string, string>
                     {
-                        ["tenantName"] = tenant?.Name ?? "",
+                        ["userName"] = userName,
                         ["amount"] = payment.Amount.ToString("F2"),
                         ["currency"] = payment.Currency ?? "AZN",
                         ["planName"] = plan?.Name ?? "—",

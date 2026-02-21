@@ -378,6 +378,20 @@ public class AuthService
         return Convert.ToHexString(bytes).ToLowerInvariant();
     }
 
+    /// <summary>E-poçta görə user və tenant. ForgotPassword üçün userName əldə etmək.</summary>
+    public async Task<(User? user, Tenant? tenant)?> GetUserWithTenantByEmailAsync(string email, CancellationToken ct = default)
+    {
+        var user = await _db.Users.Include(u => u.Tenant).FirstOrDefaultAsync(u => u.Email == email, ct);
+        return user != null ? (user, user.Tenant) : null;
+    }
+
+    /// <summary>Id-yə görə user və tenant. 2FA/Load user name üçün.</summary>
+    public async Task<(User? user, Tenant? tenant)?> GetUserWithTenantByIdAsync(Guid userId, CancellationToken ct = default)
+    {
+        var user = await _db.Users.Include(u => u.Tenant).FirstOrDefaultAsync(u => u.Id == userId, ct);
+        return user != null ? (user, user.Tenant) : null;
+    }
+
     public async Task<string?> CreatePasswordResetTokenAsync(string email, CancellationToken ct = default)
     {
         var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == email, ct);

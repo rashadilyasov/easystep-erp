@@ -68,6 +68,7 @@ public class AffiliateBonusBackgroundService : BackgroundService
                                         ["year"] = year.ToString(),
                                         ["month"] = month.ToString("D2"),
                                         ["customerCount"] = customerCount.ToString(),
+                                        ["userName"] = "Partnyor",
                                     },
                                     stoppingToken);
                             }

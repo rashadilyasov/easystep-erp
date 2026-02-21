@@ -114,7 +114,7 @@ public class AdminController : ControllerBase
     [HttpPost("users/{userId:guid}/resend-verification-email")]
     public async Task<IActionResult> ResendVerificationEmail(Guid userId, CancellationToken ct)
     {
-        var user = await _db.Users.FindAsync(new object[] { userId }, ct);
+        var user = await _db.Users.Include(u => u.Tenant).FirstOrDefaultAsync(u => u.Id == userId, ct);
         if (user == null) return NotFound(new { message = "İstifadəçi tapılmadı" });
         var token = await _auth.CreateEmailVerificationTokenForUserAsync(userId, ct);
         if (token == null) return StatusCode(500, new { message = "Token yaradıla bilmədi" });
@@ -122,9 +122,11 @@ public class AdminController : ControllerBase
         var baseUrl = _config["App:BaseUrl"] ?? "https://www.easysteperp.com";
         var verifyUrl = $"{baseUrl}/verify-email?token={Uri.EscapeDataString(token)}";
         var to = user.Email;
+        var userName = (user.Tenant?.ContactPerson ?? "").Trim();
+        if (string.IsNullOrEmpty(userName)) userName = user.Role == UserRole.Affiliate ? "Partnyor" : "Müştəri";
         _ = Task.Run(async () =>
         {
-            try { await _templatedEmail.SendTemplatedAsync(to, EmailTemplateKeys.Verification, new Dictionary<string, string> { ["verifyUrl"] = verifyUrl }, CancellationToken.None); }
+            try { await _templatedEmail.SendTemplatedAsync(to, EmailTemplateKeys.Verification, new Dictionary<string, string> { ["verifyUrl"] = verifyUrl, ["userName"] = userName }, CancellationToken.None); }
             catch (Exception ex) { _logger.LogError(ex, "Resend verification email failed for {To}", to); }
         });
         return Ok(new { message = "Təsdiq linki e-poçtuna göndərildi" });
@@ -590,7 +592,7 @@ public class AdminController : ControllerBase
             var baseUrl = _config["App:BaseUrl"] ?? "https://www.easysteperp.com";
             var panelUrl = $"{baseUrl}/affiliate";
             if (!string.IsNullOrEmpty(email))
-                await _templatedEmail.SendTemplatedAsync(email, EmailTemplateKeys.AffiliateApproved, new Dictionary<string, string> { ["affiliatePanelUrl"] = panelUrl }, ct);
+                await _templatedEmail.SendTemplatedAsync(email, EmailTemplateKeys.AffiliateApproved, new Dictionary<string, string> { ["affiliatePanelUrl"] = panelUrl, ["userName"] = "Partnyor" }, ct);
         }
         catch { /* ignore email errors */ }
         return Ok(new { message = "Partnyor təsdiqləndi" });

@@ -12,6 +12,7 @@ const adminNav = [
   { href: "/admin/content", label: "Kontent" },
   { href: "/admin/site-content", label: "Səhifə kontenti" },
   { href: "/admin/affiliates", label: "Satış Partnyorları" },
+  { href: "/admin/pending-verifications", label: "E-poçt təsdiqi gözləyənlər" },
   { href: "/admin/audit", label: "Audit log" },
   { href: "/admin/security", label: "Təhlükəsizlik (2FA)" },
   { href: "/admin/email-settings", label: "E-poçt ayarları" },

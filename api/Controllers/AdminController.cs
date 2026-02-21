@@ -101,6 +101,37 @@ public class AdminController : ControllerBase
         }));
     }
 
+    [HttpGet("pending-verifications")]
+    public async Task<IActionResult> GetPendingVerifications(CancellationToken ct = default)
+    {
+        var users = await _db.Users
+            .Include(u => u.Tenant)
+            .Where(u => !u.EmailVerified && u.TenantId != SystemTenantId)
+            .OrderByDescending(u => u.CreatedAt)
+            .Select(u => new
+            {
+                u.Id,
+                u.Email,
+                u.CreatedAt,
+                u.Role,
+                tenantName = u.Tenant.Name,
+                tenantId = u.TenantId,
+            })
+            .ToListAsync(ct);
+        var affiliateIds = await _db.Affiliates.Where(a => users.Select(x => x.Id).Contains(a.UserId))
+            .ToDictionaryAsync(a => a.UserId, a => a.Id, ct);
+        return Ok(users.Select(u => new
+        {
+            u.Id,
+            u.Email,
+            createdAt = u.CreatedAt.ToString("dd.MM.yyyy HH:mm"),
+            role = u.Role.ToString(),
+            u.tenantName,
+            u.tenantId,
+            affiliateId = affiliateIds.GetValueOrDefault(u.Id),
+        }));
+    }
+
     [HttpPost("users/{userId:guid}/verify-email")]
     public async Task<IActionResult> VerifyUserEmail(Guid userId, CancellationToken ct)
     {

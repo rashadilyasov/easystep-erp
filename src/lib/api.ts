@@ -330,6 +330,18 @@ export const api = {
           planId: planId || undefined,
         }),
       }),
+    pendingVerifications: () =>
+      apiFetch<
+        {
+          id: string;
+          email: string;
+          createdAt: string;
+          role: string;
+          tenantName: string | null;
+          tenantId: string | null;
+          affiliateId?: string;
+        }[]
+      >("/api/admin/pending-verifications"),
     verifyUserEmail: (userId: string) =>
       apiFetch<{ message: string }>(`/api/admin/users/${userId}/verify-email`, { method: "POST" }),
     resendVerificationEmail: (userId: string) =>

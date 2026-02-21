@@ -58,14 +58,16 @@ export default function AcademyContent() {
             />
           </div>
         ) : (
-          <div className="aspect-video bg-slate-200 rounded-2xl flex items-center justify-center">
-            <span className="text-slate-500">
-              YouTube playlist konfiqurasiya edilməyib (App:AcademyYoutubePlaylistId)
+          <div className="aspect-video bg-slate-100 rounded-2xl flex flex-col items-center justify-center border border-slate-200 p-6">
+            <span className="text-slate-600 font-medium mb-2">Videodərslər</span>
+            <span className="text-slate-500 text-sm text-center">
+              YouTube playlist Railway Variables-da App__AcademyYoutubePlaylistId ilə konfiqurasiya edilməlidir.
             </span>
           </div>
         )}
-        <div className="aspect-video bg-slate-100 rounded-2xl flex items-center justify-center border border-slate-200">
-          <span className="text-slate-500">Daxili videolar (tezliklə)</span>
+        <div className="aspect-video bg-slate-100 rounded-2xl flex flex-col items-center justify-center border border-slate-200 p-6">
+          <span className="text-slate-600 font-medium mb-2">Əlavə materiallar</span>
+          <span className="text-slate-500 text-sm text-center">Tezliklə əlavə olunacaq</span>
         </div>
       </div>
     </div>

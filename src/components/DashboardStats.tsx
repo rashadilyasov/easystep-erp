@@ -60,12 +60,32 @@ export default function DashboardStats() {
       <div className="p-6 bg-white rounded-2xl border border-slate-200 shadow-sm card-hover">
         <h3 className="text-sm font-medium text-slate-600 mb-1">Qalan gün</h3>
         <p className="text-2xl font-bold text-primary-600">{d.daysLeft}</p>
-        <p className="text-sm text-slate-500 mt-1">Avto-yeniləmə: {d.autoRenew ? "aktiv" : "deaktiv"}</p>
+        <p className="text-sm text-slate-500 mt-1">Avtomatik yeniləmə: {d.autoRenew ? "aktiv" : "deaktiv"}</p>
       </div>
       <div className="p-6 bg-white rounded-2xl border border-slate-200 shadow-sm card-hover">
-        <h3 className="text-sm font-medium text-slate-600 mb-1">Status</h3>
-        <p className="text-2xl font-bold text-green-600">{d.status}</p>
-        <p className="text-sm text-slate-500 mt-1">Desktop proqram əlçatandır</p>
+        <h3 className="text-sm font-medium text-slate-600 mb-1">Vəziyyət</h3>
+        <p
+          className={`text-2xl font-bold ${
+            d.status === "Active"
+              ? "text-green-600"
+              : d.status === "PastDue"
+                ? "text-amber-600"
+                : d.status === "Expired" || d.status === "Suspended"
+                  ? "text-red-600"
+                  : "text-slate-700"
+          }`}
+        >
+          {d.status === "Active"
+            ? "Aktiv"
+            : d.status === "PastDue"
+              ? "Gecikmiş"
+              : d.status === "Expired"
+                ? "Bitmiş"
+                : d.status === "Suspended"
+                  ? "Dayandırılıb"
+                  : d.status}
+        </p>
+        <p className="text-sm text-slate-500 mt-1">Masaüstü proqram əlçatandır</p>
       </div>
     </div>
   );

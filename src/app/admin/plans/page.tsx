@@ -173,7 +173,7 @@ export default function Plans() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl">
             <h3 className="text-lg font-semibold mb-4">
-              {modal === "create" ? "Yeni plan" : "Plan redaktə"}
+              {modal === "create" ? "Yeni plan" : "Planı redaktə et"}
             </h3>
             <div className="space-y-4">
               <div>
@@ -219,7 +219,7 @@ export default function Plans() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-slate-600 mb-1">Max cihaz</label>
+                  <label className="block text-sm text-slate-600 mb-1">Maks. cihaz</label>
                   <input
                     type="number"
                     value={form.maxDevices ?? ""}

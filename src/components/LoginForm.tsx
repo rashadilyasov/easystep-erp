@@ -107,7 +107,7 @@ function LoginFormInner() {
           {error}
           {(error.includes("API") || error.includes("Backend") || error.includes("/api/ping")) && (
             <a href="/api/ping" target="_blank" rel="noopener noreferrer" className="block mt-2 text-primary-600 hover:underline text-xs">
-              API statusunu yoxlayın →
+              API vəziyyətini yoxlayın →
             </a>
           )}
         </div>

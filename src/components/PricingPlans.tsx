@@ -34,7 +34,7 @@ export default function PricingPlans({ discountPercent }: { discountPercent?: nu
           const duration = p.durationMonths || 1;
           return {
             id: p.id || String(duration),
-            name: PLAN_NAMES[duration] || p.name || `Plan ${duration} ay`,
+            name: PLAN_NAMES[duration] || p.name || `${duration} aylıq`,
             durationMonths: duration,
             price: p.price ?? 0,
             popular: duration === 12,

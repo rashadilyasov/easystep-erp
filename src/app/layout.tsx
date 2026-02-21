@@ -17,7 +17,12 @@ export const metadata = {
   },
   description:
     "Easy Step ERP – təchizatçı şirkətləri üçün alış, satış, anbar, pul uçotu. Azərbaycanda təchizat və pərakəndə satış idarəetməsi. Qeydiyyat, paket seçimi və ödəniş.",
-  keywords: ["Easy Step ERP", "ERP Azərbaycan", "anbar proqramı", "təchizat idarəetməsi", "satış proqramı", "easysteperp", "easysteperp.com"],
+  keywords: [
+    "Easy Step ERP", "ERP Azərbaycan", "təchizat ERP", "təchizat erp", "anbar proqramı", "anbar proqramı azərbaycan",
+    "təchizat idarəetməsi", "satış proqramı", "toptan satış proqramı", "pərakəndə satış proqramı", "logistika proqramı",
+    "inventar idarəetməsi", "anbar uçotu", "satış idarəetmə", "təchizatçı proqramı", "distribütor proqramı",
+    "easysteperp", "easysteperp.com",
+  ],
   authors: [{ name: "Easy Step ERP", url: baseUrl }],
   creator: "Easy Step ERP",
   publisher: "Easy Step ERP",
@@ -40,26 +45,20 @@ export const metadata = {
   verification: {
     google: "HdkwS2DIa8vI3DXe7dJsUjTCRwy_HUHZfyTgegfF2LU",
   },
-  icons: {
-    icon: "/favicon.ico",
-    shortcut: "/favicon.ico",
-    apple: "/logo.png",
-  },
 };
 
 const jsonLd = {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
   name: "Easy Step ERP",
+  alternateName: "Easy Step - Təchizat və Satış ERP",
   applicationCategory: "BusinessApplication",
-  description: "Təchizatçı şirkətləri üçün alış, satış, anbar və pul uçotu proqramı. Azərbaycanda professional ERP həlli.",
+  description: "Azərbaycanda təchizat, toptan və pərakəndə satış üçün ERP proqramı. Anbar uçotu, kassa, borclar, hesabatlar - sadə dil ilə.",
   url: "https://www.easysteperp.com",
   operatingSystem: "Windows",
-  offers: {
-    "@type": "Offer",
-    price: "0",
-    priceCurrency: "AZN",
-  },
+  offers: { "@type": "Offer", price: "0", priceCurrency: "AZN" },
+  keywords: "təchizat erp, anbar proqramı, satış idarəetmə, toptan satış, pərakəndə, logistika proqramı",
+  author: { "@type": "Organization", name: "Easy Step ERP" },
 };
 
 export default function RootLayout({

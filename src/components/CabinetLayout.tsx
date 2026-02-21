@@ -6,7 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import Logo from "./Logo";
 
 const cabinetNav = [
-  { href: "/cabinet", label: "Dashboard" },
+  { href: "/cabinet", label: "Panel" },
   { href: "/cabinet/billing", label: "Ödənişlər" },
   { href: "/cabinet/downloads", label: "Yükləmələr" },
   { href: "/cabinet/licenses", label: "Lisenziyalar & Cihazlar" },

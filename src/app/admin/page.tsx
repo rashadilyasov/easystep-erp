@@ -46,7 +46,7 @@ export default function AdminDashboard() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-slate-900 mb-6">Admin Dashboard</h1>
+      <h1 className="text-2xl font-bold text-slate-900 mb-6">İdarə paneli</h1>
 
       {!apiOk && (
         <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -85,7 +85,7 @@ export default function AdminDashboard() {
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           <div className="p-6 bg-white rounded-2xl border border-slate-200 shadow-sm">
-            <h3 className="text-sm font-medium text-slate-600 mb-1">Tenantlar</h3>
+            <h3 className="text-sm font-medium text-slate-600 mb-1">Şirkətlər</h3>
             <p className="text-3xl font-bold text-slate-900">{stats.totalTenants}</p>
           </div>
           <div className="p-6 bg-white rounded-2xl border border-slate-200 shadow-sm">

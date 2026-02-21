@@ -3,6 +3,13 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 
+const STATUS_LABELS: Record<string, string> = {
+  Succeeded: "Uğurlu",
+  Failed: "Uğursuz",
+  Cancelled: "Ləğv edildi",
+  Pending: "Gözləyir",
+};
+
 type Payment = {
   id: string;
   date: string;
@@ -38,10 +45,10 @@ export default function AdminPaymentsContent() {
         <thead className="bg-slate-50">
           <tr>
             <th className="text-left px-4 py-3 font-medium text-slate-700">Tarix</th>
-            <th className="text-left px-4 py-3 font-medium text-slate-700">Tenant</th>
+            <th className="text-left px-4 py-3 font-medium text-slate-700">Şirkət</th>
             <th className="text-left px-4 py-3 font-medium text-slate-700">Məbləğ</th>
-            <th className="text-left px-4 py-3 font-medium text-slate-700">Status</th>
-            <th className="text-left px-4 py-3 font-medium text-slate-700">Provider</th>
+            <th className="text-left px-4 py-3 font-medium text-slate-700">Vəziyyət</th>
+            <th className="text-left px-4 py-3 font-medium text-slate-700">Ödəniş sistemi</th>
           </tr>
         </thead>
         <tbody>
@@ -67,7 +74,7 @@ export default function AdminPaymentsContent() {
                           : "bg-slate-100 text-slate-700"
                     }`}
                   >
-                    {p.status}
+                    {STATUS_LABELS[p.status] ?? p.status}
                   </span>
                 </td>
                 <td className="px-4 py-3">{p.provider}</td>

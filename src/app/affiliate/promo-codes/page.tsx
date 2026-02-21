@@ -68,7 +68,7 @@ export default function AffiliatePromoCodesPage() {
                 <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">Kod</th>
                 <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">Endirim %</th>
                 <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">Komissiya %</th>
-                <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">Status</th>
+                <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">Vəziyyət</th>
                 <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">Müştəri</th>
                 <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">Tarix</th>
               </tr>
@@ -81,7 +81,7 @@ export default function AffiliatePromoCodesPage() {
                   <td className="px-6 py-3">{p.commissionPercent}%</td>
                   <td className="px-6 py-3">
                     <span className={`px-2 py-1 rounded text-xs ${p.status === "Used" ? "bg-green-100 text-green-800" : "bg-amber-100 text-amber-800"}`}>
-                      {p.status === "Used" ? "Istifadə olunub" : "Aktiv"}
+                      {p.status === "Used" ? "İstifadə olunub" : "Aktiv"}
                     </span>
                   </td>
                   <td className="px-6 py-3 text-slate-600">{p.tenantName ?? "—"}</td>

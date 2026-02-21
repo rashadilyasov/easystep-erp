@@ -109,16 +109,16 @@ export default function AdminTenantsContent() {
 
   const handleDeleteTenant = async () => {
     if (!detailModal) return;
-    if (!confirm(`${detailModal.tenant.name} tenantini və bütün əlaqəli məlumatları silmək istədiyinizə əminsiniz? Bu əməliyyat geri alına bilməz.`)) return;
+    if (!confirm(`${detailModal.tenant.name} şirkətini və bütün əlaqəli məlumatları silmək istədiyinizə əminsiniz? Bu əməliyyat geri alına bilməz.`)) return;
     setDeletingTenant(true);
     try {
       await api.admin.deleteTenant(detailModal.tenant.id);
       setDetailModal(null);
       refreshTenants();
-      alert("Tenant silindi");
+      alert("Şirkət silindi");
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Xəta";
-      alert(`${msg}\n\n(Tenant tapılmadı = tenant DB-də yoxdur; Not Found = route yoxdur. /api/ping yoxlayın.)`);
+      alert(`${msg}\n\n(Şirkət tapılmadı = DB-də yoxdur; route tapılmadı = URL səhvdir. /api/ping yoxlayın.)`);
     } finally {
       setDeletingTenant(false);
     }
@@ -133,7 +133,7 @@ export default function AdminTenantsContent() {
       setExtendModal(null);
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Xəta baş verdi";
-      alert(msg.includes("405") ? "Method Not Allowed (405) – API proxy və ya backend yoxlanılmalıdır." : msg);
+      alert(msg.includes("405") ? "Metod icazə verilməyib (405) – API proxy və ya backend yoxlanılmalıdır." : msg.includes("Tenant tapılmadı") ? "Şirkət tapılmadı. DB və /api/ping yoxlayın." : msg);
     } finally {
       setExtending(null);
     }
@@ -175,7 +175,7 @@ export default function AdminTenantsContent() {
             <th className="text-left px-4 py-3 font-medium text-slate-700">Şirkət</th>
             <th className="text-left px-4 py-3 font-medium text-slate-700">İstifadəçilər</th>
             <th className="text-left px-4 py-3 font-medium text-slate-700">Plan</th>
-            <th className="text-left px-4 py-3 font-medium text-slate-700">Status</th>
+            <th className="text-left px-4 py-3 font-medium text-slate-700">Vəziyyət</th>
             <th className="text-left px-4 py-3 font-medium text-slate-700">Bitmə</th>
             <th className="text-left px-4 py-3 font-medium text-slate-700"></th>
           </tr>
@@ -184,7 +184,7 @@ export default function AdminTenantsContent() {
           {tenants.length === 0 ? (
             <tr>
               <td colSpan={6} className="px-4 py-8 text-center text-slate-500">
-                Tenant tapılmadı
+                Şirkət tapılmadı
               </td>
             </tr>
           ) : (
@@ -222,7 +222,7 @@ export default function AdminTenantsContent() {
                               disabled={resending === u.id}
                               className="text-xs px-2 py-0.5 bg-amber-100 text-amber-800 rounded hover:bg-amber-200 disabled:opacity-50"
                             >
-                              {resending === u.id ? "..." : "Mail göndər"}
+                              {resending === u.id ? "..." : "Təsdiq göndər"}
                             </button>
                           </>
                         )}
@@ -243,7 +243,13 @@ export default function AdminTenantsContent() {
                             : "bg-slate-100 text-slate-700"
                       }`}
                     >
-                      {t.subscription.status}
+                      {t.subscription.status === "Active"
+                        ? "Aktiv"
+                        : t.subscription.status === "Expired"
+                          ? "Bitmiş"
+                          : t.subscription.status === "PastDue"
+                            ? "Gecikmiş"
+                            : t.subscription.status}
                     </span>
                   ) : (
                     "-"
@@ -334,7 +340,7 @@ export default function AdminTenantsContent() {
                         disabled={deletingTenant}
                         className="text-xs px-3 py-1.5 bg-red-100 text-red-800 rounded hover:bg-red-200 disabled:opacity-50"
                       >
-                        {deletingTenant ? "..." : "Profili sil"}
+                        {deletingTenant ? "..." : "Şirkəti sil"}
                       </button>
                     )}
                     <button onClick={() => setDetailModal(null)} className="text-slate-500 hover:text-red-500">✕</button>
@@ -345,7 +351,7 @@ export default function AdminTenantsContent() {
                     <h4 className="font-medium text-slate-700 mb-2">İstifadəçilər</h4>
                     <div className="space-y-2">
                       {detailModal.users.length === 0 ? (
-                        <p className="text-slate-500 text-sm py-2">Bu tenant üçün istifadəçi qeydiyyatda deyil</p>
+                        <p className="text-slate-500 text-sm py-2">Bu şirkət üçün istifadəçi qeydiyyatda deyil</p>
                       ) : detailModal.users.map((u) => (
                         <div key={u.id} className="flex items-center gap-2 flex-wrap p-2 bg-slate-50 rounded-lg">
                           {editingUser?.id === u.id ? (
@@ -383,7 +389,7 @@ export default function AdminTenantsContent() {
                                     disabled={resending === u.id}
                                     className="text-xs px-2 py-0.5 bg-amber-100 text-amber-800 rounded"
                                   >
-                                    {resending === u.id ? "..." : "Mail göndər"}
+                                    {resending === u.id ? "..." : "Təsdiq göndər"}
                                   </button>
                                 </>
                               )}
@@ -393,7 +399,7 @@ export default function AdminTenantsContent() {
                                     onClick={() => setEditingUser({ id: u.id, email: u.email })}
                                     className="text-xs px-2 py-0.5 text-primary-600 hover:underline"
                                   >
-                                    Edit
+                                    Redaktə
                                   </button>
                                   <button
                                     onClick={() => handleDeleteUser(u.id)}
@@ -413,7 +419,17 @@ export default function AdminTenantsContent() {
                   {detailModal.subscription && (
                     <div>
                       <h4 className="font-medium text-slate-700 mb-1">Abunə</h4>
-                      <p>{detailModal.subscription.name} — {detailModal.subscription.status} — bitmə: {new Date(detailModal.subscription.endDate).toLocaleDateString("az-AZ")}</p>
+                      <p>
+                        {detailModal.subscription.name} —{" "}
+                        {detailModal.subscription.status === "Active"
+                          ? "Aktiv"
+                          : detailModal.subscription.status === "Expired"
+                            ? "Bitmiş"
+                            : detailModal.subscription.status === "PastDue"
+                              ? "Gecikmiş"
+                              : detailModal.subscription.status}{" "}
+                        — bitmə: {new Date(detailModal.subscription.endDate).toLocaleDateString("az-AZ")}
+                      </p>
                       <button
                         onClick={() => { setDetailModal(null); openExtendModal({ id: detailModal.tenant.id, name: detailModal.tenant.name, contactPerson: "", createdAt: "", subscription: null }); }}
                         className="mt-1 text-primary-600 text-xs hover:underline"
@@ -429,7 +445,9 @@ export default function AdminTenantsContent() {
                         {detailModal.payments.map((p) => (
                           <div key={p.id} className="flex justify-between">
                             <span>{p.date} — {p.amount} {p.currency}</span>
-                            <span className={p.status === "Succeeded" ? "text-green-600" : "text-slate-600"}>{p.status}</span>
+                            <span className={p.status === "Succeeded" ? "text-green-600" : "text-slate-600"}>
+                              {p.status === "Succeeded" ? "Təsdiqləndi" : p.status === "Failed" ? "Uğursuz" : p.status === "Cancelled" ? "Ləğv edildi" : p.status}
+                            </span>
                           </div>
                         ))}
                       </div>
@@ -442,7 +460,9 @@ export default function AdminTenantsContent() {
                         {detailModal.tickets.map((t) => (
                           <div key={t.id} className="flex justify-between">
                             <span>{t.subject}</span>
-                            <span>{t.status} — {t.date}</span>
+                            <span>
+                              {t.status === "Open" ? "Gözləyir" : t.status === "InProgress" ? "Həll edilir" : t.status === "Resolved" ? "Həll edildi" : t.status === "Closed" ? "Bağlı" : t.status} — {t.date}
+                            </span>
                           </div>
                         ))}
                       </div>

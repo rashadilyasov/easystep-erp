@@ -32,7 +32,7 @@ export default function RegisterAffiliateForm() {
       return;
     }
     if (!isStrongPassword(form.password)) {
-      setError(form.password.length < 12 ? "Şifrə minimum 12 simvol olmalıdır" : "Şifrə böyük hərf, kiçik hərf və rəqəm əlavə edin");
+      setError(form.password.length < 12 ? "Şifrə minimum 12 simvol olmalıdır" : "Şifrədə böyük hərf, kiçik hərf və rəqəm olmalıdır");
       return;
     }
     if (!form.acceptTerms) {
@@ -113,7 +113,7 @@ export default function RegisterAffiliateForm() {
         />
         {form.password && !isStrongPassword(form.password) && (
           <p className="text-xs text-amber-600 mt-1">
-            Böyük hərf, kiçik hərf və rəqəm əlavə edin
+            Şifrədə böyük hərf, kiçik hərf və rəqəm olmalıdır
           </p>
         )}
       </div>

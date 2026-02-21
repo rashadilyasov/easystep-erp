@@ -21,7 +21,7 @@ export default function CheckoutSuccess() {
           </div>
           <h1 className="text-2xl font-bold text-slate-900 mb-2">Ödəniş uğurla tamamlandı</h1>
           <p className="text-slate-600 mb-8">
-            Abunəliyiniz aktivləşdi. Desktop proqramı indi yükləyə bilərsiniz.
+            Abunəliyiniz aktivləşdi. Masaüstü proqramı indi yükləyə bilərsiniz.
           </p>
           <div className="flex flex-col gap-3">
             <Link href="/cabinet/downloads" className="btn-primary">

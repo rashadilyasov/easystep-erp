@@ -12,7 +12,7 @@ const FRAME_MESSAGES = [
   "💵 Kassa və bank - nə gəldi, nə çıxdı, bir ayda",
 ];
 
-const SIDEBAR_ITEMS = ["Dashboard", "Kontragentlər", "Anbarlar", "Alış", "Satış", "Pul"] as const;
+const SIDEBAR_ITEMS = ["Panel", "Kontragentlər", "Anbarlar", "Alış", "Satış", "Pul"] as const;
 
 function Sidebar({ activeIndex }: { activeIndex: number }) {
   return (
@@ -49,7 +49,7 @@ const FRAMES = [
         <Sidebar activeIndex={0} />
         <div className="flex-1 min-w-0 p-3 sm:p-4 md:p-5 overflow-visible">
           <div className="h-10 md:h-11 bg-gradient-to-r from-primary-600 to-primary-500 rounded-xl mb-4 md:mb-5 flex items-center px-4 md:px-5 text-white font-semibold text-xs md:text-sm shadow-lg shadow-primary-500/25">
-            Əsas Səhifə (Dashboard)
+            Əsas səhifə
           </div>
           <div className="grid grid-cols-2 gap-2 sm:gap-4 md:grid-cols-4 mb-4 md:mb-5 min-w-0">
             {[
@@ -95,14 +95,14 @@ const FRAMES = [
               </thead>
               <tbody>
                 {[
-                  { name: "ABC MMC", borc: "₼ 2 450", mueyyen: "-" },
-                  { name: "XYZ Ltd", borc: "-", mueyyen: "₼ 1 890" },
-                  { name: "Trade Plus", borc: "₼ 5 120", mueyyen: "-" },
+                  { name: "ABC MMC", borclu: "₼ 2 450", borc: "-" },
+                  { name: "XYZ MMC", borclu: "-", borc: "₼ 1 890" },
+                  { name: "Ticarət Plus MMC", borclu: "₼ 5 120", borc: "-" },
                 ].map((r) => (
                   <tr key={r.name} className="border-t border-slate-100 hover:bg-primary-50/50">
                     <td className="py-3 md:py-4 px-3 md:px-5 font-semibold text-slate-800">{r.name}</td>
-                    <td className="py-3 md:py-4 px-3 md:px-5 text-right font-bold text-emerald-600">{r.borc}</td>
-                    <td className="py-3 md:py-4 px-3 md:px-5 text-right font-bold text-amber-600">{r.mueyyen}</td>
+                    <td className="py-3 md:py-4 px-3 md:px-5 text-right font-bold text-emerald-600">{r.borclu}</td>
+                    <td className="py-3 md:py-4 px-3 md:px-5 text-right font-bold text-amber-600">{r.borc}</td>
                   </tr>
                 ))}
               </tbody>
@@ -124,9 +124,9 @@ const FRAMES = [
           <div className="h-10 md:h-11 bg-gradient-to-r from-primary-600 to-primary-500 rounded-xl mb-4 md:mb-5 flex items-center px-4 md:px-5 text-white font-semibold text-xs md:text-sm shadow-lg shadow-primary-500/25">Anbar qalıqları</div>
           <div className="grid gap-3 md:gap-4">
             {[
-              { name: "Material A", qty: "1 250", bir: "ədəd", value: "₼ 12 500", bar: 85 },
-              { name: "Material B", qty: "890", bir: "kq", value: "₼ 8 900", bar: 60 },
-              { name: "Material C", qty: "320", bir: "ədəd", value: "₼ 7 520", bar: 40 },
+              { name: "Məhsul A", qty: "1 250", bir: "ədəd", value: "₼ 12 500", bar: 85 },
+              { name: "Məhsul B", qty: "890", bir: "kq", value: "₼ 8 900", bar: 60 },
+              { name: "Məhsul C", qty: "320", bir: "ədəd", value: "₼ 7 520", bar: 40 },
             ].map((r) => (
               <div key={r.name} className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-4 p-2.5 sm:p-4 bg-white rounded-xl md:rounded-2xl border border-slate-200/80 shadow-md hover:shadow-lg transition-shadow min-w-0 overflow-hidden">
                 <div className="flex justify-between items-center gap-2 min-w-0">

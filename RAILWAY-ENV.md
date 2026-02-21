@@ -2,7 +2,7 @@
 
 Add these in **Railway** → easystep-erp → **Variables** → **Raw Editor**.
 
-## Raw Editor — kopyala-yapışdır
+## Raw Editor — kopyala və əlavə et
 
 Aşağıda parol placeholder ilə — təhlükəsiz (GitHub-a push oluna bilər).
 Parolunuzu əlavə etmək üçün **aşağıdakı tam bloku** bu söhbətdə verəcəyəm, oradan kopyalayın.
@@ -17,11 +17,12 @@ App__ApiBaseUrl=https://api.easysteperp.com
 Smtp__Host=easysteperp.com
 Smtp__Port=465
 Smtp__User=hello@easysteperp.com
-Smtp__Password=BURADA_PAROLUNU_YAPISTIR
+Smtp__Password=BURADA_PAROLUNU_QOY
 Smtp__From=hello@easysteperp.com
 Smtp__UseSsl=true
 Affiliate__DefaultDiscountPercent=5
 Affiliate__DefaultCommissionPercent=5
+App__AcademyYoutubePlaylistId=
 Cron__Secret=RAILWAY_CRON_SECRET_BURAYA_QOYUN
 ```
 
@@ -65,4 +66,5 @@ Cron__Secret=RAILWAY_CRON_SECRET_BURAYA_QOYUN
 | `Smtp__Password` | e-poçt parolu |
 | `Smtp__From` | `hello@easysteperp.com` |
 | `Smtp__UseSsl` | `true` |
+| `App__AcademyYoutubePlaylistId` | YouTube playlist ID (Akademiya videoları; məs: PLxxxxxxxx) |
 | `Cron__Secret` | Bonus hesablama cron üçün gizli açar (Railway Cron job) |

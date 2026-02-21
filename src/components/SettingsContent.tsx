@@ -104,7 +104,7 @@ export default function SettingsContent() {
               value={form.taxId}
               onChange={(e) => setForm((f) => ({ ...f, taxId: e.target.value }))}
               className="w-full px-4 py-2 rounded-lg border border-slate-300 input-focus"
-              placeholder="Opsional"
+              placeholder="Vacib deyil"
             />
           </div>
           <div>
@@ -165,7 +165,7 @@ export default function SettingsContent() {
 
       <section className="p-6 bg-white rounded-2xl border border-slate-200">
         <h3 className="font-semibold text-slate-900 mb-4">İstifadəçilər</h3>
-        <p className="text-slate-600 text-sm mb-4">Tenant üzvlərinin idarəetməsi.</p>
+        <p className="text-slate-600 text-sm mb-4">Şirkət üzvlərinin idarəetməsi.</p>
         <button className="px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-50" disabled>
           İstifadəçi dəvət et (tezliklə)
         </button>

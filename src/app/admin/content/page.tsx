@@ -6,7 +6,12 @@ import { api } from "@/lib/api";
 type Contact = { id: string; name: string; email: string; message: string; date: string };
 type Ticket = { id: string; subject: string; status: string; date: string; tenantName: string; body?: string };
 
-const TICKET_STATUSES = ["Open", "InProgress", "Resolved", "Closed"] as const;
+const TICKET_STATUSES: { value: string; label: string }[] = [
+  { value: "Open", label: "Gözləyir" },
+  { value: "InProgress", label: "Həll edilir" },
+  { value: "Resolved", label: "Həll edildi" },
+  { value: "Closed", label: "Bağlı" },
+];
 
 export default function Content() {
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -59,7 +64,7 @@ export default function Content() {
         <div className="p-6 bg-white rounded-2xl border border-slate-200">
           <h3 className="font-semibold text-slate-900 mb-2">Tutoriallar (Akademiya)</h3>
           <p className="text-slate-600 text-sm mb-4">
-            YouTube playlist: appsettings.json → App:AcademyYoutubePlaylistId
+            YouTube playlist: Railway Variables-da <code className="bg-slate-100 px-1 rounded">App__AcademyYoutubePlaylistId</code> əlavə edin (məs: PLxxxxxxxx). Sonra Redeploy edin.
           </p>
         </div>
         <div className="p-6 bg-white rounded-2xl border border-slate-200">
@@ -87,7 +92,7 @@ export default function Content() {
                     className="text-sm border border-slate-300 rounded px-2 py-1 bg-white disabled:opacity-50"
                   >
                     {TICKET_STATUSES.map((s) => (
-                      <option key={s} value={s}>{s}</option>
+                      <option key={s.value} value={s.value}>{s.label}</option>
                     ))}
                   </select>
                 </div>
@@ -122,7 +127,7 @@ export default function Content() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl p-6 w-full max-w-lg shadow-xl max-h-[80vh] overflow-auto">
             <h3 className="font-semibold text-slate-900 mb-2">{detailTicket.subject}</h3>
-            <p className="text-slate-500 text-xs mb-3">{detailTicket.tenantName} • {detailTicket.date} • {detailTicket.status}</p>
+            <p className="text-slate-500 text-xs mb-3">{detailTicket.tenantName} • {detailTicket.date} • {TICKET_STATUSES.find((s) => s.value === detailTicket.status)?.label ?? detailTicket.status}</p>
             <p className="text-slate-700 text-sm whitespace-pre-wrap mb-4">{detailTicket.body}</p>
             <select
               value={detailTicket.status}
@@ -134,7 +139,7 @@ export default function Content() {
               className="text-sm border border-slate-300 rounded px-2 py-1 bg-white disabled:opacity-50 mb-4"
             >
               {TICKET_STATUSES.map((s) => (
-                <option key={s} value={s}>{s}</option>
+                <option key={s.value} value={s.value}>{s.label}</option>
               ))}
             </select>
             <div>

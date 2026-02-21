@@ -163,7 +163,7 @@ export default function AdminSecurity() {
                 <div className="bg-white p-2 rounded border border-slate-200">
                   <img
                     src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(setup.qrCodeUrl ?? "")}`}
-                    alt="QR Code"
+                    alt="QR kod"
                     width={150}
                     height={150}
                   />

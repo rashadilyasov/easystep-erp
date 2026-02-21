@@ -5,15 +5,15 @@ import { api } from "@/lib/api";
 import { usePathname } from "next/navigation";
 
 const adminNav = [
-  { href: "/admin", label: "Dashboard" },
-  { href: "/admin/tenants", label: "Tenantlar" },
+  { href: "/admin", label: "Panel" },
+  { href: "/admin/tenants", label: "Şirkətlər" },
   { href: "/admin/plans", label: "Planlar" },
   { href: "/admin/payments", label: "Ödənişlər" },
   { href: "/admin/content", label: "Kontent" },
   { href: "/admin/site-content", label: "Səhifə kontenti" },
   { href: "/admin/affiliates", label: "Satış Partnyorları" },
   { href: "/admin/pending-verifications", label: "E-poçt təsdiqi gözləyənlər" },
-  { href: "/admin/audit", label: "Audit log" },
+  { href: "/admin/audit", label: "Audit jurnalı" },
   { href: "/admin/security", label: "Təhlükəsizlik (2FA)" },
   { href: "/admin/email-settings", label: "E-poçt ayarları" },
 ];
@@ -30,7 +30,7 @@ export default function AdminLayout({
       <header className="bg-slate-900 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <Link href="/admin" className="text-xl font-bold">
-            Easy Step <span className="text-amber-400">Admin</span>
+            Easy Step <span className="text-amber-400">İdarə</span>
           </Link>
           <div className="flex items-center gap-4">
             <Link href="/cabinet" className="text-slate-300 hover:text-white text-sm">

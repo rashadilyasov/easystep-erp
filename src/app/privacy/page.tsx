@@ -15,11 +15,11 @@ export default function Privacy() {
           <h1 className="text-4xl font-bold text-slate-900 mb-6">Məxfilik siyasəti</h1>
           <div className="prose prose-slate max-w-none space-y-4 text-slate-600">
             <p>
-              Easy Step ERP məxfilikinizi qorumağa önəm verir.
+              Easy Step ERP məxfilikinizin qorunmasına əhəmiyyət verir.
             </p>
             <h2 className="text-xl font-semibold text-slate-900 mt-6">1. Toplanan məlumatlar</h2>
             <p>
-              Qeydiyyat zamanı: e-poçt, şirkət adı, əlaqə şəxsi, VÖEN (opsional). Ödəniş məlumatları ödəniş provayderi tərəfindən işlənir; kart məlumatları bizim serverlərə göndərilmir.
+              Qeydiyyat zamanı: e-poçt, şirkət adı, əlaqə şəxsi, VÖEN (vacib deyil). Ödəniş məlumatları ödəniş provayderi tərəfindən işlənir; kart məlumatları bizim serverlərə göndərilmir.
             </p>
             <h2 className="text-xl font-semibold text-slate-900 mt-6">2. Məlumatların istifadəsi</h2>
             <p>

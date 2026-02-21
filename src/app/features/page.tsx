@@ -58,16 +58,16 @@ export default function Features() {
       desc: "Qaimə, faktura və invoice-lərin çoxmərhələli təsdiqlənməsi. Verilənlər bazasının ehtiyat nüsxəsi və bərpası. Audit jurnalı və rol əsaslı icazə idarəetməsi.",
     },
     {
-      title: "Panel (Dashboard) və əsas göstəricilər",
+      title: "Panel və əsas göstəricilər",
       desc: "Bir baxışda əsas KPI-lər: stok vəziyyəti, borc balansı, nağd vəziyyəti, satış göstəriciləri. Real vaxt ümumiləşdirilmiş panel.",
     },
     {
-      title: "Excel ixrac və məlumat importu",
-      desc: "Hesabatların və cədvəllərin Excel/CSV formatında ixracı. Məhsul, kontragent və əməliyyatların kütləvi importu.",
+      title: "Excel ixrac və məlumat idxalı",
+      desc: "Hesabatların və cədvəllərin Excel/CSV formatında ixracı. Məhsul, kontragent və əməliyyatların kütləvi idxalı.",
     },
     {
       title: "Mobil tətbiq, hesabat çıxışı və bildirişlər",
-      desc: "Mobil tətbiq vasitəsilə hesabatlara çıxış. Sənədlərin mobil üzərindən təsdiqlənməsi. Sənəd statusu barədə avtomatik bildirişlər.",
+      desc: "Mobil tətbiq vasitəsilə hesabatlara çıxış. Sənədlərin mobil üzərindən təsdiqlənməsi. Sənəd vəziyyəti barədə avtomatik bildirişlər.",
     },
   ];
 

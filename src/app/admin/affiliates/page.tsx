@@ -353,7 +353,7 @@ export default function AdminAffiliatesPage() {
                   <tr>
                     <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">E-poçt</th>
                     <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">E-poçt təsdiqi</th>
-                    <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">Status</th>
+                    <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">Vəziyyət</th>
                     <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">Müştərilər</th>
                     <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">Gözləyir</th>
                     <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">Ödənilən</th>
@@ -591,7 +591,7 @@ export default function AdminAffiliatesPage() {
                   <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">Partnyor</th>
                   <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">Müştəri sayı</th>
                   <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">Məbləğ</th>
-                  <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">Status</th>
+                  <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">Vəziyyət</th>
                   <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">Əməliyyat</th>
                 </tr>
               </thead>
@@ -655,8 +655,8 @@ export default function AdminAffiliatesPage() {
                   <th className="text-left px-6 py-3 font-medium text-slate-700">Kod</th>
                   <th className="text-left px-6 py-3 font-medium text-slate-700">Partnyor</th>
                   <th className="text-left px-6 py-3 font-medium text-slate-700">Müştəri</th>
-                  <th className="text-left px-6 py-3 font-medium text-slate-700">Status</th>
-                  <th className="text-left px-6 py-3 font-medium text-slate-700">Istifadə</th>
+                  <th className="text-left px-6 py-3 font-medium text-slate-700">Vəziyyət</th>
+                  <th className="text-left px-6 py-3 font-medium text-slate-700">İstifadə</th>
                   <th className="text-left px-6 py-3 font-medium text-slate-700">Endirim bitir</th>
                 </tr>
               </thead>
@@ -667,7 +667,7 @@ export default function AdminAffiliatesPage() {
                     <td className="px-6 py-3">{p.affiliateEmail}</td>
                     <td className="px-6 py-3">{p.tenantName ?? "—"}</td>
                     <td className="px-6 py-3">
-                      <span className={p.status === "Used" ? "text-green-600" : "text-amber-600"}>{p.status === "Used" ? "Istifadə" : "Aktiv"}</span>
+                      <span className={p.status === "Used" ? "text-green-600" : "text-amber-600"}>{p.status === "Used" ? "İstifadə olunub" : "Aktiv"}</span>
                     </td>
                     <td className="px-6 py-3">{p.usedAt ?? "—"}</td>
                     <td className="px-6 py-3">{p.discountValidUntil ?? "—"}</td>

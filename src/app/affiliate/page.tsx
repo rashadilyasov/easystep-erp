@@ -50,7 +50,7 @@ export default function AffiliateDashboard() {
   if (loading && !data) {
     return (
       <div>
-        <h1 className="text-2xl font-bold text-slate-900 mb-6">Dashboard</h1>
+        <h1 className="text-2xl font-bold text-slate-900 mb-6">Panel</h1>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           {[1, 2, 3, 4].map((i) => (
             <div key={i} className="p-6 bg-white rounded-2xl border border-slate-200 shadow-sm animate-pulse">
@@ -66,7 +66,7 @@ export default function AffiliateDashboard() {
   if (error) {
     return (
       <div>
-        <h1 className="text-2xl font-bold text-slate-900 mb-6">Dashboard</h1>
+        <h1 className="text-2xl font-bold text-slate-900 mb-6">Panel</h1>
         <div className="p-6 bg-amber-50 border border-amber-200 rounded-2xl text-amber-800">
           <p className="font-medium">Məlumat yüklənmədi</p>
           <p className="mt-1 text-sm">{error}</p>
@@ -104,7 +104,7 @@ export default function AffiliateDashboard() {
           <p className="text-3xl font-bold text-slate-900">
             {data.thisMonthCustomerCount}/{data.bonusRequired ?? 5}
           </p>
-          <p className="text-xs text-slate-500 mt-1"> Bonus: {data.bonusStatus}</p>
+          <p className="text-xs text-slate-500 mt-1"> Bonus: {data.bonusStatus === "Pending" ? "Gözləyir" : data.bonusStatus === "Approved" ? "Təsdiqləndi" : data.bonusStatus === "Paid" ? "Ödənildi" : data.bonusStatus}</p>
         </div>
         <div className="p-6 bg-white rounded-2xl border border-slate-200 shadow-sm">
           <h3 className="text-sm font-medium text-slate-600 mb-1">Gözləyən balans</h3>
@@ -157,7 +157,7 @@ export default function AffiliateDashboard() {
                       <p className="text-xs text-slate-500">Endirim: {p.discountValidUntil}</p>
                     )}
                     <span className={`inline-block mt-1 px-2 py-0.5 rounded text-xs ${p.status === "Used" ? "bg-green-100 text-green-800" : "bg-amber-100 text-amber-800"}`}>
-                      {p.status === "Used" ? "Istifadə olunub" : "Aktiv"}
+                      {p.status === "Used" ? "İstifadə olunub" : "Aktiv"}
                     </span>
                   </div>
                 </div>

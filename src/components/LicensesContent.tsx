@@ -86,7 +86,7 @@ export default function LicensesContent() {
               <div>
                 <h3 className="font-semibold text-slate-900">{dev.name}</h3>
                 <p className="text-sm text-slate-600">Son aktivlik: {dev.lastSeen}</p>
-                <p className="text-xs text-slate-500 font-mono">FP: {dev.fingerprint}</p>
+                <p className="text-xs text-slate-500 font-mono">Cihaz ID: {dev.fingerprint}</p>
               </div>
               {dev.status === 0 && (
                 <button

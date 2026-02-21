@@ -71,11 +71,11 @@ export default function AdminPendingVerificationsPage() {
   };
 
   const roleLabels: Record<string, string> = {
-    Admin: "Admin",
+    Admin: "İdarəçi",
     Owner: "Sahib",
     Partner: "Partnyor",
     Affiliate: "Satış Partnyoru",
-    CustomerAdmin: "Müştəri Admin",
+    CustomerAdmin: "Müştəri idarəçisi",
     CustomerUser: "Müştəri",
     User: "İstifadəçi",
   };
@@ -86,7 +86,7 @@ export default function AdminPendingVerificationsPage() {
         <div>
           <h1 className="text-2xl font-bold text-slate-900 mb-2">E-poçt təsdiqi gözləyənlər</h1>
           <p className="text-slate-600 text-sm">
-            Qeydiyyatdan keçib, e-poçtu təsdiqlənməmiş bütün istifadəçilər (müştəri və partnyor). Manual təsdiq və ya təsdiq linkini yenidən göndərmək mümkündür.
+            Qeydiyyatdan keçib, e-poçtu təsdiqlənməmiş bütün istifadəçilər (müştəri və partnyor). Əl ilə təsdiq və ya təsdiq linkini yenidən göndərmək mümkündür.
           </p>
         </div>
         <button
@@ -103,8 +103,8 @@ export default function AdminPendingVerificationsPage() {
         <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-sm">
           <p className="font-medium">Səhifə yüklənmədi</p>
           <p className="mt-1">{error}</p>
-          <p className="mt-2 text-amber-700">Həmçinin Tenantlar səhifəsində müştəri şirkətlərinə baxıb istifadəçini oradan təsdiqləyə bilərsiniz.</p>
-          <Link href="/admin/tenants" className="inline-block mt-2 text-amber-900 font-medium hover:underline">Tenantlara keç →</Link>
+          <p className="mt-2 text-amber-700">Həmçinin Şirkətlər səhifəsində müştəri şirkətlərinə baxıb istifadəçini oradan təsdiqləyə bilərsiniz.</p>
+          <Link href="/admin/tenants" className="inline-block mt-2 text-amber-900 font-medium hover:underline">Şirkətlərə keç →</Link>
         </div>
       )}
 
@@ -116,7 +116,7 @@ export default function AdminPendingVerificationsPage() {
             <p className="font-medium">Təsdiq gözləyən istifadəçi yoxdur</p>
             <p className="text-sm mt-2">Bütün qeydiyyatlar təsdiqləndikdə siyahı boş olacaq.</p>
             <p className="text-sm mt-4 text-slate-400">
-              Müştəri kimi qeydiyyat etdilərsə → <Link href="/admin/tenants" className="text-primary-600 hover:underline">Tenantlar</Link> səhifəsində şirkətin altında görünər.
+              Müştəri kimi qeydiyyat etdilərsə → <Link href="/admin/tenants" className="text-primary-600 hover:underline">Şirkətlər</Link> səhifəsində şirkətin altında görünər.
             </p>
           </div>
         ) : (
@@ -126,7 +126,7 @@ export default function AdminPendingVerificationsPage() {
                 <tr>
                   <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">E-poçt</th>
                   <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">Rol</th>
-                  <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">Tenant</th>
+                  <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">Şirkət</th>
                   <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">Qeydiyyat</th>
                   <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">Əməliyyat</th>
                 </tr>

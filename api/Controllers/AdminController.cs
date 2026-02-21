@@ -422,7 +422,7 @@ public class AdminController : ControllerBase
             return NotFound(new { message = "Bilet tapılmadı" });
 
         if (!Enum.TryParse<TicketStatus>(req.Status, true, out var status))
-            return BadRequest(new { message = "Geçərsiz status" });
+            return BadRequest(new { message = "Keçərsiz status" });
 
         ticket.Status = status;
         ticket.UpdatedAt = DateTime.UtcNow;

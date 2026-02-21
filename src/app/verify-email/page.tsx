@@ -31,7 +31,7 @@ function VerifyEmailContent() {
   if (!token) {
     return (
       <div className="p-6 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-center">
-        <p className="font-medium">Etibarsız və ya eksik link.</p>
+        <p className="font-medium">Etibarsız və ya natamam link.</p>
         <p className="text-sm mt-1">E-poçt təsdiqi üçün e-poçtunuzdakı linkə keçid edin.</p>
         <AuthModalTrigger mode="login" className="mt-4 inline-block text-primary-600 hover:underline text-sm font-medium">
           Daxil ol →

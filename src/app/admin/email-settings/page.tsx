@@ -98,7 +98,7 @@ export default function AdminEmailSettingsPage() {
               tab === t ? "bg-primary-600 text-white" : "bg-slate-200 text-slate-700 hover:bg-slate-300"
             }`}
           >
-            {t === "smtp" ? "SMTP" : t === "templates" ? "Şablonlar" : "Bulk göndərmə"}
+            {t === "smtp" ? "SMTP" : t === "templates" ? "Şablonlar" : "Toplu göndərmə"}
           </button>
         ))}
       </div>
@@ -165,10 +165,10 @@ export default function AdminEmailSettingsPage() {
             {selectedTemplate ? (
               <>
                 <h3 className="font-semibold text-slate-900 mb-4">Redaktə: {templates.find((t) => t.key === selectedTemplate)?.label}</h3>
-                <p className="text-xs text-slate-500 mb-2">Placeholder-lər: {"{{userName}}"} {"{{verifyUrl}}"} {"{{resetUrl}}"} {"{{code}}"} {"{{affiliatePanelUrl}}"} {"{{tenantName}}"} {"{{amount}}"} {"{{currency}}"} {"{{planName}}"} {"{{message}}"} {"{{year}}"} {"{{month}}"} {"{{customerCount}}"}</p>
+                <p className="text-xs text-slate-500 mb-2">Şablon dəyişənləri: {"{{userName}}"} {"{{verifyUrl}}"} {"{{resetUrl}}"} {"{{code}}"} {"{{affiliatePanelUrl}}"} {"{{tenantName}}"} {"{{amount}}"} {"{{currency}}"} {"{{planName}}"} {"{{message}}"} {"{{year}}"} {"{{month}}"} {"{{customerCount}}"}</p>
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Göndərən (From)</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Göndərən</label>
                     <select value={templateData.from} onChange={(e) => setTemplateData((d) => ({ ...d, from: e.target.value }))} className="w-full px-4 py-2 border border-slate-300 rounded-lg bg-white">
                       <option value="">— SMTP varsayılanı —</option>
                       {[...new Set([smtp.from, ...(smtp.fromAddresses ?? [])].filter(Boolean))].map((addr) => (
@@ -199,7 +199,7 @@ export default function AdminEmailSettingsPage() {
 
       {tab === "bulk" && (
         <div className="bg-white rounded-2xl border border-slate-200 p-6 max-w-2xl">
-          <h2 className="font-semibold text-slate-900 mb-4">Bulk e-poçt göndərmə</h2>
+          <h2 className="font-semibold text-slate-900 mb-4">Toplu e-poçt göndərmə</h2>
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">E-poçtlar (vergüllü, nöqtəvergüllü və ya sətirə görə ayrılmış)</label>

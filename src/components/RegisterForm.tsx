@@ -129,7 +129,7 @@ export default function RegisterForm() {
           value={form.taxId}
           onChange={(e) => setForm((f) => ({ ...f, taxId: e.target.value }))}
           className="w-full px-4 py-3 rounded-xl border border-slate-300 input-focus"
-          placeholder="Opsional"
+          placeholder="Vacib deyil"
         />
       </div>
       <div>

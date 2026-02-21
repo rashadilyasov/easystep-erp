@@ -28,7 +28,7 @@ export default function BillingContent() {
         setData(null);
         const msg = e instanceof Error ? e.message : "Məlumatları yükləmək mümkün olmadı";
         setLoadError(msg.includes("401") || msg.includes("Unauthorized")
-          ? "Oturum sona çatmışdır. Çıxış edib yenidən daxil olun."
+          ? "Sessiya bitmişdir. Çıxış edib yenidən daxil olun."
           : msg);
       })
       .finally(() => setLoading(false));
@@ -133,8 +133,8 @@ export default function BillingContent() {
               <tr>
                 <th className="text-left px-4 py-3 font-medium text-slate-700">Tarix</th>
                 <th className="text-left px-4 py-3 font-medium text-slate-700">Məbləğ</th>
-                <th className="text-left px-4 py-3 font-medium text-slate-700">Status</th>
-                <th className="text-left px-4 py-3 font-medium text-slate-700">Trx ID</th>
+                <th className="text-left px-4 py-3 font-medium text-slate-700">Vəziyyət</th>
+                <th className="text-left px-4 py-3 font-medium text-slate-700">Əməliyyat nömrəsi</th>
                 <th className="text-left px-4 py-3 font-medium text-slate-700"></th>
               </tr>
             </thead>
@@ -158,10 +158,22 @@ export default function BillingContent() {
                     <td className="px-4 py-3">
                       <span
                         className={`px-2 py-1 rounded text-xs ${
-                          p.status === "Succeeded" ? "bg-green-100 text-green-800" : "bg-slate-100 text-slate-700"
+                          p.status === "Succeeded"
+                            ? "bg-green-100 text-green-800"
+                            : p.status === "Failed" || p.status === "Cancelled"
+                              ? "bg-red-100 text-red-800"
+                              : "bg-slate-100 text-slate-700"
                         }`}
                       >
-                        {p.status === "Succeeded" ? "Təsdiqləndi" : p.status}
+                        {p.status === "Succeeded"
+                          ? "Təsdiqləndi"
+                          : p.status === "Failed"
+                            ? "Uğursuz"
+                            : p.status === "Cancelled"
+                              ? "Ləğv edildi"
+                              : p.status === "Pending"
+                                ? "Gözləyir"
+                                : p.status}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-slate-500">{p.trxId ?? "-"}</td>

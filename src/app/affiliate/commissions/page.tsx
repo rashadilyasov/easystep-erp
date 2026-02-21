@@ -46,7 +46,7 @@ export default function AffiliateCommissionsPage() {
                 <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">Müştəri</th>
                 <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">Ödəniş</th>
                 <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">Komissiya</th>
-                <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">Status</th>
+                <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">Vəziyyət</th>
                 <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">Ödəniş tarixi</th>
               </tr>
             </thead>

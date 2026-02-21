@@ -39,7 +39,7 @@ export default function DownloadsContent() {
         const { url } = await api.downloadUrl(releaseId);
         if (url) window.location.href = url;
       } catch {
-        alert("Yükləmə linki alınmadı. Abunə statusunuzu yoxlayın.");
+        alert("Yükləmə linki alınmadı. Abunə vəziyyətinizi yoxlayın.");
       }
     },
     []
@@ -91,7 +91,7 @@ export default function DownloadsContent() {
 
       {list[0]?.notes && (
         <div className="mt-8 p-4 bg-slate-100 rounded-xl">
-          <h4 className="font-medium text-slate-900 mb-2">Release notes (v{list[0].version})</h4>
+          <h4 className="font-medium text-slate-900 mb-2">Buraxılış qeydləri (v{list[0].version})</h4>
           <p className="text-sm text-slate-600 whitespace-pre-wrap">{list[0].notes}</p>
         </div>
       )}

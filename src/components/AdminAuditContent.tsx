@@ -50,7 +50,7 @@ export default function AdminAuditContent() {
         <thead className="bg-slate-50">
           <tr>
             <th className="text-left px-4 py-3 font-medium text-slate-700">Tarix</th>
-            <th className="text-left px-4 py-3 font-medium text-slate-700">Actor</th>
+            <th className="text-left px-4 py-3 font-medium text-slate-700">İstifadəçi</th>
             <th className="text-left px-4 py-3 font-medium text-slate-700">Hərəkət</th>
             <th className="text-left px-4 py-3 font-medium text-slate-700">Detallar</th>
             <th className="text-left px-4 py-3 font-medium text-slate-700">IP</th>

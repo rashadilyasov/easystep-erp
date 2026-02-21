@@ -20,7 +20,7 @@ export default function Terms() {
             <h2 className="text-xl font-semibold text-slate-900 mt-6">1. Xidmət haqqında</h2>
             <p>
               Easy Step ERP təchizatçı şirkətləri üçün alış, satış, anbar və pul uçotu modulları təqdim edir.
-              Abunə əsasında desktop proqrama çıxış verilir.
+              Abunə əsasında masaüstü proqrama çıxış verilir.
             </p>
             <h2 className="text-xl font-semibold text-slate-900 mt-6">2. Qeydiyyat və hesab</h2>
             <p>
@@ -28,7 +28,7 @@ export default function Terms() {
             </p>
             <h2 className="text-xl font-semibold text-slate-900 mt-6">3. Ödənişlər</h2>
             <p>
-              Abunə planları müddət ərzində keçərlidir. Avto-yeniləmə aktiv olarsa, bitmə tarixindən əvvəl növbəti dövr üçün ödəniş tutulacaq.
+              Abunə planları müddət ərzində keçərlidir. Avtomatik yeniləmə aktiv olarsa, bitmə tarixindən əvvəl növbəti dövr üçün ödəniş tutulacaq.
             </p>
           </div>
         </div>

@@ -36,7 +36,7 @@ export default function SatisPartnyorlariPage() {
                   <li><strong>Operator</strong> — Easy Step ERP xidmətlərini təqdim edən tərəf.</li>
                   <li><strong>Müştəri</strong> — Partnyorun promo kodu vasitəsilə qeydiyyatdan keçərək abunə olan şəxs.</li>
                 </ul>
-                <p className="mt-3">Proqrama qoşulmaq üçün partnyor əvvəlcə <Link href="/terms" className="text-primary-600 hover:underline font-medium">Ümumi İstifadə Şərtləri</Link> və <Link href="/privacy" className="text-primary-600 hover:underline font-medium">Məxfilik Siyasətini</Link> qəbul etməlidir. Bu Qaydalar əlavə olaraq partnyor münasibətlərinə aid bütün şərtləri əhatə edir və qeydiyyatda iştirak partiyorun bu Qaydaları tam olaraq qəbul etdiyi mənasını verir.</p>
+                <p className="mt-3">Proqrama qoşulmaq üçün partnyor əvvəlcə <Link href="/terms" className="text-primary-600 hover:underline font-medium">Ümumi İstifadə Şərtləri</Link> və <Link href="/privacy" className="text-primary-600 hover:underline font-medium">Məxfilik Siyasətini</Link> qəbul etməlidir. Bu Qaydalar əlavə olaraq partnyor münasibətlərinə aid bütün şərtləri əhatə edir və qeydiyyatda iştirak partnyorun bu Qaydaları tam olaraq qəbul etdiyi mənasını verir.</p>
               </section>
 
               <section>

@@ -27,7 +27,7 @@ const DEFAULT_CONTENT: Record<string, unknown> = {
       "Layihə əsasında sifariş idarəetməsi və hesabatlılıq",
       "Mənfəət-zərər (P/L) və nağd pul axını (Cash Flow) hesabatları",
       "Çoxmərhələli sənəd təsdiqlənmə mexanizmi",
-      "Sənəd statusu barədə avtomatik bildirişlər",
+      "Sənəd vəziyyəti barədə avtomatik bildirişlər",
       "Mobil tətbiq vasitəsilə hesabatlara çıxış",
       "Verilənlər bazasının ehtiyat nüsxəsi və bərpası",
       "Audit jurnalı və rol əsaslı icazə idarəetməsi",

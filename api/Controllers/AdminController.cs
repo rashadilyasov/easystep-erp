@@ -141,8 +141,13 @@ public class AdminController : ControllerBase
         var user = await _db.Users.FindAsync(new object[] { userId }, ct);
         if (user == null) return NotFound(new { message = "İstifadəçi tapılmadı" });
         user.EmailVerified = true;
+        if (user.Role == UserRole.Affiliate)
+        {
+            var aff = await _db.Affiliates.FirstOrDefaultAsync(a => a.UserId == userId, ct);
+            if (aff != null) { aff.IsApproved = true; aff.UpdatedAt = DateTime.UtcNow; }
+        }
         await _db.SaveChangesAsync(ct);
-        return Ok(new { message = "E-poçt təsdiqləndi" });
+        return Ok(new { message = "E-poçt təsdiqləndi" + (user.Role == UserRole.Affiliate ? ". Partnyor promo kod yarada bilər." : "") });
     }
 
     [HttpPost("users/{userId:guid}/resend-verification-email")]

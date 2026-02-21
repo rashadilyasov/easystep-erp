@@ -3,8 +3,222 @@
 import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/api";
 
+type Announcement = { id: string; title: string; body: string; publishedAt: string; active?: boolean };
 type Contact = { id: string; name: string; email: string; message: string; date: string };
 type Ticket = { id: string; subject: string; status: string; date: string; tenantName: string; body?: string };
+
+function AcademyMaterialsSection() {
+  const [list, setList] = useState<{ title: string; url: string }[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [title, setTitle] = useState("");
+  const [url, setUrl] = useState("");
+
+  const fetchList = useCallback(() => {
+    setLoading(true);
+    api.admin.academyMaterials()
+      .then((r) => setList(Array.isArray(r) ? r : []))
+      .catch(() => setList([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => { fetchList(); }, [fetchList]);
+
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title.trim() || !url.trim()) return;
+    setCreating(true);
+    try {
+      await api.admin.createAcademyMaterial(title.trim(), url.trim());
+      setTitle("");
+      setUrl("");
+      setShowForm(false);
+      fetchList();
+    } catch {
+      // ignore
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const handleDelete = async (index: number) => {
+    if (!confirm("Bu materialı silmək istədiyinizə əminsiniz?")) return;
+    try {
+      await api.admin.deleteAcademyMaterial(index);
+      fetchList();
+    } catch {
+      // ignore
+    }
+  };
+
+  return (
+    <div className="mt-4 pt-4 border-t border-slate-200">
+      <h4 className="font-medium text-slate-800 mb-2">Əlavə materiallar (PDF, link)</h4>
+      {!showForm ? (
+        <button
+          type="button"
+          onClick={() => setShowForm(true)}
+          className="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 text-sm"
+        >
+          + Material əlavə et
+        </button>
+      ) : (
+        <form onSubmit={handleCreate} className="space-y-2 mb-3 p-3 bg-slate-50 rounded-lg">
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Başlıq"
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
+            required
+          />
+          <input
+            type="url"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            placeholder="URL (https://...)"
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
+            required
+          />
+          <div className="flex gap-2">
+            <button type="submit" disabled={creating} className="px-3 py-1.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 text-sm">
+              {creating ? "..." : "Əlavə et"}
+            </button>
+            <button type="button" onClick={() => { setShowForm(false); setTitle(""); setUrl(""); }} className="px-3 py-1.5 border border-slate-300 rounded-lg hover:bg-slate-100 text-sm">
+              Ləğv
+            </button>
+          </div>
+        </form>
+      )}
+      {loading ? (
+        <div className="h-12 bg-slate-100 rounded animate-pulse mt-2" />
+      ) : list.length > 0 ? (
+        <ul className="mt-2 space-y-1 text-sm">
+          {list.map((m, i) => (
+            <li key={i} className="flex items-center justify-between gap-2">
+              <a href={m.url} target="_blank" rel="noopener noreferrer" className="text-primary-600 hover:underline truncate">{m.title}</a>
+              <button type="button" onClick={() => handleDelete(i)} className="text-red-600 hover:text-red-700 text-xs shrink-0">Sil</button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
+  );
+}
+
+function AnnouncementsSection() {
+  const [list, setList] = useState<Announcement[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [title, setTitle] = useState("");
+  const [body, setBody] = useState("");
+
+  const fetchList = useCallback(() => {
+    setLoading(true);
+    api.admin.announcements()
+      .then((r) => setList(Array.isArray(r) ? r : []))
+      .catch(() => setList([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => { fetchList(); }, [fetchList]);
+
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title.trim() || !body.trim()) return;
+    setCreating(true);
+    try {
+      await api.admin.createAnnouncement(title.trim(), body.trim());
+      setTitle("");
+      setBody("");
+      setShowForm(false);
+      fetchList();
+    } catch {
+      // ignore
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Bu elanı silmək istədiyinizə əminsiniz?")) return;
+    try {
+      await api.admin.deleteAnnouncement(id);
+      fetchList();
+    } catch {
+      // ignore
+    }
+  };
+
+  return (
+    <>
+      <h3 className="font-semibold text-slate-900 mb-4">Elanlar</h3>
+      <p className="text-slate-600 text-sm mb-4">Müştərilər kabinetdə bu elanları görəcək.</p>
+      {!showForm ? (
+        <button
+          type="button"
+          onClick={() => setShowForm(true)}
+          className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-sm"
+        >
+          + Elan əlavə et
+        </button>
+      ) : (
+        <form onSubmit={handleCreate} className="space-y-3 mb-4 p-4 bg-slate-50 rounded-lg">
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Mövzu"
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+            required
+          />
+          <textarea
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            placeholder="Mətn"
+            rows={3}
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+            required
+          />
+          <div className="flex gap-2">
+            <button type="submit" disabled={creating} className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50">
+              {creating ? "..." : "Əlavə et"}
+            </button>
+            <button type="button" onClick={() => { setShowForm(false); setTitle(""); setBody(""); }} className="px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-100">
+              Ləğv
+            </button>
+          </div>
+        </form>
+      )}
+      {loading ? (
+        <div className="h-16 bg-slate-100 rounded animate-pulse" />
+      ) : list.length === 0 ? (
+        <p className="text-slate-500 text-sm">Elan yoxdur</p>
+      ) : (
+        <div className="space-y-2">
+          {list.map((a) => (
+            <div key={a.id} className="p-3 bg-slate-50 rounded-lg text-sm flex items-center justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                <div className="font-medium text-slate-900">{a.title}</div>
+                <div className="text-slate-600 truncate">{a.body}</div>
+                <span className="text-slate-400 text-xs">{a.publishedAt}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleDelete(a.id)}
+                className="text-red-600 hover:text-red-700 text-xs shrink-0"
+              >
+                Sil
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
 
 const TICKET_STATUSES: { value: string; label: string }[] = [
   { value: "Open", label: "Gözləyir" },
@@ -66,6 +280,7 @@ export default function Content() {
           <p className="text-slate-600 text-sm mb-4">
             YouTube playlist: Railway Variables-da <code className="bg-slate-100 px-1 rounded">App__AcademyYoutubePlaylistId</code> əlavə edin (məs: PLxxxxxxxx). Sonra Redeploy edin.
           </p>
+          <AcademyMaterialsSection />
         </div>
         <div className="p-6 bg-white rounded-2xl border border-slate-200">
           <h3 className="font-semibold text-slate-900 mb-4">Biletlər</h3>
@@ -119,8 +334,7 @@ export default function Content() {
           )}
         </div>
         <div className="p-6 bg-white rounded-2xl border border-slate-200">
-          <h3 className="font-semibold text-slate-900 mb-2">Elanlar</h3>
-          <p className="text-slate-600 text-sm mb-4">Müştərilər üçün elanlar (tezliklə).</p>
+          <AnnouncementsSection />
         </div>
       </div>
       {detailTicket && (

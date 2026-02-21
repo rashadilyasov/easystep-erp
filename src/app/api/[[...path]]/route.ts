@@ -68,11 +68,12 @@ async function proxy(
     headers.set("Content-Type", "application/json");
   }
 
-  let body: string | undefined;
+  let body: string | ArrayBuffer | undefined;
   if (method !== "GET" && method !== "HEAD") {
-    body = await request.text();
+    const ct = request.headers.get("content-type") || "";
+    body = ct.includes("multipart/form-data") ? await request.arrayBuffer() : await request.text();
   }
-  const hasBody = body != null && body.length > 0;
+  const hasBody = body != null && (typeof body === "string" ? body.length > 0 : body.byteLength > 0);
 
   try {
     const res = await fetch(url, {

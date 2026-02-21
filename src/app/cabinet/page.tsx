@@ -1,10 +1,12 @@
 import DashboardStats from "@/components/DashboardStats";
+import CabinetAnnouncements from "@/components/CabinetAnnouncements";
 
 export default function CabinetDashboard() {
   return (
     <div>
       <h1 className="text-2xl font-bold text-slate-900 mb-6">Panel</h1>
       <DashboardStats />
+      <CabinetAnnouncements />
       <div className="mt-8 grid gap-4 md:grid-cols-2">
         <div className="p-6 bg-slate-50 border border-slate-200 rounded-2xl">
           <h3 className="font-semibold text-slate-900 mb-2">Sürətli keçidlər</h3>

@@ -206,7 +206,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("2fa/setup")]
-    [Microsoft.AspNetCore.Authorization.Authorize(Policy = "AdminOnly")]
+    [Authorize]
     public async Task<IActionResult> Setup2FA([FromBody] Setup2FARequest? req, CancellationToken ct)
     {
         var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
@@ -267,7 +267,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("2fa/verify")]
-    [Microsoft.AspNetCore.Authorization.Authorize(Policy = "AdminOnly")]
+    [Authorize]
     public async Task<IActionResult> Verify2FA([FromBody] Verify2FARequest req, CancellationToken ct)
     {
         var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
@@ -292,7 +292,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("2fa/send-disable-otp")]
-    [Microsoft.AspNetCore.Authorization.Authorize(Policy = "AdminOnly")]
+    [Authorize]
     public async Task<IActionResult> SendDisableOtp(CancellationToken ct)
     {
         var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
@@ -316,7 +316,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("2fa/disable")]
-    [Microsoft.AspNetCore.Authorization.Authorize(Policy = "AdminOnly")]
+    [Authorize]
     public async Task<IActionResult> Disable2FA([FromBody] Disable2FARequest req, CancellationToken ct)
     {
         var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
@@ -479,7 +479,43 @@ public class AuthController : ControllerBase
 
         return Ok(new { message = "E-poçtunuz təsdiqləndi. İndi daxil ola bilərsiniz." });
     }
+
+    [HttpPost("accept-invite")]
+    [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("auth")]
+    public async Task<IActionResult> AcceptInvite([FromBody] AcceptInviteRequest req, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(req.Token) || string.IsNullOrWhiteSpace(req.Password))
+            return BadRequest(new { message = "Token və şifrə tələb olunur." });
+
+        var (errorCode, userId) = await _auth.ValidateInviteAndCreateUserAsync(req.Token, req.Password, ct);
+        if (errorCode != null)
+        {
+            var msg = errorCode switch
+            {
+                "InvalidToken" => "Link etibarsız və ya vaxtı keçib.",
+                "TokenExpired" => "Link vaxtı keçib. Yeni dəvət tələb edin.",
+                "EmailExists" => "Bu e-poçt artıq qeydiyyatdadır.",
+                "PasswordTooShort" => "Şifrə minimum 12 simvol olmalıdır.",
+                "PasswordTooWeak" => "Şifrədə böyük hərf, kiçik hərf və rəqəm olmalıdır.",
+                _ => "Xəta baş verdi.",
+            };
+            return BadRequest(new { message = msg });
+        }
+
+        var r = await _auth.GetUserWithTenantByIdAsync(userId!.Value, ct);
+        if (r == null || r.Value.user == null || r.Value.tenant == null)
+            return BadRequest(new { message = "Xəta baş verdi." });
+
+        var (u, t) = r.Value;
+        var accessToken = _auth.GenerateAccessToken(u!, t!);
+        var refreshToken = _auth.GenerateRefreshToken();
+        await _auth.StoreRefreshTokenAsync(u!.Id, refreshToken, ct);
+
+        return Ok(new { accessToken, refreshToken, expiresIn = _auth.GetExpiresInSeconds(), message = "Qeydiyyat tamamlandı. İndi daxil ola bilərsiniz." });
+    }
 }
+
+public record AcceptInviteRequest(string Token, string Password);
 
 public record ForgotPasswordRequest(string Email);
 

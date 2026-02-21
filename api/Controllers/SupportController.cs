@@ -61,6 +61,76 @@ public class SupportController : ControllerBase
         return Ok(new { id = ticket.Id, message = "Bilet açıldı" });
     }
 
+    [HttpPost("tickets/{ticketId:guid}/attachments")]
+    public async Task<IActionResult> AddAttachment(Guid ticketId, IFormFileCollection files, CancellationToken ct)
+    {
+        var tenantId = GetTenantId();
+        if (tenantId == null) return Unauthorized();
+
+        var ticket = await _db.Tickets.FirstOrDefaultAsync(t => t.Id == ticketId && t.TenantId == tenantId.Value, ct);
+        if (ticket == null) return NotFound(new { message = "Bilet tapılmadı" });
+
+        const int maxFileSize = 5 * 1024 * 1024; // 5MB
+        const int maxFiles = 3;
+
+        if (files == null || files.Count == 0)
+            return BadRequest(new { message = "Fayl seçin" });
+        if (files.Count > maxFiles)
+            return BadRequest(new { message = $"Maksimum {maxFiles} fayl əlavə edə bilərsiniz" });
+
+        foreach (var f in files)
+        {
+            if (f.Length == 0 || f.Length > maxFileSize)
+                return BadRequest(new { message = "Hər fayl 5MB-dan kiçik olmalıdır" });
+
+            using var ms = new MemoryStream();
+            await f.CopyToAsync(ms, ct);
+            var content = ms.ToArray();
+
+            _db.TicketAttachments.Add(new TicketAttachment
+            {
+                Id = Guid.NewGuid(),
+                TicketId = ticketId,
+                FileName = f.FileName ?? "fayl",
+                ContentType = f.ContentType ?? "application/octet-stream",
+                Content = content,
+                CreatedAt = DateTime.UtcNow,
+            });
+        }
+        await _db.SaveChangesAsync(ct);
+        return Ok(new { message = "Fayl(lar) əlavə edildi" });
+    }
+
+    [HttpGet("tickets/{ticketId:guid}/attachments")]
+    public async Task<IActionResult> ListAttachments(Guid ticketId, CancellationToken ct)
+    {
+        var tenantId = GetTenantId();
+        if (tenantId == null) return Unauthorized();
+
+        var exists = await _db.Tickets.AnyAsync(t => t.Id == ticketId && t.TenantId == tenantId.Value, ct);
+        if (!exists) return NotFound();
+
+        var list = await _db.TicketAttachments
+            .Where(a => a.TicketId == ticketId)
+            .Select(a => new { a.Id, a.FileName, a.ContentType, a.CreatedAt })
+            .ToListAsync(ct);
+        return Ok(list);
+    }
+
+    [HttpGet("attachments/{id:guid}")]
+    public async Task<IActionResult> DownloadAttachment(Guid id, CancellationToken ct)
+    {
+        var tenantId = GetTenantId();
+        if (tenantId == null) return Unauthorized();
+
+        var att = await _db.TicketAttachments
+            .Include(a => a.Ticket)
+            .FirstOrDefaultAsync(a => a.Id == id && a.Ticket.TenantId == tenantId.Value, ct);
+        if (att == null) return NotFound();
+
+        return File(att.Content, att.ContentType, att.FileName);
+    }
+
     private Guid? GetTenantId()
     {
         var v = User.FindFirst("tenant_id")?.Value;

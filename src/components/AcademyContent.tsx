@@ -16,11 +16,18 @@ const STEPS = [
 
 export default function AcademyContent() {
   const [playlistId, setPlaylistId] = useState<string>("");
+  const [materials, setMaterials] = useState<{ title: string; url: string }[]>([]);
 
   useEffect(() => {
     api.academy()
       .then((r) => setPlaylistId(r.youtubePlaylistId ?? ""))
       .catch(() => setPlaylistId(""));
+  }, []);
+
+  useEffect(() => {
+    api.content.academyMaterials()
+      .then((r) => setMaterials(Array.isArray(r) ? r : []))
+      .catch(() => setMaterials([]));
   }, []);
 
   const embedUrl = playlistId
@@ -65,9 +72,21 @@ export default function AcademyContent() {
             </span>
           </div>
         )}
-        <div className="aspect-video bg-slate-100 rounded-2xl flex flex-col items-center justify-center border border-slate-200 p-6">
-          <span className="text-slate-600 font-medium mb-2">Əlavə materiallar</span>
-          <span className="text-slate-500 text-sm text-center">Tezliklə əlavə olunacaq</span>
+        <div className="rounded-2xl border border-slate-200 p-6 bg-white">
+          <span className="text-slate-600 font-medium mb-3 block">Əlavə materiallar</span>
+          {materials.length === 0 ? (
+            <span className="text-slate-500 text-sm">Admin Kontent bölməsindən PDF/link əlavə edə bilərsiniz.</span>
+          ) : (
+            <ul className="space-y-2">
+              {materials.map((m, i) => (
+                <li key={i}>
+                  <a href={m.url} target="_blank" rel="noopener noreferrer" className="text-primary-600 hover:underline text-sm">
+                    {m.title}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
     </div>

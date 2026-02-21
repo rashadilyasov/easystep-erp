@@ -20,6 +20,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<ContactMessage> ContactMessages => Set<ContactMessage>();
     public DbSet<Ticket> Tickets => Set<Ticket>();
+    public DbSet<TicketAttachment> TicketAttachments => Set<TicketAttachment>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
     public DbSet<EmailVerificationToken> EmailVerificationTokens => Set<EmailVerificationToken>();
@@ -113,6 +114,13 @@ public class ApplicationDbContext : DbContext
             e.HasIndex(x => x.TenantId);
             e.HasIndex(x => x.CreatedAt);
             e.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId);
+        });
+
+        modelBuilder.Entity<TicketAttachment>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => x.TicketId);
+            e.HasOne(x => x.Ticket).WithMany().HasForeignKey(x => x.TicketId);
         });
 
         modelBuilder.Entity<RefreshToken>(e =>

@@ -30,6 +30,37 @@ type FetchOptions = RequestInit & {
 
 const FETCH_TIMEOUT_MS = 30000;
 
+export async function apiFetchForm<T>(path: string, files: FileList | File[]): Promise<T> {
+  const base = getApiBase();
+  const url = path.startsWith("http") ? path : `${base}${path}`;
+  const form = new FormData();
+  const arr = files instanceof FileList ? Array.from(files) : files;
+  arr.forEach((f) => form.append("files", f));
+  const headers: Record<string, string> = {};
+  const token = getAccessToken();
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 60000);
+  const res = await fetch(url, { method: "POST", body: form, headers, signal: controller.signal }).finally(() =>
+    clearTimeout(timeoutId)
+  );
+  const text = await res.text();
+  if (!res.ok) {
+    let msg = res.statusText;
+    try {
+      const body = JSON.parse(text) as { message?: string };
+      msg = body.message || msg;
+    } catch { /* ignore */ }
+    throw new Error(msg || `API xətası (${res.status})`);
+  }
+  if (!text?.trim()) return {} as T;
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    return {} as T;
+  }
+}
+
 export async function apiFetch<T>(path: string, options: FetchOptions = {}): Promise<T> {
   try {
     const { params, skipAuth, _retrying, ...init } = options;
@@ -205,12 +236,19 @@ export const api = {
         method: "POST",
         body: JSON.stringify({ subject, body }),
       }),
+    addAttachments: (ticketId: string, files: FileList | File[]) =>
+      apiFetchForm<{ message: string }>(`/api/support/tickets/${ticketId}/attachments`, files),
+    listAttachments: (ticketId: string) =>
+      apiFetch<{ id: string; fileName: string; contentType: string; createdAt: string }[]>(`/api/support/tickets/${ticketId}/attachments`),
+    attachmentUrl: (id: string) => `/api/support/attachments/${id}`,
   },
   academy: () =>
     apiFetch<{ youtubePlaylistId: string }>("/api/content/academy"),
   plans: () => apiFetch<{ id: string; name: string; price: number }[]>("/api/plans", { skipAuth: true }),
   content: {
     site: () => apiFetch<Record<string, unknown>>("/api/content/site", { skipAuth: true }),
+    announcements: () => apiFetch<{ id: string; title: string; body: string; publishedAt: string; active: boolean }[]>("/api/content/announcements"),
+    academyMaterials: () => apiFetch<{ title: string; url: string }[]>("/api/content/academy-materials"),
   },
   health: () => apiFetch<{ status: string }>("/api/health", { skipAuth: true }),
   dashboard: () =>
@@ -258,6 +296,17 @@ export const api = {
     apiFetch<{ autoRenew: boolean }>("/api/settings/subscription/auto-renew", {
       method: "PATCH",
       body: JSON.stringify({ enabled }),
+    }),
+  inviteUser: (email: string, role: "CustomerAdmin" | "CustomerUser") =>
+    apiFetch<{ message: string; inviteUrl?: string }>("/api/settings/invite", {
+      method: "POST",
+      body: JSON.stringify({ email, role }),
+    }),
+  acceptInvite: (token: string, password: string) =>
+    apiFetch<{ accessToken: string; refreshToken: string; expiresIn: number; message: string }>("/api/auth/accept-invite", {
+      method: "POST",
+      body: JSON.stringify({ token, password }),
+      skipAuth: true,
     }),
   me: () => apiFetch<{ email: string; role: string; tenantId: string }>("/api/auth/me"),
   affiliate: {
@@ -361,6 +410,31 @@ export const api = {
       }),
     deleteUser: (userId: string) =>
       apiFetch<{ message: string }>(`/api/admin/users/${userId}`, { method: "DELETE" }),
+    announcements: () =>
+      apiFetch<{ id: string; title: string; body: string; publishedAt: string; active: boolean }[]>("/api/admin/announcements"),
+    createAnnouncement: (title: string, body: string) =>
+      apiFetch<{ id: string; message: string }>("/api/admin/announcements", {
+        method: "POST",
+        body: JSON.stringify({ title, body }),
+      }),
+    deleteAnnouncement: (id: string) =>
+      apiFetch<{ message: string }>(`/api/admin/announcements/${id}`, { method: "DELETE" }),
+    academyMaterials: () =>
+      apiFetch<{ title: string; url: string }[]>("/api/admin/academy-materials"),
+    createAcademyMaterial: (title: string, url: string) =>
+      apiFetch<{ message: string }>("/api/admin/academy-materials", {
+        method: "POST",
+        body: JSON.stringify({ title, url }),
+      }),
+    deleteAcademyMaterial: (index: number) =>
+      apiFetch<{ message: string }>(`/api/admin/academy-materials/${index}`, { method: "DELETE" }),
+    createAcademyMaterial: (title: string, url: string) =>
+      apiFetch<{ message: string }>("/api/admin/academy-materials", {
+        method: "POST",
+        body: JSON.stringify({ title, url }),
+      }),
+    deleteAcademyMaterial: (index: number) =>
+      apiFetch<{ message: string }>(`/api/admin/academy-materials/${index}`, { method: "DELETE" }),
     plans: () =>
       apiFetch<{ id: string; name: string; durationMonths: number; price: number; currency: string; maxDevices: number | null; isActive: boolean; createdAt: string }[]>(
         "/api/admin/plans"

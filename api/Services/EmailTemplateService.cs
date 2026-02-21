@@ -17,6 +17,7 @@ public static class EmailTemplateKeys
     public const string BonusReminder = "email:template:bonusReminder";
     public const string PaymentConfirm = "email:template:paymentConfirm";
     public const string Notification = "email:template:notification";
+    public const string UserInvite = "email:template:userInvite";
 }
 
 public class EmailTemplateService
@@ -123,6 +124,8 @@ public class EmailTemplateService
             "<p>Salam {{userName}},</p><p>Ödənişiniz qəbul olundu. Məbləğ: {{amount}} {{currency}}</p><p>Plan: {{planName}}</p><p>— Easy Step ERP</p>", "billing@easysteperp.com"),
         EmailTemplateKeys.Notification => ("Easy Step ERP - Bildiriş",
             "<p>Salam {{userName}},</p><p>{{message}}</p><p>— Easy Step ERP</p>", "notifications@easysteperp.com"),
+        EmailTemplateKeys.UserInvite => ("Easy Step ERP - Dəvət",
+            "<!DOCTYPE html><html><body style='font-family:Arial,sans-serif'><h2>Şirkətə dəvət</h2><p>Salam,</p><p>{{inviterName}} sizi {{tenantName}} şirkətinə Easy Step ERP istifadəçisi kimi dəvət edir.</p><p>Qeydiyyatı tamamlamaq üçün aşağıdakı linkə keçid edin və şifrənizi təyin edin:</p><p><a href='{{inviteUrl}}'>{{inviteUrl}}</a></p><p>Link 7 gün ərzində keçərlidir.</p><p>— Easy Step ERP</p></body></html>", "noreply@easysteperp.com"),
         _ => ("", "", null),
     };
 

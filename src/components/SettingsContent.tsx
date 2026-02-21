@@ -1,7 +1,67 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
+
+function InviteUserForm() {
+  const [role, setRole] = useState<"CustomerAdmin" | "CustomerUser">("CustomerUser");
+  const [canInvite, setCanInvite] = useState(false);
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  useEffect(() => {
+    api.me().then((u) => setCanInvite(u.role === "CustomerAdmin" || u.role === "SuperAdmin")).catch(() => setCanInvite(false));
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim() || !canInvite) return;
+    setLoading(true);
+    setMessage(null);
+    try {
+      await api.inviteUser(email.trim(), role);
+      setMessage({ type: "success", text: "Dəvət göndərildi." });
+      setEmail("");
+    } catch (err) {
+      setMessage({ type: "error", text: err instanceof Error ? err.message : "Xəta baş verdi" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!canInvite) return <p className="text-slate-500 text-sm">Yalnız şirkət sahibi istifadəçi dəvət edə bilər.</p>;
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-3 max-w-md">
+      {message && (
+        <p className={`text-sm ${message.type === "success" ? "text-green-600" : "text-red-600"}`}>{message.text}</p>
+      )}
+      <div>
+        <label className="block text-sm text-slate-600 mb-1">E-poçt</label>
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="istifadəchi@example.com"
+          className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+          required
+        />
+      </div>
+      <div>
+        <label className="block text-sm text-slate-600 mb-1">Rol</label>
+        <select value={role} onChange={(e) => setRole(e.target.value as "CustomerAdmin" | "CustomerUser")} className="w-full px-3 py-2 border border-slate-300 rounded-lg">
+          <option value="CustomerUser">Müştəri istifadəçisi</option>
+          <option value="CustomerAdmin">Şirkət idarəçisi</option>
+        </select>
+      </div>
+      <button type="submit" disabled={loading} className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50">
+        {loading ? "Göndərilir..." : "Dəvət göndər"}
+      </button>
+    </form>
+  );
+}
 
 type TenantData = {
   name: string;
@@ -165,18 +225,19 @@ export default function SettingsContent() {
 
       <section className="p-6 bg-white rounded-2xl border border-slate-200">
         <h3 className="font-semibold text-slate-900 mb-4">İstifadəçilər</h3>
-        <p className="text-slate-600 text-sm mb-4">Şirkət üzvlərinin idarəetməsi.</p>
-        <button className="px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-50" disabled>
-          İstifadəçi dəvət et (tezliklə)
-        </button>
+        <p className="text-slate-600 text-sm mb-4">Şirkət üzvlərinin idarəetməsi. Şirkət sahibi (CustomerAdmin) digər istifadəçiləri dəvət edə bilər.</p>
+        <InviteUserForm />
       </section>
 
       <section className="p-6 bg-white rounded-2xl border border-slate-200">
         <h3 className="font-semibold text-slate-900 mb-4">2FA (İki faktorlu doğrulama)</h3>
-        <label className="flex items-center gap-2">
-          <input type="checkbox" className="rounded" disabled />
-          <span className="text-slate-600">2FA aktiv et (tezliklə)</span>
-        </label>
+        <p className="text-slate-600 text-sm mb-4">Girişi möhkəmləndirmək üçün 2FA aktiv edə bilərsiniz.</p>
+        <Link
+          href="/cabinet/security"
+          className="inline-block px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-medium"
+        >
+          2FA ayarları →
+        </Link>
       </section>
     </div>
   );

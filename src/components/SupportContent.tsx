@@ -18,6 +18,7 @@ export default function SupportContent() {
   const [modalOpen, setModalOpen] = useState(false);
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
+  const [files, setFiles] = useState<File[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
   const load = useCallback(() => {
@@ -30,10 +31,15 @@ export default function SupportContent() {
     if (!subject.trim() || !body.trim()) return;
     setSubmitting(true);
     try {
-      await api.tickets.create(subject.trim(), body.trim());
+      const res = await api.tickets.create(subject.trim(), body.trim());
+      const ticketId = (res as { id?: string }).id;
+      if (ticketId && files.length > 0) {
+        await api.tickets.addAttachments(ticketId, files);
+      }
       setModalOpen(false);
       setSubject("");
       setBody("");
+      setFiles([]);
       load();
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Xəta baş verdi";
@@ -114,6 +120,17 @@ export default function SupportContent() {
                   className="w-full px-4 py-2 rounded-lg border border-slate-300 input-focus"
                   placeholder="Problemi təsvir edin..."
                 />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Fayl əlavə et (maks. 3 fayl, hər biri 5MB)</label>
+                <input
+                  type="file"
+                  multiple
+                  accept=".pdf,.doc,.docx,.txt,.log,.png,.jpg,.jpeg"
+                  onChange={(e) => setFiles(e.target.files ? Array.from(e.target.files) : [])}
+                  className="w-full text-sm text-slate-600"
+                />
+                {files.length > 0 && <p className="text-xs text-slate-500 mt-1">{files.length} fayl seçildi</p>}
               </div>
               <div className="flex gap-3">
                 <button

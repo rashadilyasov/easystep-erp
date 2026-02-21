@@ -442,6 +442,115 @@ public class AdminController : ControllerBase
         return Ok(list.Select(c => new { c.Id, c.Name, c.Email, c.Message, date = c.CreatedAt.ToString("dd.MM.yyyy HH:mm") }));
     }
 
+    [HttpGet("announcements")]
+    public async Task<IActionResult> GetAnnouncements(CancellationToken ct)
+    {
+        var sc = await _db.SiteContents.FirstOrDefaultAsync(c => c.Key == "content:announcements", ct);
+        if (sc == null || string.IsNullOrEmpty(sc.Value))
+            return Ok(Array.Empty<object>());
+        try
+        {
+            var arr = System.Text.Json.JsonSerializer.Deserialize<List<object>>(sc.Value);
+            return Ok(arr ?? new List<object>());
+        }
+        catch { return Ok(Array.Empty<object>()); }
+    }
+
+    [HttpPost("announcements")]
+    public async Task<IActionResult> CreateAnnouncement([FromBody] CreateAnnouncementRequest req, CancellationToken ct)
+    {
+        var sc = await _db.SiteContents.FirstOrDefaultAsync(c => c.Key == "content:announcements", ct);
+        var list = new List<object>();
+        if (sc != null && !string.IsNullOrEmpty(sc.Value))
+        {
+            try { list = System.Text.Json.JsonSerializer.Deserialize<List<object>>(sc.Value) ?? new List<object>(); }
+            catch { }
+        }
+        var id = Guid.NewGuid().ToString("N")[..12];
+        var now = DateTime.UtcNow.ToString("yyyy-MM-dd");
+        var item = new { id, title = req.Title ?? "", body = req.Body ?? "", publishedAt = now, active = true };
+        list.Insert(0, System.Text.Json.JsonSerializer.SerializeToElement(item));
+        var json = System.Text.Json.JsonSerializer.Serialize(list.Select(x => x is System.Text.Json.JsonElement je ? System.Text.Json.JsonSerializer.Deserialize<object>(je) : x)));
+        if (sc != null) { sc.Value = json; sc.UpdatedAt = DateTime.UtcNow; }
+        else _db.SiteContents.Add(new SiteContent { Id = Guid.NewGuid(), Key = "content:announcements", Value = json, UpdatedAt = DateTime.UtcNow });
+        await _db.SaveChangesAsync(ct);
+        return Ok(new { id, message = "Elan əlavə edildi" });
+    }
+
+    [HttpDelete("announcements/{id}")]
+    public async Task<IActionResult> DeleteAnnouncement(string id, CancellationToken ct)
+    {
+        var sc = await _db.SiteContents.FirstOrDefaultAsync(c => c.Key == "content:announcements", ct);
+        if (sc == null || string.IsNullOrEmpty(sc.Value))
+            return NotFound(new { message = "Elan tapılmadı" });
+        try
+        {
+            var list = System.Text.Json.JsonSerializer.Deserialize<List<System.Text.Json.JsonElement>>(sc.Value) ?? new List<System.Text.Json.JsonElement>();
+            var filtered = list.Where(je =>
+            {
+                var doc = je;
+                return doc.TryGetProperty("id", out var pid) && pid.GetString() != id;
+            }).ToList();
+            sc.Value = System.Text.Json.JsonSerializer.Serialize(filtered);
+            sc.UpdatedAt = DateTime.UtcNow;
+            await _db.SaveChangesAsync(ct);
+            return Ok(new { message = "Elan silindi" });
+        }
+        catch { return BadRequest(new { message = "Xəta" }); }
+    }
+
+    [HttpGet("academy-materials")]
+    public async Task<IActionResult> GetAcademyMaterials(CancellationToken ct)
+    {
+        var sc = await _db.SiteContents.FirstOrDefaultAsync(c => c.Key == "content:academyMaterials", ct);
+        if (sc == null || string.IsNullOrEmpty(sc.Value))
+            return Ok(Array.Empty<object>());
+        try
+        {
+            var arr = System.Text.Json.JsonSerializer.Deserialize<List<object>>(sc.Value);
+            return Ok(arr ?? new List<object>());
+        }
+        catch { return Ok(Array.Empty<object>()); }
+    }
+
+    [HttpPost("academy-materials")]
+    public async Task<IActionResult> CreateAcademyMaterial([FromBody] CreateAcademyMaterialRequest req, CancellationToken ct)
+    {
+        var sc = await _db.SiteContents.FirstOrDefaultAsync(c => c.Key == "content:academyMaterials", ct);
+        var list = new List<Dictionary<string, string>>();
+        if (sc != null && !string.IsNullOrEmpty(sc.Value))
+        {
+            try { list = System.Text.Json.JsonSerializer.Deserialize<List<Dictionary<string, string>>>(sc.Value) ?? new List<Dictionary<string, string>>(); }
+            catch { }
+        }
+        list.Add(new Dictionary<string, string> { ["title"] = req.Title ?? "", ["url"] = req.Url ?? "" });
+        var json = System.Text.Json.JsonSerializer.Serialize(list);
+        if (sc != null) { sc.Value = json; sc.UpdatedAt = DateTime.UtcNow; }
+        else _db.SiteContents.Add(new SiteContent { Id = Guid.NewGuid(), Key = "content:academyMaterials", Value = json, UpdatedAt = DateTime.UtcNow });
+        await _db.SaveChangesAsync(ct);
+        return Ok(new { message = "Material əlavə edildi" });
+    }
+
+    [HttpDelete("academy-materials/{index:int}")]
+    public async Task<IActionResult> DeleteAcademyMaterial(int index, CancellationToken ct)
+    {
+        var sc = await _db.SiteContents.FirstOrDefaultAsync(c => c.Key == "content:academyMaterials", ct);
+        if (sc == null || string.IsNullOrEmpty(sc.Value))
+            return NotFound(new { message = "Material tapılmadı" });
+        try
+        {
+            var list = System.Text.Json.JsonSerializer.Deserialize<List<Dictionary<string, string>>>(sc.Value) ?? new List<Dictionary<string, string>>();
+            if (index < 0 || index >= list.Count)
+                return NotFound(new { message = "Material tapılmadı" });
+            list.RemoveAt(index);
+            sc.Value = System.Text.Json.JsonSerializer.Serialize(list);
+            sc.UpdatedAt = DateTime.UtcNow;
+            await _db.SaveChangesAsync(ct);
+            return Ok(new { message = "Material silindi" });
+        }
+        catch { return BadRequest(new { message = "Xəta" }); }
+    }
+
     [HttpGet("plans")]
     public async Task<IActionResult> GetPlans(CancellationToken ct = default)
     {
@@ -949,6 +1058,7 @@ public class AdminController : ControllerBase
             (EmailTemplateKeys.BonusReminder, "Bonus xəbərdarlığı"),
             (EmailTemplateKeys.PaymentConfirm, "Ödəniş təsdiqi"),
             (EmailTemplateKeys.Notification, "Ümumi bildiriş"),
+            (EmailTemplateKeys.UserInvite, "İstifadəçi dəvəti"),
         };
         return Ok(list.Select(x => new { key = x.Item1, label = x.Item2 }));
     }

@@ -467,6 +467,79 @@ public class AuthService
         await _db.SaveChangesAsync(ct);
         return true;
     }
+
+    /// <summary>İstifadəçi dəvəti üçün imzalı token yaradır (7 gün keçərli).</summary>
+    public string GenerateInviteToken(Guid tenantId, string email, UserRole role)
+    {
+        var key = _config["Jwt:Key"] ?? "easystep-erp-secret-key-min-32-chars!!";
+        var exp = DateTimeOffset.UtcNow.AddDays(7).ToUnixTimeSeconds();
+        var payload = $"{tenantId}|{(email ?? "").Trim().ToLowerInvariant()}|{role}|{exp}";
+        var payloadB64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(payload)).Replace("+", "-").Replace("/", "_").TrimEnd('=');
+        using var hmac = new System.Security.Cryptography.HMACSHA256(Encoding.UTF8.GetBytes(key));
+        var sig = Convert.ToBase64String(hmac.ComputeHash(Encoding.UTF8.GetBytes(payloadB64))).Replace("+", "-").Replace("/", "_").TrimEnd('=');
+        return $"{payloadB64}.{sig}";
+    }
+
+    /// <summary>Dəvət tokenunu yoxlayır və istifadəçi yaradır. Uğursuzdursa (errorCode, null), uğurludursa (null, userId).</summary>
+    public async Task<(string? ErrorCode, Guid? UserId)> ValidateInviteAndCreateUserAsync(string token, string password, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(token) || string.IsNullOrWhiteSpace(password) || password.Length < 12)
+            return ("InvalidRequest", null);
+        if (!IsStrongPassword(password))
+            return (password.Length < 12 ? "PasswordTooShort" : "PasswordTooWeak", null);
+
+        var parts = token.Split('.');
+        if (parts.Length != 2)
+            return ("InvalidToken", null);
+
+        var key = _config["Jwt:Key"] ?? "easystep-erp-secret-key-min-32-chars!!";
+        using var hmac = new System.Security.Cryptography.HMACSHA256(Encoding.UTF8.GetBytes(key));
+        var expectedSig = Convert.ToBase64String(hmac.ComputeHash(Encoding.UTF8.GetBytes(parts[0]))).Replace("+", "-").Replace("/", "_").TrimEnd('=');
+        if (parts[1] != expectedSig)
+            return ("InvalidToken", null);
+
+        try
+        {
+            var padding = 4 - (parts[0].Length % 4);
+            if (padding < 4) parts[0] += new string('=', padding);
+            var decoded = Encoding.UTF8.GetString(Convert.FromBase64String(parts[0].Replace("-", "+").Replace("_", "/")));
+            var segs = decoded.Split('|');
+            if (segs.Length != 4) return ("InvalidToken", null);
+            if (!Guid.TryParse(segs[0], out var tenantId)) return ("InvalidToken", null);
+            var email = (segs[1] ?? "").Trim().ToLowerInvariant();
+            if (string.IsNullOrEmpty(email)) return ("InvalidToken", null);
+            if (!Enum.TryParse<UserRole>(segs[2], out var role) || role == UserRole.SuperAdmin || role == UserRole.Affiliate || role == UserRole.Visitor)
+                return ("InvalidToken", null);
+            if (!long.TryParse(segs[3], out var exp) || DateTimeOffset.UtcNow.ToUnixTimeSeconds() > exp)
+                return ("TokenExpired", null);
+
+            if (await _db.Users.AnyAsync(u => u.Email.ToLower() == email, ct))
+                return ("EmailExists", null);
+
+            var tenant = await _db.Tenants.FindAsync(new object[] { tenantId }, ct);
+            if (tenant == null) return ("InvalidToken", null);
+
+            var user = new User
+            {
+                Id = Guid.NewGuid(),
+                TenantId = tenantId,
+                Email = email,
+                PasswordHash = HashPassword(password),
+                Role = role,
+                EmailVerified = true,
+                TwoFactorEnabled = false,
+                CreatedAt = DateTime.UtcNow,
+            };
+            _db.Users.Add(user);
+            await _db.SaveChangesAsync(ct);
+            await _audit.LogAsync("UserInviteAccepted", user.Id, user.Email, metadata: $"tenantId={tenantId} inviterRole=CustomerAdmin", ct: ct);
+            return (null, user.Id);
+        }
+        catch
+        {
+            return ("InvalidToken", null);
+        }
+    }
 }
 
 public record RegisterAffiliateRequest(string Email, string Password, string FullName, bool AcceptTerms, bool Age18Confirmed = false);

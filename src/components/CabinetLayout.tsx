@@ -13,6 +13,7 @@ const cabinetNav = [
   { href: "/cabinet/academy", label: "Akademiya" },
   { href: "/cabinet/support", label: "Dəstək" },
   { href: "/cabinet/settings", label: "Parametrlər" },
+  { href: "/cabinet/security", label: "2FA" },
 ];
 
 export default function CabinetLayout({

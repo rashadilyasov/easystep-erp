@@ -74,7 +74,7 @@
 | Tələb | Status |
 |-------|--------|
 | 2FA (TOTP) admin üçün | ✅ |
-| Ticket fayl əlavə | ⏳ Gələcək |
+| Ticket fayl əlavə | ✅ |
 | Portmanat (secondary) | ⏳ Gələcək |
 | Email OTP verify | ⏳ Gələcək |
 
@@ -90,4 +90,4 @@
 
 ---
 
-**Yekun:** Əsas tələblər və qəbul meyarları yerinə yetirilib. Opsional funksiyalar (2FA, ticket attachments) gələcək iterasiya üçün qalır.
+**Yekun:** Əsas tələblər, qəbul meyarları və opsional funksiyalar (2FA, ticket attachments, istifadəçi dəvəti, elanlar, akademiya materialları) yerinə yetirilib.

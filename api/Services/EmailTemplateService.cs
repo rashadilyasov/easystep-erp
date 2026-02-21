@@ -62,18 +62,20 @@ public class EmailTemplateService
 
     public async Task<object?> GetRawTemplateAsync(string key, CancellationToken ct = default)
     {
+        var (defaultSubj, defaultBody, defaultFrom) = GetDefault(key);
         var sc = await _db.SiteContents.FirstOrDefaultAsync(c => c.Key == key, ct);
-        if (sc == null || string.IsNullOrEmpty(sc.Value)) return GetDefaultForAdmin(key);
+        if (sc == null || string.IsNullOrEmpty(sc.Value)) return new { subject = defaultSubj, body = defaultBody, from = defaultFrom };
         try
         {
             var j = JsonSerializer.Deserialize<JsonElement>(sc.Value);
-            var subj = j.TryGetProperty("subject", out var s) ? s.GetString() ?? "" : "";
-            var body = j.TryGetProperty("body", out var b) ? b.GetString() ?? "" : "";
+            var subj = (j.TryGetProperty("subject", out var s) ? s.GetString() ?? "" : "").Trim();
+            var body = (j.TryGetProperty("body", out var b) ? b.GetString() ?? "" : "").Trim();
             var from = j.TryGetProperty("from", out var f) ? f.GetString() : null;
-            var (_, _, defaultFrom) = GetDefault(key);
+            if (string.IsNullOrEmpty(subj)) subj = defaultSubj;
+            if (string.IsNullOrEmpty(body)) body = defaultBody;
             return new { subject = subj, body = body, from = string.IsNullOrWhiteSpace(from) ? defaultFrom : from };
         }
-        catch { return GetDefaultForAdmin(key); }
+        catch { return new { subject = defaultSubj, body = defaultBody, from = defaultFrom }; }
     }
 
     public async Task SaveTemplateAsync(string key, string subject, string body, string? from = null, CancellationToken ct = default)

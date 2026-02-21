@@ -16,17 +16,25 @@ export default function BillingContent() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const load = useCallback(() => {
     setLoadError(null);
+    setLoading(true);
     api
       .billing()
-      .then(setData)
-      .catch(() => {
+      .then((res) => {
+        setData(res ?? { plan: null, autoRenew: false, promoCode: null, payments: [] });
+      })
+      .catch((e) => {
         setData(null);
-        setLoadError("Məlumatları yükləmək mümkün olmadı");
+        const msg = e instanceof Error ? e.message : "Məlumatları yükləmək mümkün olmadı";
+        setLoadError(msg.includes("401") || msg.includes("Unauthorized")
+          ? "Oturum sona çatmışdır. Çıxış edib yenidən daxil olun."
+          : msg);
       })
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => load(), [load]);
 
   const d: BillingData = data ?? {
     plan: null,
@@ -75,7 +83,7 @@ export default function BillingContent() {
           <p>{loadError}</p>
           <button
             type="button"
-            onClick={() => window.location.reload()}
+            onClick={() => load()}
             className="mt-2 text-amber-700 font-medium hover:underline"
           >
             Yenidən yoxla

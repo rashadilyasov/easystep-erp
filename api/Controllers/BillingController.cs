@@ -21,8 +21,9 @@ public class BillingController : ControllerBase
     private readonly Services.AuditService _audit;
     private readonly AffiliateService _affiliate;
     private readonly ITemplatedEmailService _templatedEmail;
+    private readonly ILogger<BillingController> _logger;
 
-    public BillingController(ApplicationDbContext db, IPaymentProvider payment, IConfiguration config, Services.AuditService audit, AffiliateService affiliate, ITemplatedEmailService templatedEmail)
+    public BillingController(ApplicationDbContext db, IPaymentProvider payment, IConfiguration config, Services.AuditService audit, AffiliateService affiliate, ITemplatedEmailService templatedEmail, ILogger<BillingController> logger)
     {
         _db = db;
         _payment = payment;
@@ -30,61 +31,72 @@ public class BillingController : ControllerBase
         _audit = audit;
         _affiliate = affiliate;
         _templatedEmail = templatedEmail;
+        _logger = logger;
     }
 
     [HttpGet]
     [Authorize]
     public async Task<IActionResult> Get(CancellationToken ct)
     {
-        var tenantId = GetTenantId();
-        if (tenantId == null)
-            return Ok(DefaultBilling());
-
-        var sub = await _db.Subscriptions
-            .Include(s => s.Plan)
-            .Where(s => s.TenantId == tenantId.Value && s.Status == SubscriptionStatus.Active)
-            .OrderByDescending(s => s.EndDate)
-            .FirstOrDefaultAsync(ct);
-
-        var payments = await _db.Payments
-            .Where(p => p.TenantId == tenantId.Value)
-            .OrderByDescending(p => p.CreatedAt)
-            .Take(50)
-            .Select(p => new { p.Id, p.CreatedAt, p.Amount, p.DiscountAmount, p.Currency, p.Status, p.TransactionId })
-            .ToListAsync(ct);
-
-        var paymentIds = payments.Select(p => p.Id).ToList();
-        var invoices = await _db.Invoices
-            .Where(i => i.TenantId == tenantId!.Value && paymentIds.Contains(i.PaymentId))
-            .ToDictionaryAsync(i => i.PaymentId, i => i.Number, ct);
-
-        var tenant = await _db.Tenants
-            .Include(t => t.PromoCode)
-            .FirstOrDefaultAsync(t => t.Id == tenantId.Value, ct);
-        var promoInfo = tenant?.PromoCodeId != null && tenant?.PromoCode != null
-            ? new { code = tenant.PromoCode.Code, discountPercent = tenant.PromoCode.DiscountPercent }
-            : (object?)null;
-
-        var plan = sub?.Plan;
-        return Ok(new
+        try
         {
-            plan = plan != null
-                ? new { name = plan.Name, price = plan.Price, currency = plan.Currency, endDate = sub!.EndDate }
-                : (object?)null,
-            autoRenew = sub?.AutoRenew ?? false,
-            promoCode = promoInfo,
-            payments = payments.Select(p => new
+            var tenantId = GetTenantId();
+            if (tenantId == null)
+                return Ok(DefaultBilling());
+
+            var sub = await _db.Subscriptions
+                .Include(s => s.Plan)
+                .Where(s => s.TenantId == tenantId.Value && s.Status == SubscriptionStatus.Active)
+                .OrderByDescending(s => s.EndDate)
+                .FirstOrDefaultAsync(ct);
+
+            var payments = await _db.Payments
+                .Where(p => p.TenantId == tenantId.Value)
+                .OrderByDescending(p => p.CreatedAt)
+                .Take(50)
+                .Select(p => new { p.Id, p.CreatedAt, p.Amount, p.DiscountAmount, p.Currency, p.Status, p.TransactionId })
+                .ToListAsync(ct);
+
+            var paymentIds = payments.Select(p => p.Id).ToList();
+            var invoices = paymentIds.Count > 0
+                ? await _db.Invoices
+                    .Where(i => i.TenantId == tenantId.Value && paymentIds.Contains(i.PaymentId))
+                    .ToDictionaryAsync(i => i.PaymentId, i => i.Number, ct)
+                : new Dictionary<Guid, string>();
+
+            var tenant = await _db.Tenants
+                .Include(t => t.PromoCode)
+                .FirstOrDefaultAsync(t => t.Id == tenantId.Value, ct);
+            object? promoInfo = tenant?.PromoCodeId != null && tenant?.PromoCode != null
+                ? new { code = tenant.PromoCode!.Code, discountPercent = tenant.PromoCode.DiscountPercent }
+                : null;
+
+            var plan = sub?.Plan;
+            return Ok(new
             {
-                p.Id,
-                date = p.CreatedAt.ToString("dd.MM.yyyy"),
-                p.Amount,
-                discountAmount = p.DiscountAmount,
-                p.Currency,
-                status = p.Status.ToString(),
-                trxId = p.TransactionId != null && p.TransactionId.Length > 12 ? p.TransactionId[..12] + "..." : p.TransactionId,
-                invoiceNumber = invoices.GetValueOrDefault(p.Id),
-            }),
-        });
+                plan = plan != null
+                    ? new { name = plan.Name, price = plan.Price, currency = plan.Currency, endDate = sub!.EndDate }
+                    : (object?)null,
+                autoRenew = sub?.AutoRenew ?? false,
+                promoCode = promoInfo,
+                payments = payments.Select(p => new
+                {
+                    p.Id,
+                    date = p.CreatedAt.ToString("dd.MM.yyyy"),
+                    p.Amount,
+                    discountAmount = p.DiscountAmount,
+                    p.Currency,
+                    status = p.Status.ToString(),
+                    trxId = p.TransactionId != null && p.TransactionId.Length > 12 ? p.TransactionId[..12] + "..." : p.TransactionId,
+                    invoiceNumber = invoices.GetValueOrDefault(p.Id),
+                }),
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Billing Get failed, returning default");
+            return Ok(DefaultBilling());
+        }
     }
 
     /// <summary>Qiymətlər səhifəsində promo endirimi önizləməsi üçün. Sadece mövcud və istifadə olunmamış kodları yoxlayır.</summary>
@@ -370,7 +382,8 @@ table{{width:100%;border-collapse:collapse}} td{{padding:8px;border-bottom:1px s
         return new
         {
             plan = new { name = "Əla 12 ay", price = 999, currency = "AZN", endDate = endDate12 },
-            autoRenew = true,
+            autoRenew = false,
+            promoCode = (object?)null,
             payments = Array.Empty<object>(),
         };
     }

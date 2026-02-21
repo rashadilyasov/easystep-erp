@@ -105,7 +105,7 @@ public class AdminController : ControllerBase
     public async Task<IActionResult> GetPendingVerifications(CancellationToken ct = default)
     {
         var users = await _db.Users
-            .Include(u => u.Tenant)
+            .AsNoTracking()
             .Where(u => !u.EmailVerified && u.TenantId != SystemTenantId)
             .OrderByDescending(u => u.CreatedAt)
             .Select(u => new
@@ -118,8 +118,11 @@ public class AdminController : ControllerBase
                 tenantId = u.TenantId,
             })
             .ToListAsync(ct);
-        var affiliateIds = await _db.Affiliates.Where(a => users.Select(x => x.Id).Contains(a.UserId))
-            .ToDictionaryAsync(a => a.UserId, a => a.Id, ct);
+        var userIds = users.Select(x => x.Id).ToList();
+        var affiliateIds = userIds.Count > 0
+            ? await _db.Affiliates.Where(a => userIds.Contains(a.UserId))
+                .ToDictionaryAsync(a => a.UserId, a => a.Id, ct)
+            : new Dictionary<Guid, Guid>();
         return Ok(users.Select(u => new
         {
             u.Id,

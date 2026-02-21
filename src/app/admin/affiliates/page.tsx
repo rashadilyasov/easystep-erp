@@ -78,6 +78,7 @@ export default function AdminAffiliatesPage() {
   const [copied, setCopied] = useState(false);
   const [bonusFilter, setBonusFilter] = useState<string>("");
   const [calcBonusLoading, setCalcBonusLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const now = new Date();
   const prevMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
@@ -99,14 +100,16 @@ export default function AdminAffiliatesPage() {
       api.admin.promoCodes({ affiliateId: affiliateFilter || undefined }),
     ])
       .then(([s, aff, com, bon, promos]) => {
+        setLoadError(null);
         setStats(s ?? null);
-        setList(aff);
-        setCommissions(com);
-        setBonuses(bon ?? []);
-        setPromoCodes(promos ?? []);
+        setList(Array.isArray(aff) ? aff : []);
+        setCommissions(Array.isArray(com) ? com : []);
+        setBonuses(Array.isArray(bon) ? bon ?? [] : []);
+        setPromoCodes(Array.isArray(promos) ? promos ?? [] : []);
         setSelectedIds(new Set());
       })
-      .catch(() => {
+      .catch((e) => {
+        setLoadError(e instanceof Error ? e.message : "API xətası");
         setStats(null);
         setList([]);
         setCommissions([]);
@@ -266,6 +269,14 @@ export default function AdminAffiliatesPage() {
     <div>
       <h1 className="text-2xl font-bold text-slate-900 mb-6">Satış Partnyorları</h1>
 
+      {loadError && (
+        <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-sm">
+          <p className="font-medium">Məlumat yüklənmədi</p>
+          <p className="mt-1">{loadError}</p>
+          <p className="mt-2 text-amber-700">Railway deploy və /api/ping yoxlayın. Təsdiq gözləyən partnyorlar üçün E-poçt təsdiqi gözləyənlər səhifəsinə baxın.</p>
+        </div>
+      )}
+
       {/* Statistik kartlar */}
       {!loading && stats && (
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-8">
@@ -322,6 +333,10 @@ export default function AdminAffiliatesPage() {
                   Qeydiyyat linki
                 </a>{" "}
                 vasitəsilə yeni partnyorlar qoşula bilər.
+              </p>
+              <p className="text-sm mt-4 text-slate-400">
+                E-poçtu təsdiqlənməmiş partnyorlar{" "}
+                <a href="/admin/pending-verifications" className="text-primary-600 hover:underline">E-poçt təsdiqi gözləyənlər</a> səhifəsində görünər.
               </p>
             </div>
           ) : (

@@ -14,13 +14,13 @@ public class SmtpEmailService : IEmailService
         _log = log;
     }
 
-    public async Task<bool> SendAsync(string to, string subject, string htmlBody, CancellationToken ct = default)
+    public async Task<bool> SendAsync(string to, string subject, string htmlBody, string? fromOverride = null, CancellationToken ct = default)
     {
         var host = _config["Smtp:Host"];
         var port = int.Parse(_config["Smtp:Port"] ?? "587");
         var user = _config["Smtp:User"];
         var pass = _config["Smtp:Password"];
-        var from = _config["Smtp:From"] ?? "hello@easysteperp.com";
+        var from = !string.IsNullOrWhiteSpace(fromOverride) ? fromOverride.Trim() : (_config["Smtp:From"] ?? "hello@easysteperp.com");
 
         if (string.IsNullOrEmpty(host) || string.IsNullOrEmpty(user))
         {

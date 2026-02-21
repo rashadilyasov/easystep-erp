@@ -864,14 +864,14 @@ public class AdminController : ControllerBase
     {
         if (string.IsNullOrEmpty(key)) return BadRequest();
         var t = await _emailTemplates.GetRawTemplateAsync(key, ct);
-        return Ok(t ?? new { subject = "", body = "" });
+        return Ok(t ?? new { subject = "", body = "", from = (string?)null });
     }
 
     [HttpPut("email-templates/by-key")]
     public async Task<IActionResult> PutEmailTemplate([FromQuery] string key, [FromBody] EmailTemplateRequest req, CancellationToken ct = default)
     {
         if (string.IsNullOrEmpty(key) || req == null) return BadRequest();
-        await _emailTemplates.SaveTemplateAsync(key, req.Subject ?? "", req.Body ?? "", ct);
+        await _emailTemplates.SaveTemplateAsync(key, req.Subject ?? "", req.Body ?? "", req.From, ct);
         return Ok(new { message = "Şablon saxlanıldı" });
     }
 
@@ -889,7 +889,7 @@ public class AdminController : ControllerBase
         var failed = 0;
         foreach (var to in req.Emails.Where(e => !string.IsNullOrWhiteSpace(e)).Select(e => e!.Trim()).Distinct())
         {
-            var ok = await _email.SendAsync(to, req.Subject.Trim(), req.Body, ct);
+            var ok = await _email.SendAsync(to, req.Subject.Trim(), req.Body, from: null, ct);
             if (ok) sent++; else failed++;
         }
         return Ok(new { message = $"{sent} e-poçt göndərildi", sent, failed });
@@ -897,7 +897,7 @@ public class AdminController : ControllerBase
 }
 
 public record EmailSettingsRequest(string? Host, int Port, string? User, string? Password, string? From, bool UseSsl = true);
-public record EmailTemplateRequest(string? Subject, string? Body);
+public record EmailTemplateRequest(string? Subject, string? Body, string? From);
 public record BulkEmailRequest(List<string>? Emails, string? Subject, string? Body);
 
 public record DeleteTenantRequest(Guid? TenantId);

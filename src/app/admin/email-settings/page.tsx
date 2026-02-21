@@ -20,7 +20,7 @@ export default function AdminEmailSettingsPage() {
   const [smtpSaving, setSmtpSaving] = useState(false);
   const [templates, setTemplates] = useState<TemplateItem[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
-  const [templateData, setTemplateData] = useState({ subject: "", body: "" });
+  const [templateData, setTemplateData] = useState({ subject: "", body: "", from: "" });
   const [templateSaving, setTemplateSaving] = useState(false);
   const [bulkEmails, setBulkEmails] = useState("");
   const [bulkSubject, setBulkSubject] = useState("");
@@ -44,7 +44,7 @@ export default function AdminEmailSettingsPage() {
 
   const loadTemplate = useCallback((key: string) => {
     setSelectedTemplate(key);
-    api.admin.getEmailTemplate(key).then((d) => setTemplateData({ subject: d.subject ?? "", body: d.body ?? "" })).catch(() => setTemplateData({ subject: "", body: "" }));
+    api.admin.getEmailTemplate(key).then((d) => setTemplateData({ subject: d.subject ?? "", body: d.body ?? "", from: d.from ?? "" })).catch(() => setTemplateData({ subject: "", body: "", from: "" }));
   }, []);
 
   const saveSmtp = async () => {
@@ -158,6 +158,10 @@ export default function AdminEmailSettingsPage() {
                 <h3 className="font-semibold text-slate-900 mb-4">Redaktə: {templates.find((t) => t.key === selectedTemplate)?.label}</h3>
                 <p className="text-xs text-slate-500 mb-2">Placeholder-lər: {"{{verifyUrl}}"} {"{{resetUrl}}"} {"{{code}}"} {"{{affiliatePanelUrl}}"} {"{{tenantName}}"} {"{{amount}}"} {"{{currency}}"} {"{{planName}}"} {"{{message}}"} {"{{year}}"} {"{{month}}"} {"{{customerCount}}"}</p>
                 <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Göndərən (From)</label>
+                    <input type="text" value={templateData.from} onChange={(e) => setTemplateData((d) => ({ ...d, from: e.target.value }))} className="w-full px-4 py-2 border border-slate-300 rounded-lg" placeholder="noreply@easysteperp.com (boş = SMTP varsayılanı)" />
+                  </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">Mövzu</label>
                     <input type="text" value={templateData.subject} onChange={(e) => setTemplateData((d) => ({ ...d, subject: e.target.value }))} className="w-full px-4 py-2 border border-slate-300 rounded-lg" />

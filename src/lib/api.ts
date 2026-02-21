@@ -375,8 +375,8 @@ export const api = {
     emailTemplates: () =>
       apiFetch<{ key: string; label: string }[]>("/api/admin/email-templates"),
     getEmailTemplate: (key: string) =>
-      apiFetch<{ subject: string; body: string }>(`/api/admin/email-templates/by-key?key=${encodeURIComponent(key)}`),
-    putEmailTemplate: (key: string, data: { subject: string; body: string }) =>
+      apiFetch<{ subject: string; body: string; from?: string }>(`/api/admin/email-templates/by-key?key=${encodeURIComponent(key)}`),
+    putEmailTemplate: (key: string, data: { subject: string; body: string; from?: string }) =>
       apiFetch<{ message: string }>(`/api/admin/email-templates/by-key?key=${encodeURIComponent(key)}`, {
         method: "PUT",
         body: JSON.stringify(data),

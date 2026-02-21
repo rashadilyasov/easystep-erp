@@ -25,10 +25,11 @@ public class EmailTemplateService
 
     public EmailTemplateService(ApplicationDbContext db) => _db = db;
 
-    public async Task<(string Subject, string Body)> GetTemplateAsync(string key, IReadOnlyDictionary<string, string> placeholders, CancellationToken ct = default)
+    public async Task<(string Subject, string Body, string? From)> GetTemplateAsync(string key, IReadOnlyDictionary<string, string> placeholders, CancellationToken ct = default)
     {
         var sc = await _db.SiteContents.FirstOrDefaultAsync(c => c.Key == key, ct);
         string subj, body;
+        string? from = null;
         if (sc != null && !string.IsNullOrEmpty(sc.Value))
         {
             try
@@ -36,14 +37,19 @@ public class EmailTemplateService
                 var j = JsonSerializer.Deserialize<JsonElement>(sc.Value);
                 subj = j.TryGetProperty("subject", out var s) ? s.GetString() ?? "" : "";
                 body = j.TryGetProperty("body", out var b) ? b.GetString() ?? "" : "";
+                from = j.TryGetProperty("from", out var f) ? f.GetString() : null;
             }
             catch
             {
-                (subj, body) = GetDefault(key);
+                var d = GetDefault(key);
+                (subj, body, from) = (d.Subject, d.Body, d.From);
             }
         }
         else
-            (subj, body) = GetDefault(key);
+        {
+            var d = GetDefault(key);
+            (subj, body, from) = (d.Subject, d.Body, d.From);
+        }
 
         foreach (var (k, v) in placeholders)
         {
@@ -51,7 +57,7 @@ public class EmailTemplateService
             subj = subj.Replace(placeholder, v ?? "");
             body = body.Replace(placeholder, v ?? "");
         }
-        return (subj, body);
+        return (subj, body, string.IsNullOrWhiteSpace(from) ? null : from.Trim());
     }
 
     public async Task<object?> GetRawTemplateAsync(string key, CancellationToken ct = default)
@@ -60,14 +66,20 @@ public class EmailTemplateService
         if (sc == null || string.IsNullOrEmpty(sc.Value)) return GetDefaultForAdmin(key);
         try
         {
-            return JsonSerializer.Deserialize<object>(sc.Value);
+            var j = JsonSerializer.Deserialize<JsonElement>(sc.Value);
+            var subj = j.TryGetProperty("subject", out var s) ? s.GetString() ?? "" : "";
+            var body = j.TryGetProperty("body", out var b) ? b.GetString() ?? "" : "";
+            var from = j.TryGetProperty("from", out var f) ? f.GetString() : null;
+            var (_, _, defaultFrom) = GetDefault(key);
+            return new { subject = subj, body = body, from = string.IsNullOrWhiteSpace(from) ? defaultFrom : from };
         }
         catch { return GetDefaultForAdmin(key); }
     }
 
-    public async Task SaveTemplateAsync(string key, string subject, string body, CancellationToken ct = default)
+    public async Task SaveTemplateAsync(string key, string subject, string body, string? from = null, CancellationToken ct = default)
     {
-        var json = JsonSerializer.Serialize(new { subject, body });
+        var fromVal = string.IsNullOrWhiteSpace(from) ? null : from.Trim();
+        var json = JsonSerializer.Serialize(new { subject, body, from = fromVal });
         var sc = await _db.SiteContents.FirstOrDefaultAsync(c => c.Key == key, ct);
         if (sc != null)
         {
@@ -87,34 +99,34 @@ public class EmailTemplateService
         await _db.SaveChangesAsync(ct);
     }
 
-    private static (string Subject, string Body) GetDefault(string key) => key switch
+    private static (string Subject, string Body, string? From) GetDefault(string key) => key switch
     {
         EmailTemplateKeys.Verification => ("Easy Step ERP - E-poçt təsdiqi",
-            "<!DOCTYPE html><html><body style='font-family:Arial,sans-serif'><h2>E-poçtunuzu təsdiqləyin</h2><p>Salam,</p><p>Easy Step ERP hesabınızı aktivləşdirmək üçün aşağıdakı linkə keçid edin:</p><p><a href='{{verifyUrl}}'>{{verifyUrl}}</a></p><p>Link 24 saat ərzində keçərlidir.</p><p>— Easy Step ERP</p></body></html>"),
+            "<!DOCTYPE html><html><body style='font-family:Arial,sans-serif'><h2>E-poçtunuzu təsdiqləyin</h2><p>Salam,</p><p>Easy Step ERP hesabınızı aktivləşdirmək üçün aşağıdakı linkə keçid edin:</p><p><a href='{{verifyUrl}}'>{{verifyUrl}}</a></p><p>Link 24 saat ərzində keçərlidir.</p><p>— Easy Step ERP</p></body></html>", "noreply@easysteperp.com"),
         EmailTemplateKeys.AffiliateVerification => ("Easy Step ERP - Satış partnyoru e-poçt təsdiqi",
-            "<!DOCTYPE html><html><body style='font-family:Arial,sans-serif'><h2>E-poçtunuzu təsdiqləyin</h2><p>Salam,</p><p>Easy Step ERP satış partnyoru hesabınızı aktivləşdirmək üçün aşağıdakı linkə keçid edin:</p><p><a href='{{verifyUrl}}'>{{verifyUrl}}</a></p><p>Link 24 saat ərzində keçərlidir.</p><p>— Easy Step ERP</p></body></html>"),
+            "<!DOCTYPE html><html><body style='font-family:Arial,sans-serif'><h2>E-poçtunuzu təsdiqləyin</h2><p>Salam,</p><p>Easy Step ERP satış partnyoru hesabınızı aktivləşdirmək üçün aşağıdakı linkə keçid edin:</p><p><a href='{{verifyUrl}}'>{{verifyUrl}}</a></p><p>Link 24 saat ərzində keçərlidir.</p><p>— Easy Step ERP</p></body></html>", "noreply@easysteperp.com"),
         EmailTemplateKeys.PasswordReset => ("Easy Step ERP - Şifrə sıfırlama",
-            "<!DOCTYPE html><html><body style='font-family:Arial,sans-serif'><h2>Şifrə sıfırlama</h2><p>Şifrənizi sıfırlamaq üçün aşağıdakı linkə keçid edin:</p><p><a href='{{resetUrl}}'>{{resetUrl}}</a></p><p>Link 1 saat ərzində keçərlidir.</p><p>Əgər bu tələb sizdən gəlməyibsə, bu e-poçtu nəzərə almayın.</p><p>— Easy Step ERP</p></body></html>"),
+            "<!DOCTYPE html><html><body style='font-family:Arial,sans-serif'><h2>Şifrə sıfırlama</h2><p>Şifrənizi sıfırlamaq üçün aşağıdakı linkə keçid edin:</p><p><a href='{{resetUrl}}'>{{resetUrl}}</a></p><p>Link 1 saat ərzində keçərlidir.</p><p>Əgər bu tələb sizdən gəlməyibsə, bu e-poçtu nəzərə almayın.</p><p>— Easy Step ERP</p></body></html>", "security@easysteperp.com"),
         EmailTemplateKeys.LoginOtp => ("Easy Step ERP - Daxil olma kodu",
-            "<!DOCTYPE html><html><body style='font-family:Arial,sans-serif'><h2>Daxil olma kodu</h2><p>Salam,</p><p>Easy Step ERP daxil olma kodunuz: <strong>{{code}}</strong></p><p>Kod 10 dəqiqə ərzində keçərlidir.</p><p>Əgər bu tələb sizdən gəlməyibsə, bu e-poçtu nəzərə almayın.</p><p>— Easy Step ERP</p></body></html>"),
+            "<!DOCTYPE html><html><body style='font-family:Arial,sans-serif'><h2>Daxil olma kodu</h2><p>Salam,</p><p>Easy Step ERP daxil olma kodunuz: <strong>{{code}}</strong></p><p>Kod 10 dəqiqə ərzində keçərlidir.</p><p>Əgər bu tələb sizdən gəlməyibsə, bu e-poçtu nəzərə almayın.</p><p>— Easy Step ERP</p></body></html>", "security@easysteperp.com"),
         EmailTemplateKeys.TwoFaConfirm => ("Easy Step ERP - 2FA təsdiq kodu",
-            "<!DOCTYPE html><html><body style='font-family:Arial,sans-serif'><h2>2FA təsdiq kodu</h2><p>Salam,</p><p>2FA aktivləşdirmək üçün kodunuz: <strong>{{code}}</strong></p><p>— Easy Step ERP</p></body></html>"),
+            "<!DOCTYPE html><html><body style='font-family:Arial,sans-serif'><h2>2FA təsdiq kodu</h2><p>Salam,</p><p>2FA aktivləşdirmək üçün kodunuz: <strong>{{code}}</strong></p><p>— Easy Step ERP</p></body></html>", "security@easysteperp.com"),
         EmailTemplateKeys.TwoFaDisable => ("Easy Step ERP - 2FA söndürmə kodu",
-            "<!DOCTYPE html><html><body style='font-family:Arial,sans-serif'><h2>2FA söndürmə kodu</h2><p>Salam,</p><p>2FA söndürmək üçün kodunuz: <strong>{{code}}</strong></p><p>— Easy Step ERP</p></body></html>"),
+            "<!DOCTYPE html><html><body style='font-family:Arial,sans-serif'><h2>2FA söndürmə kodu</h2><p>Salam,</p><p>2FA söndürmək üçün kodunuz: <strong>{{code}}</strong></p><p>— Easy Step ERP</p></body></html>", "security@easysteperp.com"),
         EmailTemplateKeys.AffiliateApproved => ("Easy Step ERP - Partnyor təsdiqi",
-            "<p>Salam.</p><p>Satış partnyoru qeydiyyatınız təsdiqləndi. İndi promo kodlar yarada və panelə daxil ola bilərsiniz: <a href='{{affiliatePanelUrl}}'>{{affiliatePanelUrl}}</a></p>"),
+            "<p>Salam.</p><p>Satış partnyoru qeydiyyatınız təsdiqləndi. İndi promo kodlar yarada və panelə daxil ola bilərsiniz: <a href='{{affiliatePanelUrl}}'>{{affiliatePanelUrl}}</a></p>", "partners@easysteperp.com"),
         EmailTemplateKeys.BonusReminder => ("Easy Step ERP - Bonus xəbərdarlığı ({{year}}-{{month}})",
-            "<p>Salam.</p><p>Keçən ay ({{year}}-{{month}}) {{customerCount}} müştəri ilə ödəniş aldınız. Bonus üçün minimum 5 müştəri tələb olunur. Bu ay daha çox müştəri cəlb etməyə çalışın.</p>"),
+            "<p>Salam.</p><p>Keçən ay ({{year}}-{{month}}) {{customerCount}} müştəri ilə ödəniş aldınız. Bonus üçün minimum 5 müştəri tələb olunur. Bu ay daha çox müştəri cəlb etməyə çalışın.</p>", "partners@easysteperp.com"),
         EmailTemplateKeys.PaymentConfirm => ("Easy Step ERP - Ödəniş təsdiqi",
-            "<p>Salam {{tenantName}},</p><p>Ödənişiniz qəbul olundu. Məbləğ: {{amount}} {{currency}}</p><p>Plan: {{planName}}</p><p>— Easy Step ERP</p>"),
+            "<p>Salam {{tenantName}},</p><p>Ödənişiniz qəbul olundu. Məbləğ: {{amount}} {{currency}}</p><p>Plan: {{planName}}</p><p>— Easy Step ERP</p>", "billing@easysteperp.com"),
         EmailTemplateKeys.Notification => ("Easy Step ERP - Bildiriş",
-            "<p>Salam,</p><p>{{message}}</p><p>— Easy Step ERP</p>"),
-        _ => ("", ""),
+            "<p>Salam,</p><p>{{message}}</p><p>— Easy Step ERP</p>", "notifications@easysteperp.com"),
+        _ => ("", "", null),
     };
 
     private static object GetDefaultForAdmin(string key)
     {
-        var (subject, body) = GetDefault(key);
-        return new { subject, body };
+        var (subject, body, from) = GetDefault(key);
+        return new { subject, body, from };
     }
 }

@@ -13,8 +13,8 @@ public class TemplatedEmailService : ITemplatedEmailService
 
     public async Task<bool> SendTemplatedAsync(string to, string templateKey, IReadOnlyDictionary<string, string> placeholders, CancellationToken ct = default)
     {
-        var (subject, body) = await _templates.GetTemplateAsync(templateKey, placeholders, ct);
+        var (subject, body, from) = await _templates.GetTemplateAsync(templateKey, placeholders, ct);
         if (string.IsNullOrEmpty(subject)) return false;
-        return await _email.SendAsync(to, subject, body, ct);
+        return await _email.SendAsync(to, subject, body, from, ct);
     }
 }

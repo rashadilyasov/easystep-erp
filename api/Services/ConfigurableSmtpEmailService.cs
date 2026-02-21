@@ -18,7 +18,7 @@ public class ConfigurableSmtpEmailService : IEmailService
         _log = log;
     }
 
-    public async Task<bool> SendAsync(string to, string subject, string htmlBody, CancellationToken ct = default)
+    public async Task<bool> SendAsync(string to, string subject, string htmlBody, string? from = null, CancellationToken ct = default)
     {
         SmtpConfig? smtp = await _emailSettings.GetSmtpFromDbAsync(ct);
         if (smtp == null || string.IsNullOrEmpty(smtp.Host))
@@ -32,6 +32,9 @@ public class ConfigurableSmtpEmailService : IEmailService
             return true;
         }
 
+        var fromAddr = !string.IsNullOrWhiteSpace(from) ? from.Trim() : smtp.From;
+        if (string.IsNullOrEmpty(fromAddr)) fromAddr = "hello@easysteperp.com";
+
         try
         {
             using var client = new SmtpClient(smtp.Host, smtp.Port)
@@ -41,7 +44,7 @@ public class ConfigurableSmtpEmailService : IEmailService
             };
             var msg = new MailMessage
             {
-                From = new MailAddress(smtp.From, "Easy Step ERP"),
+                From = new MailAddress(fromAddr, "Easy Step ERP"),
                 Subject = subject,
                 Body = htmlBody,
                 IsBodyHtml = true,

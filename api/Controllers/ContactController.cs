@@ -47,7 +47,7 @@ public class ContactController : ControllerBase
 <p>{WebUtility.HtmlEncode(req.Message).Replace("\n", "<br/>")}</p>
 <p>— Easy Step ERP Portal</p>
 </body></html>";
-            await _email.SendAsync(adminEmail, "Easy Step ERP - Yeni əlaqə mesajı", html, ct);
+            await _email.SendAsync(adminEmail, "Easy Step ERP - Yeni əlaqə mesajı", html, from: null, ct);
         }
 
         return Ok(new { message = "Mesajınız uğurla qəbul edildi. Tezliklə əlaqə saxlayacağıq." });

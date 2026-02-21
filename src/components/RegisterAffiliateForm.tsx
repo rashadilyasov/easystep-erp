@@ -4,6 +4,14 @@ import Link from "next/link";
 import { useState } from "react";
 import { api } from "@/lib/api";
 
+function isStrongPassword(p: string): boolean {
+  if (!p || p.length < 12) return false;
+  if (!/[A-Z]/.test(p)) return false;
+  if (!/[a-z]/.test(p)) return false;
+  if (!/[0-9]/.test(p)) return false;
+  return true;
+}
+
 export default function RegisterAffiliateForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -14,6 +22,7 @@ export default function RegisterAffiliateForm() {
     password: "",
     confirmPassword: "",
     acceptTerms: false,
+    age18Confirmed: false,
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -22,12 +31,16 @@ export default function RegisterAffiliateForm() {
       setError("Şifrələr uyğun gəlmir");
       return;
     }
-    if (form.password.length < 12) {
-      setError("Şifrə minimum 12 simvol olmalıdır");
+    if (!isStrongPassword(form.password)) {
+      setError(form.password.length < 12 ? "Şifrə minimum 12 simvol olmalıdır" : "Şifrə böyük hərf, kiçik hərf və rəqəm əlavə edin");
       return;
     }
     if (!form.acceptTerms) {
       setError("Şərtləri qəbul etməlisiniz");
+      return;
+    }
+    if (!form.age18Confirmed) {
+      setError("18 yaşdan yuxarı olduğunuzu təsdiqləməlisiniz");
       return;
     }
 
@@ -39,6 +52,7 @@ export default function RegisterAffiliateForm() {
         password: form.password,
         fullName: form.fullName,
         acceptTerms: form.acceptTerms,
+        age18Confirmed: form.age18Confirmed,
       });
       setSuccess(true);
     } catch (e) {
@@ -54,7 +68,7 @@ export default function RegisterAffiliateForm() {
       <div className="p-6 bg-green-50 border border-green-200 rounded-xl text-green-800 text-center">
         <p className="font-medium">Qeydiyyat uğurla tamamlandı.</p>
         <p className="text-sm mt-1">E-poçtunuzu yoxlayın və təsdiq linkinə keçid edin.</p>
-        <p className="text-sm mt-2">Təsdiq etdikdən sonra satış partnyoru paneline daxil ola biləcəksiniz.</p>
+        <p className="text-sm mt-2">E-poçt təsdiqindən sonra admin qeydiyyatınızı təsdiqləyəcək. Təsdiqləndikdən sonra promo kodlar yarada biləcəksiniz.</p>
       </div>
     );
   }
@@ -87,7 +101,7 @@ export default function RegisterAffiliateForm() {
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-slate-700 mb-2">Şifrə (min 12 simvol)</label>
+        <label className="block text-sm font-medium text-slate-700 mb-2">Şifrə (min 12 simvol, böyük/kiçik hərf, rəqəm)</label>
         <input
           type="password"
           required
@@ -97,6 +111,11 @@ export default function RegisterAffiliateForm() {
           className="w-full px-4 py-3 rounded-xl border border-slate-300 input-focus"
           placeholder="••••••••"
         />
+        {form.password && !isStrongPassword(form.password) && (
+          <p className="text-xs text-amber-600 mt-1">
+            Böyük hərf, kiçik hərf və rəqəm əlavə edin
+          </p>
+        )}
       </div>
       <div>
         <label className="block text-sm font-medium text-slate-700 mb-2">Şifrə təsdiqi</label>
@@ -109,6 +128,17 @@ export default function RegisterAffiliateForm() {
           placeholder="••••••••"
         />
       </div>
+      <label className="flex items-start gap-2">
+        <input
+          type="checkbox"
+          checked={form.age18Confirmed}
+          onChange={(e) => setForm((f) => ({ ...f, age18Confirmed: e.target.checked }))}
+          className="mt-1 rounded"
+        />
+        <span className="text-sm text-slate-600">
+          18 yaşdan yuxarıyam və qanuni fəaliyyət göstərəcəyimi təsdiq edirəm.
+        </span>
+      </label>
       <label className="flex items-start gap-2">
         <input
           type="checkbox"

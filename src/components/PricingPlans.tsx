@@ -20,36 +20,28 @@ const PLAN_NAMES: Record<number, string> = {
   12: "Əla",
 };
 
-const FALLBACK_PLANS: Plan[] = [
-  { id: "1", name: "Başla", durationMonths: 1, price: 49, popular: false },
-  { id: "2", name: "Standart", durationMonths: 3, price: 135, popular: false },
-  { id: "3", name: "İnkişaf", durationMonths: 6, price: 240, popular: false },
-  { id: "4", name: "Əla", durationMonths: 12, price: 420, popular: true },
-];
-
 export default function PricingPlans({ discountPercent }: { discountPercent?: number }) {
-  const [plans, setPlans] = useState<Plan[]>(FALLBACK_PLANS);
+  const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    setError(null);
     api.plans()
       .then((data: unknown) => {
         const arr = Array.isArray(data) ? data as Plan[] : [];
-        if (arr.length > 0) {
-          setPlans(arr.map((p) => {
-            const duration = p.durationMonths || 1;
-            const isPro = duration === 12;
-            return {
-              id: p.id || String(duration),
-              name: PLAN_NAMES[duration] || p.name || `Plan ${duration} ay`,
-              durationMonths: duration,
-              price: p.price || 0,
-              popular: isPro,
-            };
-          }));
-        }
+        setPlans(arr.map((p) => {
+          const duration = p.durationMonths || 1;
+          return {
+            id: p.id || String(duration),
+            name: PLAN_NAMES[duration] || p.name || `Plan ${duration} ay`,
+            durationMonths: duration,
+            price: p.price ?? 0,
+            popular: duration === 12,
+          };
+        }));
       })
-      .catch(() => {})
+      .catch(() => setError("Qiymətləri yükləmək mümkün olmadı"))
       .finally(() => setLoading(false));
   }, []);
 
@@ -63,7 +55,30 @@ export default function PricingPlans({ discountPercent }: { discountPercent?: nu
     );
   }
 
-  const oneMonthPrice = plans.find((x) => x.durationMonths === 1)?.price ?? 49;
+  if (error) {
+    return (
+      <div className="p-8 text-center text-slate-600 bg-slate-50 rounded-2xl">
+        <p>{error}</p>
+        <button
+          type="button"
+          onClick={() => window.location.reload()}
+          className="mt-3 text-primary-600 font-medium hover:underline"
+        >
+          Yenidən yoxla
+        </button>
+      </div>
+    );
+  }
+
+  if (plans.length === 0) {
+    return (
+      <div className="p-8 text-center text-slate-600 bg-slate-50 rounded-2xl">
+        Planlar tapılmadı
+      </div>
+    );
+  }
+
+  const oneMonthPrice = plans.find((x) => x.durationMonths === 1)?.price;
   const hasDiscount = discountPercent != null && discountPercent > 0;
 
   return (
@@ -72,7 +87,7 @@ export default function PricingPlans({ discountPercent }: { discountPercent?: nu
         const originalPrice = p.price;
         const finalPrice = hasDiscount ? Math.round(originalPrice * (1 - discountPercent! / 100) * 100) / 100 : originalPrice;
         const perMonth = p.durationMonths > 0 ? Math.round(finalPrice / p.durationMonths) : finalPrice;
-        const savings12 = p.durationMonths === 12 ? oneMonthPrice * 12 - p.price : 0;
+        const savings12 = p.durationMonths === 12 && oneMonthPrice != null ? Math.max(0, oneMonthPrice * 12 - p.price) : 0;
         return (
           <div
             key={p.id}

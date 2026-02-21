@@ -14,28 +14,25 @@ type BillingData = {
 export default function BillingContent() {
   const [data, setData] = useState<BillingData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
+    setLoadError(null);
     api
       .billing()
       .then(setData)
-      .catch(() =>
-        setData({
-          plan: { name: "Əla 12 ay", price: 420, currency: "AZN", endDate: "2026-08-15" },
-          autoRenew: true,
-          payments: [
-            { id: "1", date: "15.02.2026", amount: 420, currency: "AZN", status: "Succeeded", trxId: "PAY-xxx..." },
-          ],
-        })
-      )
+      .catch(() => {
+        setData(null);
+        setLoadError("Məlumatları yükləmək mümkün olmadı");
+      })
       .finally(() => setLoading(false));
   }, []);
 
-  const d = data ?? {
+  const d: BillingData = data ?? {
     plan: null,
     autoRenew: false,
     promoCode: null,
-    payments: [] as BillingData["payments"],
+    payments: [],
   };
 
   const handleAutoRenewChange = useCallback(
@@ -71,6 +68,18 @@ export default function BillingContent() {
               <span><strong>Növbəti ödəniş:</strong> {new Date(d.plan.endDate).toLocaleDateString("az-AZ", { day: "numeric", month: "long", year: "numeric" })}</span>
             )}
           </div>
+        </div>
+      )}
+      {loadError && (
+        <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-800">
+          <p>{loadError}</p>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="mt-2 text-amber-700 font-medium hover:underline"
+          >
+            Yenidən yoxla
+          </button>
         </div>
       )}
       <div className="mb-8 p-6 bg-white rounded-2xl border border-slate-200">

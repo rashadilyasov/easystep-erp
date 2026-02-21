@@ -4,8 +4,10 @@ public class Affiliate
 {
     public Guid Id { get; set; }
     public Guid UserId { get; set; }
-    public decimal BalanceTotal { get; set; }  // Total paid out
-    public decimal BalancePending { get; set; } // Pending + Approved, not yet paid
+    public bool IsApproved { get; set; }
+    public decimal BalanceTotal { get; set; }
+    public decimal BalancePending { get; set; }
+    public decimal BalanceBonus { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 

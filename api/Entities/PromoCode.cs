@@ -20,6 +20,8 @@ public class PromoCode
     public PromoCodeStatus Status { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? UsedAt { get; set; }
+    /// <summary>Müştəri üçün endirim müddəti — 1 il. UsedAt + 1 il.</summary>
+    public DateTime? DiscountValidUntil { get; set; }
 
     public Affiliate Affiliate { get; set; } = null!;
     public Tenant? Tenant { get; set; }

@@ -8,11 +8,13 @@ public class AffiliateService
 {
     private readonly ApplicationDbContext _db;
     private readonly IConfiguration _config;
+    private readonly AffiliateAbuseService? _abuse;
 
-    public AffiliateService(ApplicationDbContext db, IConfiguration config)
+    public AffiliateService(ApplicationDbContext db, IConfiguration config, AffiliateAbuseService? abuse = null)
     {
         _db = db;
         _config = config;
+        _abuse = abuse;
     }
 
     public decimal DefaultDiscountPercent => decimal.TryParse(_config["Affiliate:DefaultDiscountPercent"], out var d) ? d : 5;
@@ -30,7 +32,7 @@ public class AffiliateService
     public async Task<PromoCode?> CreatePromoCodeAsync(Guid affiliateId, decimal? discountPercent, decimal? commissionPercent, CancellationToken ct = default)
     {
         var affiliate = await _db.Affiliates.FindAsync(new object[] { affiliateId }, ct);
-        if (affiliate == null) return null;
+        if (affiliate == null || !affiliate.IsApproved) return null;
 
         var discount = discountPercent ?? DefaultDiscountPercent;
         var commission = commissionPercent ?? DefaultCommissionPercent;
@@ -48,6 +50,7 @@ public class AffiliateService
         };
         _db.PromoCodes.Add(promo);
         await _db.SaveChangesAsync(ct);
+        try { await (_abuse?.CheckPromoFloodAsync(affiliateId, ct) ?? Task.CompletedTask); } catch { /* ignore */ }
         return promo;
     }
 
@@ -59,6 +62,7 @@ public class AffiliateService
         promo.TenantId = tenantId;
         promo.Status = PromoCodeStatus.Used;
         promo.UsedAt = DateTime.UtcNow;
+        promo.DiscountValidUntil = DateTime.UtcNow.AddYears(1);
         await _db.SaveChangesAsync(ct);
 
         var tenant = await _db.Tenants.FindAsync(new object[] { tenantId }, ct);
@@ -107,6 +111,51 @@ public class AffiliateService
             affiliate.UpdatedAt = DateTime.UtcNow;
         }
         await _db.SaveChangesAsync(ct);
+    }
+
+    public const decimal BonusAmountPerMonth = 50;
+
+    public async Task<List<Guid>> GetApprovedAffiliateIdsAsync(CancellationToken ct = default) =>
+        await _db.Affiliates.Where(a => a.IsApproved).Select(a => a.Id).ToListAsync(ct);
+
+    /// <summary>Ay üçün bonus hesabla — 5+ müştəri ödəniş etməlidir.</summary>
+    public async Task<AffiliateBonus?> EnsureMonthlyBonusAsync(Guid affiliateId, int year, int month, CancellationToken ct = default)
+    {
+        var monthStart = new DateTime(year, month, 1, 0, 0, 0, DateTimeKind.Utc);
+        var monthEnd = monthStart.AddMonths(1);
+
+        var customerCount = await _db.AffiliateCommissions
+            .Where(c => c.AffiliateId == affiliateId && c.CreatedAt >= monthStart && c.CreatedAt < monthEnd)
+            .Select(c => c.TenantId)
+            .Distinct()
+            .CountAsync(ct);
+
+        var existing = await _db.AffiliateBonuses.FirstOrDefaultAsync(b => b.AffiliateId == affiliateId && b.Year == year && b.Month == month, ct);
+        if (existing != null) return existing;
+
+        if (customerCount < 5) return null;
+
+        var bonus = new AffiliateBonus
+        {
+            Id = Guid.NewGuid(),
+            AffiliateId = affiliateId,
+            Year = year,
+            Month = month,
+            CustomerCount = customerCount,
+            BonusAmount = BonusAmountPerMonth,
+            Status = AffiliateBonusStatus.Pending,
+            CreatedAt = DateTime.UtcNow,
+        };
+        _db.AffiliateBonuses.Add(bonus);
+
+        var affiliate = await _db.Affiliates.FindAsync(new object[] { affiliateId }, ct);
+        if (affiliate != null)
+        {
+            affiliate.BalanceBonus += BonusAmountPerMonth;
+            affiliate.UpdatedAt = DateTime.UtcNow;
+        }
+        await _db.SaveChangesAsync(ct);
+        return bonus;
     }
 
     private static string GenerateUniqueCode()

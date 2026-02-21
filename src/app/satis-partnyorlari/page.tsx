@@ -22,33 +22,62 @@ export default function SatisPartnyorlariPage() {
           </p>
 
           <div className="bg-white rounded-2xl shadow-xl border border-slate-200 p-8 mb-12">
-            <h2 className="text-xl font-bold text-slate-900 mb-6">Partnyor olmaq üçün şərtlər və tələblər</h2>
-            <ul className="space-y-4 text-slate-600">
-              <li className="flex gap-3">
-                <span className="text-primary-600 font-bold">•</span>
-                <span>18 yaşdan yuxarı olmalı və Azərbaycan Respublikasının qanunlarına uyğun fəaliyyət göstərməlisiniz</span>
-              </li>
-              <li className="flex gap-3">
-                <span className="text-primary-600 font-bold">•</span>
-                <span>Etibarlı e-poçt ünvanı və minimum 12 simvoldan ibarət güclü şifrə tələb olunur</span>
-              </li>
-              <li className="flex gap-3">
-                <span className="text-primary-600 font-bold">•</span>
-                <span>Şərtlər və Məxfilik siyasətini qəbul etməlisiniz</span>
-              </li>
-              <li className="flex gap-3">
-                <span className="text-primary-600 font-bold">•</span>
-                <span>Hər partnyor unikal promo kodlar yarada bilər; hər kod yalnız bir müştəri tərəfindən istifadə oluna bilər</span>
-              </li>
-              <li className="flex gap-3">
-                <span className="text-primary-600 font-bold">•</span>
-                <span>Müştəri ödəniş etdikdən sonra komissiya hesablanır; komissiyalar admin tərəfindən təsdiqlənir və ödənilir</span>
-              </li>
-              <li className="flex gap-3">
-                <span className="text-primary-600 font-bold">•</span>
-                <span>Aldadıcı və ya yanlış məlumat vermək, spam və ya qeyri-qanuni təbliğat qadağandır</span>
-              </li>
-            </ul>
+            <h2 className="text-xl font-bold text-slate-900 mb-6 text-center">Partnyor Qaydaları və Bonus Mexanizmi</h2>
+
+            <div className="space-y-8 text-slate-600">
+              <section>
+                <h3 className="font-semibold text-slate-900 mb-3">1️⃣ Hər Müştəri Üçün Unikal Promo Kod</h3>
+                <ul className="space-y-2 pl-4">
+                  <li>• Hər partnyor hər yeni müştəri üçün unikal promo kod yaradır.</li>
+                  <li>• Hər promo kod yalnız bir müştəri tərəfindən istifadə oluna bilər.</li>
+                  <li>• Promo kod müştəri üçün 1 il müddətində endirim təmin edir.</li>
+                  <li>• Partnyor üçün həmin kod üzrə komissiya müştəri ilə əməkdaşlıq bitənə qədər aktivdir.</li>
+                </ul>
+              </section>
+
+              <section>
+                <h3 className="font-semibold text-slate-900 mb-3">2️⃣ Minimum Müştəri Şərti (Bonus)</h3>
+                <ul className="space-y-2 pl-4">
+                  <li>• Bonus almaq üçün ay ərzində ən azı 5 müştəri ödəniş etməlidir.</li>
+                  <li>• Bu müştərilər fərqli promo kodlarla ola bilər.</li>
+                  <li>• Ayın sonunda admin paneli aktiv müştəriləri yoxlayır və bonusu təsdiqləyir.</li>
+                  <li>• 5-dən az müştəri olduqda bonus növbəti ay üçün saxlanılır.</li>
+                </ul>
+              </section>
+
+              <section>
+                <h3 className="font-semibold text-slate-900 mb-3">3️⃣ Hesab və Təhlükəsizlik</h3>
+                <ul className="space-y-2 pl-4">
+                  <li>• Etibarlı e-poçt ünvanı tələb olunur; şifrə minimum 12 simvollu və güclü olmalıdır.</li>
+                  <li>• Hər partnyor hesabını qorumaq və şəxsi məlumatlarını düzgün saxlamaq öhdəliyinə malikdir.</li>
+                </ul>
+              </section>
+
+              <section>
+                <h3 className="font-semibold text-slate-900 mb-3">4️⃣ Qaydaların Qəbul Edilməsi</h3>
+                <ul className="space-y-2 pl-4">
+                  <li>• Partnyor qeydiyyat zamanı <Link href="/terms" className="text-primary-600 hover:underline">Şərtlər</Link> və <Link href="/privacy" className="text-primary-600 hover:underline">Məxfilik Siyasətini</Link> qəbul etməlidir.</li>
+                  <li>• Bu siyasətə riayət etmək partnyorun öhdəliyidir.</li>
+                </ul>
+              </section>
+
+              <section>
+                <h3 className="font-semibold text-slate-900 mb-3">5️⃣ Komissiya və Ödəniş</h3>
+                <ul className="space-y-2 pl-4">
+                  <li>• Müştəri ödəniş etdikdən sonra komissiya hesablanır.</li>
+                  <li>• Ödəniş və təsdiqləmə prosesi admin tərəfindən idarə olunur.</li>
+                  <li>• Partnyor yalnız həqiqi satışlar üçün komissiya və bonus ala bilər.</li>
+                </ul>
+              </section>
+
+              <section>
+                <h3 className="font-semibold text-slate-900 mb-3">6️⃣ Qadağan Olunmuş Fəaliyyətlər</h3>
+                <ul className="space-y-2 pl-4">
+                  <li>• Aldadıcı məlumat vermək, spam göndərmək və qeyri-qanuni təbliğat qəti qadağandır.</li>
+                  <li>• Bütün fəaliyyətlər admin paneli vasitəsilə izlənir.</li>
+                </ul>
+              </section>
+            </div>
 
             <div className="mt-10 pt-8 border-t border-slate-200 flex flex-col sm:flex-row gap-4 justify-center">
               <button

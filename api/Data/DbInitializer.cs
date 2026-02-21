@@ -65,10 +65,10 @@ public static class DbInitializer
         var utc = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc);
         var plans = new[]
         {
-            new Plan { Id = PlanIds[0], Name = "Pro 1 ay", DurationMonths = 1, Price = 49, Currency = "AZN", IsActive = true, CreatedAt = utc },
-            new Plan { Id = PlanIds[1], Name = "Pro 3 ay", DurationMonths = 3, Price = 135, Currency = "AZN", IsActive = true, CreatedAt = utc },
-            new Plan { Id = PlanIds[2], Name = "Pro 6 ay", DurationMonths = 6, Price = 240, Currency = "AZN", IsActive = true, CreatedAt = utc },
-            new Plan { Id = PlanIds[3], Name = "Pro 12 ay", DurationMonths = 12, Price = 420, Currency = "AZN", IsActive = true, CreatedAt = utc },
+            new Plan { Id = PlanIds[0], Name = "Başla 1 ay", DurationMonths = 1, Price = 119, Currency = "AZN", IsActive = true, CreatedAt = utc },
+            new Plan { Id = PlanIds[1], Name = "Standart 3 ay", DurationMonths = 3, Price = 329, Currency = "AZN", IsActive = true, CreatedAt = utc },
+            new Plan { Id = PlanIds[2], Name = "İnkişaf 6 ay", DurationMonths = 6, Price = 599, Currency = "AZN", IsActive = true, CreatedAt = utc },
+            new Plan { Id = PlanIds[3], Name = "Əla 12 ay", DurationMonths = 12, Price = 999, Currency = "AZN", IsActive = true, CreatedAt = utc },
         };
         db.Plans.AddRange(plans);
 
@@ -81,6 +81,20 @@ public static class DbInitializer
             );
         }
 
+        await db.SaveChangesAsync(ct);
+    }
+
+    /// <summary>Köhnə qiymətləri (49,135,240,420) yeni kanonik qiymətlərə (119,329,599,999) uyğunlaşdırır.</summary>
+    public static async Task MigratePlanPricesAsync(ApplicationDbContext db, CancellationToken ct = default)
+    {
+        var p12 = await db.Plans.FirstOrDefaultAsync(p => p.DurationMonths == 12, ct);
+        if (p12 == null || p12.Price != 420) return;
+        var updates = new[] { (1, 119m, "Başla 1 ay"), (3, 329m, "Standart 3 ay"), (6, 599m, "İnkişaf 6 ay"), (12, 999m, "Əla 12 ay") };
+        foreach (var (months, price, name) in updates)
+        {
+            var p = await db.Plans.FirstOrDefaultAsync(x => x.DurationMonths == months, ct);
+            if (p != null) { p.Price = price; p.Name = name; }
+        }
         await db.SaveChangesAsync(ct);
     }
 }

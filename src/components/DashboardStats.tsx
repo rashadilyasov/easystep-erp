@@ -13,11 +13,13 @@ type DashboardData = {
 export default function DashboardStats() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    setError(null);
     api.dashboard()
       .then(setData)
-      .catch(() => setData(null))
+      .catch(() => setError("Məlumatları yükləmək mümkün olmadı"))
       .finally(() => setLoading(false));
   }, []);
 
@@ -31,13 +33,22 @@ export default function DashboardStats() {
     );
   }
 
-  const fallback: DashboardData = {
-    plan: { name: "Əla 12 ay", endDate: "15.08.2026" },
-    daysLeft: 178,
-    status: "Aktiv",
-    autoRenew: true,
-  };
-  const d = data ?? fallback;
+  if (error || !data) {
+    return (
+      <div className="p-8 text-center text-slate-600 bg-slate-50 rounded-2xl">
+        <p>{error ?? "Aktiv abunə tapılmadı"}</p>
+        <button
+          type="button"
+          onClick={() => window.location.reload()}
+          className="mt-3 text-primary-600 font-medium hover:underline"
+        >
+          Yenidən yoxla
+        </button>
+      </div>
+    );
+  }
+
+  const d = data;
 
   return (
     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">

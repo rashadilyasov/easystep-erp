@@ -15,16 +15,28 @@ public class AuthService
     private readonly ApplicationDbContext _db;
     private readonly IConfiguration _config;
     private readonly AffiliateService _affiliate;
+    private readonly AuditService _audit;
 
-    public AuthService(ApplicationDbContext db, IConfiguration config, AffiliateService affiliate)
+    public AuthService(ApplicationDbContext db, IConfiguration config, AffiliateService affiliate, AuditService audit)
     {
         _db = db;
         _config = config;
         _affiliate = affiliate;
+        _audit = audit;
     }
 
     public string HashPassword(string password) => BCrypt.Net.BCrypt.HashPassword(password, 12);
     public bool VerifyPassword(string password, string hash) => BCrypt.Net.BCrypt.Verify(password, hash);
+
+    /// <summary>Güclü şifrə: min 12 simvol, böyük hərf, kiçik hərf, rəqəm.</summary>
+    public static bool IsStrongPassword(string? p)
+    {
+        if (string.IsNullOrEmpty(p) || p.Length < 12) return false;
+        if (!p.Any(char.IsUpper)) return false;
+        if (!p.Any(char.IsLower)) return false;
+        if (!p.Any(char.IsDigit)) return false;
+        return true;
+    }
 
     public string GenerateAccessToken(User user, Tenant tenant)
     {
@@ -159,7 +171,9 @@ public class AuthService
 
         if (!string.IsNullOrWhiteSpace(req.PromoCode))
         {
-            await _affiliate.UsePromoCodeForTenantAsync(req.PromoCode.Trim(), tenant.Id, ct);
+            var used = await _affiliate.UsePromoCodeForTenantAsync(req.PromoCode.Trim(), tenant.Id, ct);
+            if (used)
+                await _audit.LogAsync("PromoCodeUsed", null, req.Email, metadata: $"code={req.PromoCode.Trim().ToUpperInvariant()} tenantId={tenant.Id} tenantName={tenant.Name}", ct: ct);
         }
 
         var token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(24)).Replace("+", "-").Replace("/", "_").TrimEnd('=');
@@ -182,8 +196,8 @@ public class AuthService
         var emailLower = (req.Email ?? "").Trim().ToLowerInvariant();
         if (string.IsNullOrEmpty(emailLower))
             return (false, null, "InvalidEmail");
-        if ((req.Password ?? "").Length < 12)
-            return (false, null, "PasswordTooShort");
+        if (!IsStrongPassword(req.Password))
+            return (false, null, (req.Password ?? "").Length < 12 ? "PasswordTooShort" : "PasswordTooWeak");
         var emailTrim = (req.Email ?? "").Trim();
         if (await _db.Users.AnyAsync(u => u.Email.ToLower() == emailLower, ct))
             return (false, null, "EmailExists");
@@ -210,8 +224,10 @@ public class AuthService
         {
             Id = Guid.NewGuid(),
             UserId = user.Id,
+            IsApproved = false,
             BalanceTotal = 0,
             BalancePending = 0,
+            BalanceBonus = 0,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow,
         };
@@ -439,7 +455,7 @@ public class AuthService
     }
 }
 
-public record RegisterAffiliateRequest(string Email, string Password, string FullName, bool AcceptTerms);
+public record RegisterAffiliateRequest(string Email, string Password, string FullName, bool AcceptTerms, bool Age18Confirmed = false);
 
 public record RegisterRequest(
     string Email,

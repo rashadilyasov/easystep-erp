@@ -1,5 +1,6 @@
 namespace EasyStep.Erp.Api.Entities;
 
+/// <summary>Plan — qiymət və müddətin tək mənbəyi. Admin-də dəyişəndə bütün hesablamalar (checkout, billing, pricing) avtomatik yenilənir.</summary>
 public class Plan
 {
     public Guid Id { get; set; }

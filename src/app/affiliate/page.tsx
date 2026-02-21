@@ -4,11 +4,25 @@ import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/api";
 
 type DashboardData = {
+  isApproved: boolean;
   activeCustomers: number;
+  thisMonthCustomerCount: number;
+  bonusRequired: number;
+  bonusStatus: string;
   balancePending: number;
   balanceTotal: number;
+  balanceBonus?: number;
   lastMonthCommissions: { amount: number; status: string; date: string; tenantName: string }[];
-  promoCodes: { id: string; code: string; discountPercent: number; commissionPercent: number; status: string }[];
+  promoCodes: {
+    id: string;
+    code: string;
+    discountPercent: number;
+    commissionPercent: number;
+    status: string;
+    usedAt?: string | null;
+    discountValidUntil?: string | null;
+    tenantName?: string | null;
+  }[];
 };
 
 export default function AffiliateDashboard() {
@@ -46,10 +60,24 @@ export default function AffiliateDashboard() {
     <div>
       <h1 className="text-2xl font-bold text-slate-900 mb-6">Satış partnyoru paneli</h1>
 
+      {!data.isApproved && (
+        <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-800">
+          <p className="font-medium">Qeydiyyatınız admin təsdiqi gözləyir</p>
+          <p className="text-sm mt-1">Təsdiqləndikdən sonra promo kod yarada biləcəksiniz.</p>
+        </div>
+      )}
+
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
         <div className="p-6 bg-white rounded-2xl border border-slate-200 shadow-sm">
           <h3 className="text-sm font-medium text-slate-600 mb-1">Aktiv müştərilər</h3>
           <p className="text-3xl font-bold text-slate-900">{data.activeCustomers}</p>
+        </div>
+        <div className="p-6 bg-white rounded-2xl border border-slate-200 shadow-sm">
+          <h3 className="text-sm font-medium text-slate-600 mb-1">Bu ay müştəri</h3>
+          <p className="text-3xl font-bold text-slate-900">
+            {data.thisMonthCustomerCount}/{data.bonusRequired ?? 5}
+          </p>
+          <p className="text-xs text-slate-500 mt-1"> Bonus: {data.bonusStatus}</p>
         </div>
         <div className="p-6 bg-white rounded-2xl border border-slate-200 shadow-sm">
           <h3 className="text-sm font-medium text-slate-600 mb-1">Gözləyən balans</h3>
@@ -63,6 +91,12 @@ export default function AffiliateDashboard() {
           <h3 className="text-sm font-medium text-slate-600 mb-1">Promo kodlar</h3>
           <p className="text-3xl font-bold text-slate-900">{data.promoCodes.length}</p>
         </div>
+        {(data.balanceBonus ?? 0) > 0 && (
+          <div className="p-6 bg-white rounded-2xl border border-slate-200 shadow-sm">
+            <h3 className="text-sm font-medium text-slate-600 mb-1">Bonus balansı</h3>
+            <p className="text-3xl font-bold text-primary-600">{data.balanceBonus!.toFixed(2)} ₼</p>
+          </div>
+        )}
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2 mb-8">
@@ -88,11 +122,17 @@ export default function AffiliateDashboard() {
           ) : (
             <div className="space-y-2">
               {data.promoCodes.slice(0, 5).map((p) => (
-                <div key={p.id} className="flex justify-between items-center text-sm py-2 border-b border-slate-100 last:border-0">
-                  <code className="bg-slate-100 px-2 py-1 rounded font-mono">{p.code}</code>
-                  <span className={`px-2 py-0.5 rounded text-xs ${p.status === "Used" ? "bg-green-100 text-green-800" : "bg-amber-100 text-amber-800"}`}>
-                    {p.status === "Used" ? "Istifadə olunub" : "Aktiv"}
-                  </span>
+                <div key={p.id} className="flex justify-between items-center text-sm py-2 border-b border-slate-100 last:border-0 gap-2">
+                  <code className="bg-slate-100 px-2 py-1 rounded font-mono shrink-0">{p.code}</code>
+                  <div className="text-right min-w-0">
+                    {p.tenantName && <p className="text-slate-600 truncate">{p.tenantName}</p>}
+                    {p.discountValidUntil && (
+                      <p className="text-xs text-slate-500">Endirim: {p.discountValidUntil}</p>
+                    )}
+                    <span className={`inline-block mt-1 px-2 py-0.5 rounded text-xs ${p.status === "Used" ? "bg-green-100 text-green-800" : "bg-amber-100 text-amber-800"}`}>
+                      {p.status === "Used" ? "Istifadə olunub" : "Aktiv"}
+                    </span>
+                  </div>
                 </div>
               ))}
             </div>

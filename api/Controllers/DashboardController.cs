@@ -43,11 +43,16 @@ public class DashboardController : ControllerBase
         });
     }
 
-    private static object DefaultDashboard() => new
+    private static object DefaultDashboard()
     {
-        plan = new { name = "Pro 12 ay", endDate = "2026-08-15" },
-        daysLeft = 178,
-        status = "Active",
-        autoRenew = true,
-    };
+        var endDate = DateTime.UtcNow.AddMonths(12);
+        var daysLeft = Math.Max(0, (int)(endDate - DateTime.UtcNow).TotalDays);
+        return new
+        {
+            plan = new { name = "Əla 12 ay", endDate = endDate.ToString("yyyy-MM-dd") },
+            daysLeft,
+            status = "Active",
+            autoRenew = true,
+        };
+    }
 }

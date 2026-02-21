@@ -53,6 +53,8 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddScoped<AffiliateService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<AuditService>();
+builder.Services.AddScoped<AffiliateAbuseService>();
+builder.Services.AddHostedService<AffiliateBonusBackgroundService>();
 builder.Services.AddHttpClient();
 builder.Services.AddScoped<IPaymentProvider, PayriffService>();
 builder.Services.AddScoped<IEmailService, SmtpEmailService>();
@@ -202,13 +204,19 @@ using (var scope = app.Services.CreateScope())
             try
             {
                 await db.Database.ExecuteSqlRawAsync("CREATE TABLE IF NOT EXISTS Affiliates (Id TEXT PRIMARY KEY, UserId TEXT NOT NULL, BalanceTotal REAL NOT NULL, BalancePending REAL NOT NULL, CreatedAt TEXT NOT NULL, UpdatedAt TEXT NOT NULL, FOREIGN KEY (UserId) REFERENCES Users(Id))");
+                try { await db.Database.ExecuteSqlRawAsync("ALTER TABLE Affiliates ADD COLUMN IsApproved INTEGER DEFAULT 1"); } catch { } /* 1=approved for existing partners */
+                try { await db.Database.ExecuteSqlRawAsync("ALTER TABLE Affiliates ADD COLUMN BalanceBonus REAL DEFAULT 0"); } catch { }
+                try { await db.Database.ExecuteSqlRawAsync("ALTER TABLE PromoCodes ADD COLUMN DiscountValidUntil TEXT"); } catch { }
                 await db.Database.ExecuteSqlRawAsync("CREATE TABLE IF NOT EXISTS PromoCodes (Id TEXT PRIMARY KEY, Code TEXT UNIQUE NOT NULL, AffiliateId TEXT NOT NULL, TenantId TEXT, DiscountPercent REAL NOT NULL, CommissionPercent REAL NOT NULL, Status INTEGER NOT NULL, CreatedAt TEXT NOT NULL, UsedAt TEXT, FOREIGN KEY (AffiliateId) REFERENCES Affiliates(Id), FOREIGN KEY (TenantId) REFERENCES Tenants(Id))");
                 await db.Database.ExecuteSqlRawAsync("CREATE TABLE IF NOT EXISTS AffiliateCommissions (Id TEXT PRIMARY KEY, AffiliateId TEXT NOT NULL, TenantId TEXT NOT NULL, PaymentId TEXT NOT NULL, Amount REAL NOT NULL, PaymentAmount REAL NOT NULL, CommissionPercent REAL NOT NULL, Status INTEGER NOT NULL, CreatedAt TEXT NOT NULL, ApprovedAt TEXT, PaidAt TEXT, FOREIGN KEY (AffiliateId) REFERENCES Affiliates(Id), FOREIGN KEY (TenantId) REFERENCES Tenants(Id), FOREIGN KEY (PaymentId) REFERENCES Payments(Id))");
                 await db.Database.ExecuteSqlRawAsync("CREATE UNIQUE INDEX IF NOT EXISTS IX_Affiliates_UserId ON Affiliates(UserId)");
                 await db.Database.ExecuteSqlRawAsync("CREATE UNIQUE INDEX IF NOT EXISTS IX_PromoCodes_Code ON PromoCodes(Code)");
+                await db.Database.ExecuteSqlRawAsync("CREATE TABLE IF NOT EXISTS AffiliateBonuses (Id TEXT PRIMARY KEY, AffiliateId TEXT NOT NULL, Year INTEGER NOT NULL, Month INTEGER NOT NULL, CustomerCount INTEGER NOT NULL, BonusAmount REAL NOT NULL, Status INTEGER NOT NULL, CreatedAt TEXT NOT NULL, ApprovedAt TEXT, PaidAt TEXT, FOREIGN KEY (AffiliateId) REFERENCES Affiliates(Id))");
+                await db.Database.ExecuteSqlRawAsync("CREATE UNIQUE INDEX IF NOT EXISTS IX_AffiliateBonuses_Affiliate_Year_Month ON AffiliateBonuses(AffiliateId, Year, Month)");
             }
             catch { }
             await DbInitializer.SeedAsync(db);
+            await DbInitializer.MigratePlanPricesAsync(db);
         }
         else
         {
@@ -228,11 +236,17 @@ using (var scope = app.Services.CreateScope())
             catch { }
             try
             {
-                await db.Database.ExecuteSqlRawAsync(@"CREATE TABLE IF NOT EXISTS ""Affiliates"" (""Id"" uuid NOT NULL, ""UserId"" uuid NOT NULL, ""BalanceTotal"" numeric(18,2) NOT NULL, ""BalancePending"" numeric(18,2) NOT NULL, ""CreatedAt"" timestamp with time zone NOT NULL, ""UpdatedAt"" timestamp with time zone NOT NULL, CONSTRAINT ""PK_Affiliates"" PRIMARY KEY (""Id""), CONSTRAINT ""FK_Affiliates_Users_UserId"" FOREIGN KEY (""UserId"") REFERENCES ""Users"" (""Id"") ON DELETE CASCADE)");
+                await db.Database.ExecuteSqlRawAsync(@"CREATE TABLE IF NOT EXISTS ""Affiliates"" (""Id"" uuid NOT NULL, ""UserId"" uuid NOT NULL, ""IsApproved"" boolean NOT NULL DEFAULT false, ""BalanceTotal"" numeric(18,2) NOT NULL, ""BalancePending"" numeric(18,2) NOT NULL, ""BalanceBonus"" numeric(18,2) NOT NULL DEFAULT 0, ""CreatedAt"" timestamp with time zone NOT NULL, ""UpdatedAt"" timestamp with time zone NOT NULL, CONSTRAINT ""PK_Affiliates"" PRIMARY KEY (""Id""), CONSTRAINT ""FK_Affiliates_Users_UserId"" FOREIGN KEY (""UserId"") REFERENCES ""Users"" (""Id"") ON DELETE CASCADE)");
                 await db.Database.ExecuteSqlRawAsync(@"CREATE UNIQUE INDEX IF NOT EXISTS ""IX_Affiliates_UserId"" ON ""Affiliates"" (""UserId"")");
+                await db.Database.ExecuteSqlRawAsync(@"DO $$ BEGIN ALTER TABLE ""Affiliates"" ADD COLUMN ""IsApproved"" boolean NOT NULL DEFAULT true; EXCEPTION WHEN duplicate_column THEN NULL; END $$"); /* true for existing */
+                await db.Database.ExecuteSqlRawAsync(@"DO $$ BEGIN ALTER TABLE ""Affiliates"" ADD COLUMN ""BalanceBonus"" numeric(18,2) NOT NULL DEFAULT 0; EXCEPTION WHEN duplicate_column THEN NULL; END $$");
+                await db.Database.ExecuteSqlRawAsync(@"DO $$ BEGIN ALTER TABLE ""PromoCodes"" ADD COLUMN ""DiscountValidUntil"" timestamp with time zone; EXCEPTION WHEN duplicate_column THEN NULL; END $$");
+                await db.Database.ExecuteSqlRawAsync(@"CREATE TABLE IF NOT EXISTS ""AffiliateBonuses"" (""Id"" uuid NOT NULL, ""AffiliateId"" uuid NOT NULL, ""Year"" integer NOT NULL, ""Month"" integer NOT NULL, ""CustomerCount"" integer NOT NULL, ""BonusAmount"" numeric(18,2) NOT NULL, ""Status"" integer NOT NULL, ""CreatedAt"" timestamp with time zone NOT NULL, ""ApprovedAt"" timestamp with time zone, ""PaidAt"" timestamp with time zone, CONSTRAINT ""PK_AffiliateBonuses"" PRIMARY KEY (""Id""), CONSTRAINT ""FK_AffiliateBonuses_Affiliates_AffiliateId"" FOREIGN KEY (""AffiliateId"") REFERENCES ""Affiliates"" (""Id"") ON DELETE CASCADE)");
+                await db.Database.ExecuteSqlRawAsync(@"CREATE UNIQUE INDEX IF NOT EXISTS ""IX_AffiliateBonuses_Affiliate_Year_Month"" ON ""AffiliateBonuses"" (""AffiliateId"", ""Year"", ""Month"")");
             }
             catch { }
             await DbInitializer.SeedAsync(db);
+            await DbInitializer.MigratePlanPricesAsync(db);
         }
         logger.LogInformation("DB migration and seed completed");
     }

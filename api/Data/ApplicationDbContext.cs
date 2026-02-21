@@ -28,6 +28,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<Affiliate> Affiliates => Set<Affiliate>();
     public DbSet<PromoCode> PromoCodes => Set<PromoCode>();
     public DbSet<AffiliateCommission> AffiliateCommissions => Set<AffiliateCommission>();
+    public DbSet<AffiliateBonus> AffiliateBonuses => Set<AffiliateBonus>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -177,6 +178,14 @@ public class ApplicationDbContext : DbContext
             e.HasOne(x => x.Affiliate).WithMany().HasForeignKey(x => x.AffiliateId);
             e.HasOne(x => x.Tenant).WithMany().HasForeignKey(x => x.TenantId);
             e.HasOne(x => x.Payment).WithMany().HasForeignKey(x => x.PaymentId);
+        });
+
+        modelBuilder.Entity<AffiliateBonus>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => x.AffiliateId);
+            e.HasIndex(x => new { x.AffiliateId, x.Year, x.Month }).IsUnique();
+            e.HasOne(x => x.Affiliate).WithMany().HasForeignKey(x => x.AffiliateId);
         });
     }
 }

@@ -7,10 +7,40 @@ type Affiliate = {
   id: string;
   userId: string;
   email: string;
+  isApproved: boolean;
   balanceTotal: number;
   balancePending: number;
+  balanceBonus: number;
   createdAt: string;
   activeCustomers: number;
+};
+
+type PromoCode = {
+  id: string;
+  code: string;
+  discountPercent: number;
+  commissionPercent: number;
+  status: string;
+  createdAt: string;
+  usedAt: string | null;
+  discountValidUntil: string | null;
+  affiliateEmail: string;
+  tenantName: string | null;
+};
+
+type Bonus = {
+  id: string;
+  affiliateId: string;
+  affiliateEmail: string;
+  year: number;
+  month: number;
+  period: string;
+  customerCount: number;
+  bonusAmount: number;
+  status: string;
+  createdAt: string;
+  approvedAt: string | null;
+  paidAt: string | null;
 };
 
 type Commission = {
@@ -36,6 +66,8 @@ export default function AdminAffiliatesPage() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [list, setList] = useState<Affiliate[]>([]);
   const [commissions, setCommissions] = useState<Commission[]>([]);
+  const [bonuses, setBonuses] = useState<Bonus[]>([]);
+  const [promoCodes, setPromoCodes] = useState<PromoCode[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>("");
   const [affiliateFilter, setAffiliateFilter] = useState<string>("");
@@ -43,6 +75,12 @@ export default function AdminAffiliatesPage() {
   const [bulkLoading, setBulkLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [copied, setCopied] = useState(false);
+  const [bonusFilter, setBonusFilter] = useState<string>("");
+  const [calcBonusLoading, setCalcBonusLoading] = useState(false);
+
+  const now = new Date();
+  const prevMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const prevMonth = { year: prevMonthDate.getFullYear(), month: prevMonthDate.getMonth() + 1 };
 
   const load = useCallback(() => {
     setLoading(true);
@@ -53,20 +91,29 @@ export default function AdminAffiliatesPage() {
         status: filter || undefined,
         affiliateId: affiliateFilter || undefined,
       }),
+      api.admin.affiliateBonuses({
+        affiliateId: affiliateFilter || undefined,
+        status: bonusFilter || undefined,
+      }),
+      api.admin.promoCodes({ affiliateId: affiliateFilter || undefined }),
     ])
-      .then(([s, aff, com]) => {
+      .then(([s, aff, com, bon, promos]) => {
         setStats(s ?? null);
         setList(aff);
         setCommissions(com);
+        setBonuses(bon ?? []);
+        setPromoCodes(promos ?? []);
         setSelectedIds(new Set());
       })
       .catch(() => {
         setStats(null);
         setList([]);
         setCommissions([]);
+        setBonuses([]);
+        setPromoCodes([]);
       })
       .finally(() => setLoading(false));
-  }, [filter, affiliateFilter]);
+  }, [filter, affiliateFilter, bonusFilter]);
 
   useEffect(() => load(), [load]);
 
@@ -82,6 +129,46 @@ export default function AdminAffiliatesPage() {
   const handlePay = async (id: string) => {
     try {
       await api.admin.payCommission(id);
+      load();
+    } catch {
+      alert("Xəta baş verdi");
+    }
+  };
+
+  const handleApproveAffiliate = async (id: string) => {
+    try {
+      await api.admin.approveAffiliate(id);
+      load();
+    } catch {
+      alert("Xəta baş verdi");
+    }
+  };
+
+  const handleCalculateBonuses = async () => {
+    setCalcBonusLoading(true);
+    try {
+      const r = await api.admin.calculateBonuses(prevMonth.year, prevMonth.month);
+      alert(r?.message ?? "Bonus hesablandı");
+      load();
+    } catch {
+      alert("Xəta baş verdi");
+    } finally {
+      setCalcBonusLoading(false);
+    }
+  };
+
+  const handleApproveBonus = async (id: string) => {
+    try {
+      await api.admin.approveBonus(id);
+      load();
+    } catch {
+      alert("Xəta baş verdi");
+    }
+  };
+
+  const handlePayBonus = async (id: string) => {
+    try {
+      await api.admin.payBonus(id);
       load();
     } catch {
       alert("Xəta baş verdi");
@@ -220,9 +307,11 @@ export default function AdminAffiliatesPage() {
                 <thead className="bg-slate-50 sticky top-0">
                   <tr>
                     <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">E-poçt</th>
+                    <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">Status</th>
                     <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">Müştərilər</th>
                     <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">Gözləyir</th>
                     <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">Ödənilən</th>
+                    <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">Əməliyyat</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -235,9 +324,27 @@ export default function AdminAffiliatesPage() {
                       onClick={() => setAffiliateFilter(affiliateFilter === a.id ? "" : a.id)}
                     >
                       <td className="px-6 py-3 text-sm">{a.email}</td>
+                      <td className="px-6 py-3 text-sm">
+                        {a.isApproved ? (
+                          <span className="text-green-600">Təsdiqlənib</span>
+                        ) : (
+                          <span className="text-amber-600">Gözləyir</span>
+                        )}
+                      </td>
                       <td className="px-6 py-3 text-sm">{a.activeCustomers}</td>
                       <td className="px-6 py-3 text-sm text-amber-700">{a.balancePending.toFixed(2)} ₼</td>
                       <td className="px-6 py-3 text-sm text-green-700">{a.balanceTotal.toFixed(2)} ₼</td>
+                      <td className="px-6 py-3" onClick={(e) => e.stopPropagation()}>
+                        {!a.isApproved && (
+                          <button
+                            type="button"
+                            onClick={() => handleApproveAffiliate(a.id)}
+                            className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded hover:bg-blue-200"
+                          >
+                            Təsdiqlə
+                          </button>
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -362,6 +469,143 @@ export default function AdminAffiliatesPage() {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Bonus idarəsi */}
+      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm mt-8">
+        <div className="px-6 py-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h2 className="font-semibold text-slate-900">Aylıq bonuslar (5+ müştəri)</h2>
+            {affiliateFilter && (
+              <span className="text-xs px-2 py-1 bg-primary-100 text-primary-800 rounded">
+                {list.find((a) => a.id === affiliateFilter)?.email ?? "Filtrləndi"}{" "}
+                <button type="button" onClick={() => setAffiliateFilter("")} className="ml-1 font-bold hover:text-primary-900">×</button>
+              </span>
+            )}
+            <select
+              value={bonusFilter}
+              onChange={(e) => setBonusFilter(e.target.value)}
+              className="text-sm border border-slate-300 rounded-lg px-2 py-1"
+            >
+              <option value="">Hamısı</option>
+              <option value="Pending">Gözləyir</option>
+              <option value="Approved">Təsdiqləndi</option>
+              <option value="Paid">Ödənildi</option>
+            </select>
+          </div>
+          <button
+            type="button"
+            onClick={handleCalculateBonuses}
+            disabled={calcBonusLoading}
+            className="text-sm px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50"
+          >
+            {calcBonusLoading ? "Hesablanır..." : `${prevMonth.year}-${String(prevMonth.month).padStart(2, "0")} üçün hesabla`}
+          </button>
+        </div>
+        {loading ? (
+          <div className="h-32 animate-pulse bg-slate-50" />
+        ) : bonuses.length === 0 ? (
+          <div className="p-8 text-center text-slate-500">
+            <p className="font-medium">Bonus yoxdur</p>
+            <p className="text-sm mt-2">
+              Ay ərzində 5+ müştəri ödəniş edən partnyorlar üçün bonus yaradılır. &quot;Hesabla&quot; düyməsi ilə əvvəlki ay üçün hesablama edin.
+            </p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto max-h-64 overflow-y-auto">
+            <table className="w-full">
+              <thead className="bg-slate-50 sticky top-0">
+                <tr>
+                  <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">Dövr</th>
+                  <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">Partnyor</th>
+                  <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">Müştəri sayı</th>
+                  <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">Məbləğ</th>
+                  <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">Status</th>
+                  <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">Əməliyyat</th>
+                </tr>
+              </thead>
+              <tbody>
+                {bonuses.map((b) => (
+                  <tr key={b.id} className="border-t border-slate-100 hover:bg-slate-50">
+                    <td className="px-6 py-3 text-sm">{b.period}</td>
+                    <td className="px-6 py-3 text-sm">{b.affiliateEmail}</td>
+                    <td className="px-6 py-3 text-sm">{b.customerCount}</td>
+                    <td className="px-6 py-3 font-medium">{b.bonusAmount.toFixed(2)} ₼</td>
+                    <td className="px-6 py-3 text-sm">
+                      {b.status === "Pending" && <span className="text-amber-600">Gözləyir</span>}
+                      {b.status === "Approved" && <span className="text-blue-600">Təsdiqləndi</span>}
+                      {b.status === "Paid" && <span className="text-green-600">Ödənildi</span>}
+                    </td>
+                    <td className="px-6 py-3">
+                      {b.status === "Pending" && (
+                        <button
+                          onClick={() => handleApproveBonus(b.id)}
+                          className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded hover:bg-blue-200 mr-1"
+                        >
+                          Təsdiqlə
+                        </button>
+                      )}
+                      {(b.status === "Pending" || b.status === "Approved") && (
+                        <button
+                          onClick={() => handlePayBonus(b.id)}
+                          className="text-xs px-2 py-1 bg-green-100 text-green-800 rounded hover:bg-green-200"
+                        >
+                          Ödə
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Promo kodlar */}
+      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm mt-8">
+        <div className="px-6 py-4 border-b border-slate-100">
+          <h2 className="font-semibold text-slate-900">Promo kodlar</h2>
+          {affiliateFilter && (
+            <span className="text-xs text-slate-500 mt-1 block">
+              Filtrləndi: {list.find((a) => a.id === affiliateFilter)?.email}
+            </span>
+          )}
+        </div>
+        {loading ? (
+          <div className="h-32 animate-pulse bg-slate-50" />
+        ) : promoCodes.length === 0 ? (
+          <div className="p-8 text-center text-slate-500">Promo kod tapılmadı</div>
+        ) : (
+          <div className="overflow-x-auto max-h-64 overflow-y-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-slate-50 sticky top-0">
+                <tr>
+                  <th className="text-left px-6 py-3 font-medium text-slate-700">Kod</th>
+                  <th className="text-left px-6 py-3 font-medium text-slate-700">Partnyor</th>
+                  <th className="text-left px-6 py-3 font-medium text-slate-700">Müştəri</th>
+                  <th className="text-left px-6 py-3 font-medium text-slate-700">Status</th>
+                  <th className="text-left px-6 py-3 font-medium text-slate-700">Istifadə</th>
+                  <th className="text-left px-6 py-3 font-medium text-slate-700">Endirim bitir</th>
+                </tr>
+              </thead>
+              <tbody>
+                {promoCodes.slice(0, 100).map((p) => (
+                  <tr key={p.id} className="border-t border-slate-100 hover:bg-slate-50">
+                    <td className="px-6 py-3 font-mono">{p.code}</td>
+                    <td className="px-6 py-3">{p.affiliateEmail}</td>
+                    <td className="px-6 py-3">{p.tenantName ?? "—"}</td>
+                    <td className="px-6 py-3">
+                      <span className={p.status === "Used" ? "text-green-600" : "text-amber-600"}>{p.status === "Used" ? "Istifadə" : "Aktiv"}</span>
+                    </td>
+                    <td className="px-6 py-3">{p.usedAt ?? "—"}</td>
+                    <td className="px-6 py-3">{p.discountValidUntil ?? "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );

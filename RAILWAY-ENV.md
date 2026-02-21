@@ -22,6 +22,7 @@ Smtp__From=hello@easysteperp.com
 Smtp__UseSsl=true
 Affiliate__DefaultDiscountPercent=5
 Affiliate__DefaultCommissionPercent=5
+Cron__Secret=RAILWAY_CRON_SECRET_BURAYA_QOYUN
 ```
 
 > **Vacib:** `__` (iki alt xətt) — bir alt xətt `_` işləməz.
@@ -64,3 +65,4 @@ Affiliate__DefaultCommissionPercent=5
 | `Smtp__Password` | e-poçt parolu |
 | `Smtp__From` | `hello@easysteperp.com` |
 | `Smtp__UseSsl` | `true` |
+| `Cron__Secret` | Bonus hesablama cron üçün gizli açar (Railway Cron job) |

@@ -15,11 +15,13 @@ public class AffiliateController : ControllerBase
 {
     private readonly ApplicationDbContext _db;
     private readonly AffiliateService _affiliate;
+    private readonly AuditService _audit;
 
-    public AffiliateController(ApplicationDbContext db, AffiliateService affiliate)
+    public AffiliateController(ApplicationDbContext db, AffiliateService affiliate, AuditService audit)
     {
         _db = db;
         _affiliate = affiliate;
+        _audit = audit;
     }
 
     private async Task<Affiliate?> GetAffiliateAsync(CancellationToken ct)
@@ -45,11 +47,22 @@ public class AffiliateController : ControllerBase
             .Where(c => c.AffiliateId == aff.Id && (c.Status == AffiliateCommissionStatus.Pending || c.Status == AffiliateCommissionStatus.Approved))
             .SumAsync(c => c.Amount, ct);
 
-        var monthStart = DateTime.UtcNow.AddMonths(-1);
-        var lastMonthCommissions = await _db.AffiliateCommissions
+        var now = DateTime.UtcNow;
+        var monthStart = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+        var thisMonthCustomerCount = await _db.AffiliateCommissions
             .Where(c => c.AffiliateId == aff.Id && c.CreatedAt >= monthStart)
+            .Select(c => c.TenantId)
+            .Distinct()
+            .CountAsync(ct);
+
+        var lastMonthStart = monthStart.AddMonths(-1);
+        var lastMonthCommissions = await _db.AffiliateCommissions
+            .Where(c => c.AffiliateId == aff.Id && c.CreatedAt >= lastMonthStart && c.CreatedAt < monthStart)
             .Select(c => new { c.Amount, c.Status, c.CreatedAt, TenantName = c.Tenant.Name })
             .ToListAsync(ct);
+
+        var thisMonthBonus = await _db.AffiliateBonuses
+            .FirstOrDefaultAsync(b => b.AffiliateId == aff.Id && b.Year == now.Year && b.Month == now.Month, ct);
 
         var promoCodes = await _db.PromoCodes
             .Where(p => p.AffiliateId == aff.Id)
@@ -62,15 +75,21 @@ public class AffiliateController : ControllerBase
                 commissionPercent = p.CommissionPercent,
                 status = p.Status.ToString(),
                 usedAt = p.UsedAt,
+                discountValidUntil = p.DiscountValidUntil,
                 tenantName = p.Tenant != null ? p.Tenant.Name : null,
             })
             .ToListAsync(ct);
 
         return Ok(new
         {
+            isApproved = aff.IsApproved,
             activeCustomers,
+            thisMonthCustomerCount,
+            bonusRequired = 5,
+            bonusStatus = thisMonthBonus != null ? thisMonthBonus.Status.ToString() : (thisMonthCustomerCount >= 5 ? "Pending" : $"{thisMonthCustomerCount}/5 müştəri"),
             balancePending = aff.BalancePending,
             balanceTotal = aff.BalanceTotal,
+            balanceBonus = aff.BalanceBonus,
             lastMonthCommissions = lastMonthCommissions.Select(c => new
             {
                 c.Amount,
@@ -78,7 +97,17 @@ public class AffiliateController : ControllerBase
                 date = c.CreatedAt.ToString("dd.MM.yyyy"),
                 c.TenantName,
             }),
-            promoCodes,
+            promoCodes = promoCodes.Select(p => new
+            {
+                p.Id,
+                p.Code,
+                p.discountPercent,
+                p.commissionPercent,
+                p.status,
+                p.usedAt,
+                discountValidUntil = p.discountValidUntil?.ToString("dd.MM.yyyy"),
+                p.tenantName,
+            }),
         });
     }
 
@@ -112,6 +141,8 @@ public class AffiliateController : ControllerBase
     {
         var aff = await GetAffiliateAsync(ct);
         if (aff == null) return Unauthorized();
+        if (!aff.IsApproved)
+            return BadRequest(new { message = "Qeydiyyatınız hələ admin tərəfindən təsdiqlənməyib. Promo kod yaratmaq üçün təsdiq gözləyin." });
 
         var promo = await _affiliate.CreatePromoCodeAsync(
             aff.Id,
@@ -119,6 +150,9 @@ public class AffiliateController : ControllerBase
             req?.CommissionPercent,
             ct);
         if (promo == null) return BadRequest(new { message = "Promo kod yaradıla bilmədi" });
+
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        await _audit.LogAsync("PromoCodeCreated", Guid.TryParse(userId, out var uid) ? uid : null, aff.User?.Email, metadata: $"code={promo.Code} affiliateId={aff.Id}", ct: ct);
 
         return Ok(new
         {

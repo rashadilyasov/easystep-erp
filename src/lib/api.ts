@@ -157,7 +157,7 @@ export const api = {
       promoCode?: string;
       acceptTerms: boolean;
     }) => apiFetch("/api/auth/register", { method: "POST", body: JSON.stringify(data), skipAuth: true }),
-    registerAffiliate: (data: { email: string; password: string; fullName: string; acceptTerms: boolean }) =>
+    registerAffiliate: (data: { email: string; password: string; fullName: string; acceptTerms: boolean; age18Confirmed: boolean }) =>
       apiFetch<{ message: string }>("/api/auth/register-affiliate", {
         method: "POST",
         body: JSON.stringify(data),
@@ -290,7 +290,10 @@ export const api = {
       apiFetch<{ totalTenants: number; activeSubscriptions: number; revenueThisMonth: number; openTickets: number }>(
         "/api/admin/stats"
       ),
-    audit: () => apiFetch<{ id: string; action: string; actor: string; ipAddress: string | null; date: string }[]>("/api/admin/audit"),
+    audit: (params?: { abuseOnly?: boolean }) =>
+      apiFetch<{ id: string; action: string; actor: string; ipAddress: string | null; metadata?: string | null; date: string }[]>(
+        `/api/admin/audit${params?.abuseOnly ? "?abuseOnly=true" : ""}`
+      ),
     tickets: () => apiFetch<{ id: string; subject: string; body: string; status: string; date: string; tenantName: string }[]>("/api/admin/tickets"),
     ticket: (ticketId: string) =>
       apiFetch<{ id: string; subject: string; body: string; status: string; date: string; tenantName: string }>(
@@ -381,8 +384,29 @@ export const api = {
       }>("/api/admin/affiliate-stats"),
     affiliates: () =>
       apiFetch<
-        { id: string; userId: string; email: string; balanceTotal: number; balancePending: number; createdAt: string; activeCustomers: number }[]
+        {
+          id: string;
+          userId: string;
+          email: string;
+          isApproved: boolean;
+          balanceTotal: number;
+          balancePending: number;
+          balanceBonus: number;
+          createdAt: string;
+          activeCustomers: number;
+        }[]
       >("/api/admin/affiliates"),
+    approveAffiliate: (id: string) =>
+      apiFetch<{ message: string }>(`/api/admin/affiliates/${id}/approve`, { method: "POST" }),
+    promoCodes: (params?: { affiliateId?: string; status?: string }) => {
+      const sp = new URLSearchParams();
+      if (params?.affiliateId) sp.set("affiliateId", params.affiliateId);
+      if (params?.status) sp.set("status", params.status);
+      const search = sp.toString();
+      return apiFetch<
+        { id: string; code: string; discountPercent: number; commissionPercent: number; status: string; createdAt: string; usedAt: string | null; discountValidUntil: string | null; affiliateEmail: string; tenantName: string | null }[]
+      >(`/api/admin/promo-codes${search ? `?${search}` : ""}`);
+    },
     affiliateCommissions: (params?: { status?: string; affiliateId?: string }) => {
       const sp = new URLSearchParams();
       if (params?.status) sp.set("status", params.status);
@@ -412,6 +436,39 @@ export const api = {
         method: "POST",
         body: JSON.stringify({ commissionIds }),
       }),
+    affiliateBonuses: (params?: { affiliateId?: string; year?: number; month?: number; status?: string }) => {
+      const sp = new URLSearchParams();
+      if (params?.affiliateId) sp.set("affiliateId", params.affiliateId);
+      if (params?.year) sp.set("year", String(params.year));
+      if (params?.month) sp.set("month", String(params.month));
+      if (params?.status) sp.set("status", params.status);
+      const search = sp.toString();
+      return apiFetch<
+        {
+          id: string;
+          affiliateId: string;
+          affiliateEmail: string;
+          year: number;
+          month: number;
+          period: string;
+          customerCount: number;
+          bonusAmount: number;
+          status: string;
+          createdAt: string;
+          approvedAt: string | null;
+          paidAt: string | null;
+        }[]
+      >(`/api/admin/affiliate-bonuses${search ? `?${search}` : ""}`);
+    },
+    calculateBonuses: (year: number, month: number) =>
+      apiFetch<{ message: string; calculated: number }>(
+        `/api/admin/affiliate-bonuses/calculate?year=${year}&month=${month}`,
+        { method: "POST" }
+      ),
+    approveBonus: (id: string) =>
+      apiFetch<{ message: string }>(`/api/admin/affiliate-bonuses/${id}/approve`, { method: "POST" }),
+    payBonus: (id: string) =>
+      apiFetch<{ message: string }>(`/api/admin/affiliate-bonuses/${id}/pay`, { method: "POST" }),
   },
   revokeDevice: (deviceId: string) =>
     apiFetch<{ message: string }>("/api/license/revoke-device", {

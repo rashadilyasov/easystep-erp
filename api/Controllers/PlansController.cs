@@ -25,7 +25,7 @@ public class PlansController : ControllerBase
                 p.DurationMonths,
                 p.Price,
                 p.Currency,
-                Popular = p.DurationMonths == 3,
+                Popular = p.DurationMonths == 12,
             })
             .ToListAsync(ct);
         return Ok(plans);

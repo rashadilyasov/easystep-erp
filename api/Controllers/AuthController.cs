@@ -76,8 +76,10 @@ public class AuthController : ControllerBase
             return BadRequest(new { message = "E-poçt və şifrə tələb olunur" });
         if (!req.AcceptTerms)
             return BadRequest(new { message = "Şərtləri qəbul etməlisiniz" });
-        if ((req.Password ?? "").Length < 12)
-            return BadRequest(new { message = "Şifrə minimum 12 simvol olmalıdır" });
+        if (!req.Age18Confirmed)
+            return BadRequest(new { message = "18 yaşdan yuxarı olduğunuzu təsdiqləməlisiniz" });
+        if (!AuthService.IsStrongPassword(req.Password))
+            return BadRequest(new { message = (req.Password ?? "").Length < 12 ? "Şifrə minimum 12 simvol olmalıdır" : "Şifrə böyük hərf, kiçik hərf və rəqəm əlavə edin" });
 
         try
         {
@@ -87,6 +89,7 @@ public class AuthController : ControllerBase
                 {
                     "EmailExists" => "Bu e-poçt artıq qeydiyyatdadır",
                     "PasswordTooShort" => "Şifrə minimum 12 simvol olmalıdır",
+                    "PasswordTooWeak" => "Şifrə böyük hərf, kiçik hərf və rəqəm əlavə edin",
                     "InvalidEmail" => "E-poçt daxil edin",
                     _ => "Satış partnyoru qeydiyyatı müvəqqəti olaraq mövcud deyil"
                 } });

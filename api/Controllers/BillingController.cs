@@ -341,15 +341,17 @@ table{{width:100%;border-collapse:collapse}} td{{padding:8px;border-bottom:1px s
                CryptographicOperations.FixedTimeEquals(ourHash, theirHash);
     }
 
-    private static object DefaultBilling() => new
+    private static object DefaultBilling()
     {
-        plan = new { name = "Pro 12 ay", price = 420, currency = "AZN", endDate = DateTime.UtcNow.AddMonths(6) },
-        autoRenew = true,
-        payments = new[]
+        var now = DateTime.UtcNow;
+        var endDate12 = now.AddMonths(12);
+        return new
         {
-            new { id = Guid.Empty, date = "15.02.2026", amount = 420m, currency = "AZN", status = "Succeeded", trxId = "PAY-xxx..." },
-        },
-    };
+            plan = new { name = "Əla 12 ay", price = 999, currency = "AZN", endDate = endDate12 },
+            autoRenew = true,
+            payments = Array.Empty<object>(),
+        };
+    }
 }
 
 public record CheckoutRequest(Guid PlanId);

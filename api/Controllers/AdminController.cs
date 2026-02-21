@@ -19,8 +19,10 @@ public class AdminController : ControllerBase
     private readonly IEmailService _email;
     private readonly IConfiguration _config;
     private readonly ILogger<AdminController> _logger;
+    private readonly AffiliateService _affiliateService;
+    private readonly AuditService _audit;
 
-    public AdminController(ApplicationDbContext db, IWebHostEnvironment env, AuthService auth, IEmailService email, IConfiguration config, ILogger<AdminController> logger)
+    public AdminController(ApplicationDbContext db, IWebHostEnvironment env, AuthService auth, IEmailService email, IConfiguration config, ILogger<AdminController> logger, AffiliateService affiliateService, AuditService audit)
     {
         _db = db;
         _env = env;
@@ -28,7 +30,12 @@ public class AdminController : ControllerBase
         _email = email;
         _config = config;
         _logger = logger;
+        _affiliateService = affiliateService;
+        _audit = audit;
     }
+
+    private Guid? GetAdminUserId() =>
+        Guid.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var id) ? id : null;
 
     private static readonly Guid SystemTenantId = Guid.Parse("b0000000-0000-0000-0000-000000000001");
     private static readonly Guid AffiliatesTenantId = Guid.Parse("b0000000-0000-0000-0000-000000000002");
@@ -302,12 +309,15 @@ public class AdminController : ControllerBase
     }
 
     [HttpGet("audit")]
-    public async Task<IActionResult> GetAudit([FromQuery] int limit = 100, CancellationToken ct = default)
+    public async Task<IActionResult> GetAudit([FromQuery] int limit = 100, [FromQuery] bool abuseOnly = false, CancellationToken ct = default)
     {
-        var logs = await _db.AuditLogs
+        var query = _db.AuditLogs.AsQueryable();
+        if (abuseOnly)
+            query = query.Where(a => a.Action.StartsWith("AbuseSuspected"));
+        var logs = await query
             .OrderByDescending(a => a.CreatedAt)
             .Take(limit)
-            .Select(a => new { a.Id, a.Action, a.ActorEmail, a.IpAddress, a.CreatedAt })
+            .Select(a => new { a.Id, a.Action, a.ActorEmail, a.IpAddress, a.Metadata, a.CreatedAt })
             .ToListAsync(ct);
         return Ok(logs.Select(a => new
         {
@@ -315,6 +325,7 @@ public class AdminController : ControllerBase
             a.Action,
             actor = a.ActorEmail ?? "—",
             a.IpAddress,
+            a.Metadata,
             date = a.CreatedAt.ToString("dd.MM.yyyy HH:mm"),
         }));
     }
@@ -541,8 +552,10 @@ public class AdminController : ControllerBase
                 a.Id,
                 a.UserId,
                 email = a.User.Email,
+                a.IsApproved,
                 a.BalanceTotal,
                 a.BalancePending,
+                a.BalanceBonus,
                 createdAt = a.User.CreatedAt,
             })
             .ToListAsync(ct);
@@ -556,10 +569,75 @@ public class AdminController : ControllerBase
             a.Id,
             a.UserId,
             a.email,
+            isApproved = a.IsApproved,
             balanceTotal = a.BalanceTotal,
             balancePending = a.BalancePending,
+            balanceBonus = a.BalanceBonus,
             createdAt = a.createdAt.ToString("dd.MM.yyyy"),
             activeCustomers = promoCounts.GetValueOrDefault(a.Id, 0),
+        }));
+    }
+
+    [HttpPost("affiliates/{id:guid}/approve")]
+    public async Task<IActionResult> ApproveAffiliate(Guid id, CancellationToken ct)
+    {
+        var aff = await _db.Affiliates.Include(a => a.User).FirstOrDefaultAsync(a => a.Id == id, ct);
+        if (aff == null) return NotFound(new { message = "Partnyor tapılmadı" });
+        if (aff.IsApproved) return BadRequest(new { message = "Artıq təsdiqlənib" });
+
+        aff.IsApproved = true;
+        aff.UpdatedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync(ct);
+        await _audit.LogAsync("AffiliateApproved", GetAdminUserId(), User.Identity?.Name, metadata: $"affiliateId={id}", ct: ct);
+        try
+        {
+            var email = aff.User?.Email;
+            if (!string.IsNullOrEmpty(email))
+                await _email.SendAsync(email, "Easy Step ERP - Partnyor təsdiqi", "<p>Salam.</p><p>Satış partnyoru qeydiyyatınız təsdiqləndi. İndi promo kodlar yarada və panelə daxil ola bilərsiniz: <a href=\"https://easysteperp.com/affiliate\">easysteperp.com/affiliate</a></p>", ct);
+        }
+        catch { /* ignore email errors */ }
+        return Ok(new { message = "Partnyor təsdiqləndi" });
+    }
+
+    [HttpGet("promo-codes")]
+    public async Task<IActionResult> GetPromoCodes([FromQuery] Guid? affiliateId, [FromQuery] string? status, [FromQuery] int limit = 200, CancellationToken ct = default)
+    {
+        var query = _db.PromoCodes
+            .Include(p => p.Affiliate).ThenInclude(a => a.User)
+            .Include(p => p.Tenant)
+            .AsQueryable();
+        if (affiliateId.HasValue)
+            query = query.Where(p => p.AffiliateId == affiliateId.Value);
+        if (!string.IsNullOrEmpty(status) && Enum.TryParse<PromoCodeStatus>(status, true, out var st))
+            query = query.Where(p => p.Status == st);
+
+        var list = await query.OrderByDescending(p => p.CreatedAt).Take(limit)
+            .Select(p => new
+            {
+                p.Id,
+                p.Code,
+                p.DiscountPercent,
+                p.CommissionPercent,
+                p.Status,
+                p.CreatedAt,
+                p.UsedAt,
+                p.DiscountValidUntil,
+                affiliateEmail = p.Affiliate.User.Email,
+                tenantName = p.Tenant != null ? p.Tenant.Name : null,
+            })
+            .ToListAsync(ct);
+        return Ok(list.Select(p => new
+        {
+            p.Id,
+            p.Code,
+            p.DiscountPercent,
+            p.CommissionPercent,
+            status = p.Status.ToString(),
+            createdAt = p.CreatedAt.ToString("dd.MM.yyyy HH:mm"),
+            usedAt = p.UsedAt?.ToString("dd.MM.yyyy HH:mm"),
+            discountValidUntil = p.DiscountValidUntil?.ToString("dd.MM.yyyy"),
+            p.affiliateEmail,
+            p.tenantName,
         }));
     }
 
@@ -638,6 +716,7 @@ public class AdminController : ControllerBase
         c.Affiliate.BalancePending -= c.Amount;
         c.Affiliate.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync(ct);
+        await _audit.LogAsync("CommissionPaid", GetAdminUserId(), User.Identity?.Name, metadata: $"commissionId={id} amount={c.Amount} affiliateId={c.AffiliateId}", ct: ct);
         return Ok(new { message = "Ödəniş tamamlandı" });
     }
 
@@ -662,7 +741,83 @@ public class AdminController : ControllerBase
             }
         }
         await _db.SaveChangesAsync(ct);
+        if (paid > 0)
+            await _audit.LogAsync("CommissionPayoutBatch", GetAdminUserId(), User.Identity?.Name, metadata: $"paid={paid} count={ids.Length}", ct: ct);
         return Ok(new { message = $"{paid} komissiya ödənildi", paid });
+    }
+
+    // --- Bonus idarəsi ---
+    [HttpGet("affiliate-bonuses")]
+    public async Task<IActionResult> GetAffiliateBonuses([FromQuery] Guid? affiliateId, [FromQuery] int? year, [FromQuery] int? month, [FromQuery] string? status, [FromQuery] int limit = 100, CancellationToken ct = default)
+    {
+        var query = _db.AffiliateBonuses.Include(b => b.Affiliate).ThenInclude(a => a.User).AsQueryable();
+        if (affiliateId.HasValue) query = query.Where(b => b.AffiliateId == affiliateId.Value);
+        if (year.HasValue) query = query.Where(b => b.Year == year.Value);
+        if (month.HasValue) query = query.Where(b => b.Month == month.Value);
+        if (!string.IsNullOrEmpty(status) && Enum.TryParse<AffiliateBonusStatus>(status, true, out var st))
+            query = query.Where(b => b.Status == st);
+
+        var list = await query.OrderByDescending(b => b.Year).ThenByDescending(b => b.Month).Take(limit)
+            .Select(b => new { b.Id, b.AffiliateId, affiliateEmail = b.Affiliate.User.Email, b.Year, b.Month, b.CustomerCount, b.BonusAmount, b.Status, b.CreatedAt, b.ApprovedAt, b.PaidAt })
+            .ToListAsync(ct);
+        return Ok(list.Select(b => new
+        {
+            b.Id,
+            b.AffiliateId,
+            b.affiliateEmail,
+            b.Year,
+            b.Month,
+            period = $"{b.Year:D4}-{b.Month:D2}",
+            b.CustomerCount,
+            b.BonusAmount,
+            status = b.Status.ToString(),
+            createdAt = b.CreatedAt.ToString("dd.MM.yyyy"),
+            approvedAt = b.ApprovedAt?.ToString("dd.MM.yyyy"),
+            paidAt = b.PaidAt?.ToString("dd.MM.yyyy"),
+        }));
+    }
+
+    [HttpPost("affiliate-bonuses/calculate")]
+    public async Task<IActionResult> CalculateMonthlyBonuses([FromQuery] int year, [FromQuery] int month, CancellationToken ct = default)
+    {
+        var affiliates = await _db.Affiliates.Where(a => a.IsApproved).Select(a => a.Id).ToListAsync(ct);
+        var count = 0;
+        foreach (var id in affiliates)
+        {
+            var bonus = await _affiliateService.EnsureMonthlyBonusAsync(id, year, month, ct);
+            if (bonus != null) count++;
+        }
+        return Ok(new { message = $"{count} partnyor üçün bonus yaradıldı/yoxlanıldı", calculated = count });
+    }
+
+    [HttpPost("affiliate-bonuses/{id:guid}/approve")]
+    public async Task<IActionResult> ApproveBonus(Guid id, CancellationToken ct)
+    {
+        var b = await _db.AffiliateBonuses.FindAsync(new object[] { id }, ct);
+        if (b == null) return NotFound(new { message = "Bonus tapılmadı" });
+        if (b.Status != AffiliateBonusStatus.Pending)
+            return BadRequest(new { message = "Yalnız Pending bonus təsdiqlənə bilər" });
+        b.Status = AffiliateBonusStatus.Approved;
+        b.ApprovedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync(ct);
+        return Ok(new { message = "Bonus təsdiqləndi" });
+    }
+
+    [HttpPost("affiliate-bonuses/{id:guid}/pay")]
+    public async Task<IActionResult> PayBonus(Guid id, CancellationToken ct)
+    {
+        var b = await _db.AffiliateBonuses.Include(x => x.Affiliate).FirstOrDefaultAsync(x => x.Id == id, ct);
+        if (b == null) return NotFound(new { message = "Bonus tapılmadı" });
+        if (b.Status != AffiliateBonusStatus.Approved && b.Status != AffiliateBonusStatus.Pending)
+            return BadRequest(new { message = "Bonus ödənişə hazır deyil" });
+        b.Status = AffiliateBonusStatus.Paid;
+        b.PaidAt = DateTime.UtcNow;
+        b.Affiliate.BalanceTotal += b.BonusAmount;
+        b.Affiliate.BalanceBonus -= b.BonusAmount;
+        b.Affiliate.UpdatedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync(ct);
+        await _audit.LogAsync("BonusPaid", GetAdminUserId(), User.Identity?.Name, metadata: $"bonusId={id} amount={b.BonusAmount} affiliateId={b.AffiliateId} period={b.Year}-{b.Month}", ct: ct);
+        return Ok(new { message = "Bonus ödənildi" });
     }
 
 }

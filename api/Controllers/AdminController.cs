@@ -828,13 +828,21 @@ public class AdminController : ControllerBase
     [HttpPut("email-settings")]
     public async Task<IActionResult> PutEmailSettings([FromBody] EmailSettingsRequest req, CancellationToken ct = default)
     {
+        var fromAddr = req.From ?? "hello@easysteperp.com";
+        var addrs = (req.FromAddresses ?? [])
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Select(x => x!.Trim())
+            .Distinct()
+            .ToList();
+        if (addrs.Count == 0 || !addrs.Contains(fromAddr)) addrs.Insert(0, fromAddr);
         var config = new SmtpConfig
         {
             Host = req.Host ?? "",
             Port = req.Port > 0 ? req.Port : 587,
             User = req.User ?? "",
-            From = req.From ?? "hello@easysteperp.com",
+            From = fromAddr,
             UseSsl = req.UseSsl,
+            FromAddresses = addrs,
         };
         await _emailSettings.SaveSmtpAsync(config, req.Password, ct);
         return Ok(new { message = "SMTP ayarları saxlanıldı" });
@@ -896,7 +904,7 @@ public class AdminController : ControllerBase
     }
 }
 
-public record EmailSettingsRequest(string? Host, int Port, string? User, string? Password, string? From, bool UseSsl = true);
+public record EmailSettingsRequest(string? Host, int Port, string? User, string? Password, string? From, bool UseSsl = true, string[]? FromAddresses = null);
 public record EmailTemplateRequest(string? Subject, string? Body, string? From);
 public record BulkEmailRequest(List<string>? Emails, string? Subject, string? Body);
 

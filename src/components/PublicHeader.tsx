@@ -6,7 +6,7 @@ import Logo from "./Logo";
 import { useAuthModal } from "@/contexts/AuthModalContext";
 import { api } from "@/lib/api";
 
-type NavItem = "features" | "pricing" | "contact" | "security" | "partners" | null;
+type NavItem = "features" | "pricing" | "contact" | "partners" | null;
 
 export default function PublicHeader({ active }: { active?: NavItem }) {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -55,9 +55,6 @@ export default function PublicHeader({ active }: { active?: NavItem }) {
       </Link>
       <Link href="/contact" className={`py-2 lg:py-0 ${linkClass("contact")}`} onClick={() => setMobileOpen(false)}>
         Əlaqə
-      </Link>
-      <Link href="/security" className={`py-2 lg:py-0 ${linkClass("security")}`} onClick={() => setMobileOpen(false)}>
-        Təhlükəsizlik
       </Link>
       <Link href="/satis-partnyorlari" className={`py-2 lg:py-0 ${linkClass("partners")}`} onClick={() => setMobileOpen(false)}>
         Satış Partnyorları

@@ -12,6 +12,8 @@ public class SmtpConfig
     public string? Password { get; set; }
     public string From { get; set; } = "hello@easysteperp.com";
     public bool UseSsl { get; set; } = true;
+    /// <summary>Şablonlarda combobox üçün göndərən ünvanları siyahısı. Baş "From" həm də siyahıya daxildir.</summary>
+    public List<string>? FromAddresses { get; set; }
 }
 
 public class EmailSettingsService
@@ -33,11 +35,16 @@ public class EmailSettingsService
         catch { return null; }
     }
 
+    private static readonly string[] DefaultFromAddresses = ["hello@easysteperp.com", "noreply@easysteperp.com", "security@easysteperp.com", "partners@easysteperp.com", "billing@easysteperp.com", "notifications@easysteperp.com"];
+
     /// <summary>Admin üçün — parol maskalanır.</summary>
     public async Task<object> GetSmtpForAdminAsync(CancellationToken ct = default)
     {
         var c = await GetSmtpFromDbAsync(ct);
-        if (c == null) return new { host = "", port = 587, user = "", password = "", from = "hello@easysteperp.com", useSsl = true };
+        if (c == null) return new { host = "", port = 587, user = "", password = "", from = "hello@easysteperp.com", useSsl = true, fromAddresses = DefaultFromAddresses };
+        var addrs = c.FromAddresses?.Where(x => !string.IsNullOrWhiteSpace(x)).Select(x => x!.Trim()).Distinct().ToList() ?? new List<string>();
+        if (addrs.Count == 0) addrs = [c.From ?? "hello@easysteperp.com", .. DefaultFromAddresses.Where(a => a != (c.From ?? ""))];
+        addrs = addrs.Distinct().ToList();
         return new
         {
             c.Host,
@@ -46,6 +53,7 @@ public class EmailSettingsService
             password = string.IsNullOrEmpty(c.Password) ? "" : "********",
             c.From,
             c.UseSsl,
+            fromAddresses = addrs,
         };
     }
 

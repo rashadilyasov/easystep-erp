@@ -10,13 +10,14 @@ type SmtpSettings = {
   password: string;
   from: string;
   useSsl: boolean;
+  fromAddresses: string[];
 };
 
 type TemplateItem = { key: string; label: string };
 
 export default function AdminEmailSettingsPage() {
   const [tab, setTab] = useState<"smtp" | "templates" | "bulk">("smtp");
-  const [smtp, setSmtp] = useState<SmtpSettings>({ host: "", port: 587, user: "", password: "", from: "hello@easysteperp.com", useSsl: true });
+  const [smtp, setSmtp] = useState<SmtpSettings>({ host: "", port: 587, user: "", password: "", from: "hello@easysteperp.com", useSsl: true, fromAddresses: [] });
   const [smtpSaving, setSmtpSaving] = useState(false);
   const [templates, setTemplates] = useState<TemplateItem[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
@@ -39,7 +40,10 @@ export default function AdminEmailSettingsPage() {
 
   useEffect(() => {
     if (tab === "smtp") loadSmtp();
-    if (tab === "templates") loadTemplates();
+    if (tab === "templates") {
+      loadTemplates();
+      loadSmtp(); // Şablonlar combobox üçün göndərən siyahısı
+    }
   }, [tab, loadSmtp, loadTemplates]);
 
   const loadTemplate = useCallback((key: string) => {
@@ -121,8 +125,13 @@ export default function AdminEmailSettingsPage() {
               <input type="password" value={smtp.password} onChange={(e) => setSmtp((s) => ({ ...s, password: e.target.value }))} className="w-full px-4 py-2 border border-slate-300 rounded-lg" placeholder="Dəyişdirməmək üçün boş buraxın" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Göndərən (From)</label>
-              <input type="text" value={smtp.from} onChange={(e) => setSmtp((s) => ({ ...s, from: e.target.value }))} className="w-full px-4 py-2 border border-slate-300 rounded-lg" />
+              <label className="block text-sm font-medium text-slate-700 mb-1">Varsayılan göndərən (From)</label>
+              <input type="text" value={smtp.from} onChange={(e) => setSmtp((s) => ({ ...s, from: e.target.value }))} className="w-full px-4 py-2 border border-slate-300 rounded-lg" placeholder="hello@easysteperp.com" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Göndərən ünvanları (şablonlar üçün)</label>
+              <textarea value={smtp.fromAddresses?.join("\n") ?? ""} onChange={(e) => setSmtp((s) => ({ ...s, fromAddresses: e.target.value.split("\n").map((x) => x.trim()).filter(Boolean) }))} rows={4} className="w-full px-4 py-2 border border-slate-300 rounded-lg font-mono text-sm" placeholder={"Hər sətirdə bir ünvan\nnoreply@easysteperp.com\nsecurity@easysteperp.com"} />
+              <p className="text-xs text-slate-500 mt-1">Şablonlarda combobox-da bu ünvanlar göstəriləcək. Hər sətirdə bir e-poçt.</p>
             </div>
             <label className="flex items-center gap-2">
               <input type="checkbox" checked={smtp.useSsl} onChange={(e) => setSmtp((s) => ({ ...s, useSsl: e.target.checked }))} className="rounded" />
@@ -160,7 +169,13 @@ export default function AdminEmailSettingsPage() {
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">Göndərən (From)</label>
-                    <input type="text" value={templateData.from} onChange={(e) => setTemplateData((d) => ({ ...d, from: e.target.value }))} className="w-full px-4 py-2 border border-slate-300 rounded-lg" placeholder="noreply@easysteperp.com (boş = SMTP varsayılanı)" />
+                    <select value={templateData.from} onChange={(e) => setTemplateData((d) => ({ ...d, from: e.target.value }))} className="w-full px-4 py-2 border border-slate-300 rounded-lg bg-white">
+                      <option value="">— SMTP varsayılanı —</option>
+                      {[...new Set([smtp.from, ...(smtp.fromAddresses ?? [])].filter(Boolean))].map((addr) => (
+                        <option key={addr} value={addr}>{addr}</option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-slate-500 mt-1">SMTP hissəsində təyin olunan ünvanlardan seçin</p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">Mövzu</label>

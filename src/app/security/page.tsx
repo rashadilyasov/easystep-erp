@@ -10,7 +10,7 @@ export const metadata = {
 export default function Security() {
   return (
     <div className="min-h-screen">
-      <PublicHeader active="security" />
+      <PublicHeader />
 
       <section className="pt-32 pb-20 px-4">
         <div className="max-w-3xl mx-auto">

@@ -767,6 +767,24 @@ public class AdminController : ControllerBase
         return Ok(new { message = "Partnyor təsdiqləndi" });
     }
 
+    [HttpPost("promo-codes")]
+    public async Task<IActionResult> CreatePromoCode([FromBody] AdminCreatePromoCodeRequest req, CancellationToken ct = default)
+    {
+        if (req == null || !req.AffiliateId.HasValue)
+            return BadRequest(new { message = "Partnyor seçilməlidir" });
+        var discount = req.DiscountPercent ?? _affiliateService.DefaultDiscountPercent;
+        var commission = req.CommissionPercent ?? _affiliateService.DefaultCommissionPercent;
+        if (discount < 0 || discount > 100)
+            return BadRequest(new { message = "Endirim faizi 0–100 arasında olmalıdır" });
+        if (commission < 0 || commission > 100)
+            return BadRequest(new { message = "Komissiya faizi 0–100 arasında olmalıdır" });
+        var promo = await _affiliateService.CreatePromoCodeAsync(req.AffiliateId.Value, discount, commission, ct);
+        if (promo == null)
+            return BadRequest(new { message = "Promo kod yaradıla bilmədi. Partnyor təsdiqlənib?" });
+        await _audit.LogAsync("PromoCodeCreated", GetAdminUserId(), User.Identity?.Name, metadata: $"code={promo.Code} affiliateId={req.AffiliateId} discount={discount}% commission={commission}%", ct: ct);
+        return Ok(new { id = promo.Id, code = promo.Code, discountPercent = promo.DiscountPercent, commissionPercent = promo.CommissionPercent, message = "Promo kod yaradıldı" });
+    }
+
     [HttpPatch("promo-codes/{id:guid}")]
     public async Task<IActionResult> UpdatePromoCode(Guid id, [FromBody] UpdatePromoCodeRequest req, CancellationToken ct = default)
     {
@@ -1142,6 +1160,7 @@ public record AdminUpdateUserRequest(string? Email, string? Phone);
 public record UpdateTicketStatusRequest(string Status);
 public record CreatePlanRequest(string Name, int DurationMonths, decimal Price, string? Currency = "AZN", int? MaxDevices = null);
 public record UpdatePlanRequest(string? Name, int? DurationMonths, decimal? Price, string? Currency, int? MaxDevices, bool? IsActive);
+public record AdminCreatePromoCodeRequest(Guid? AffiliateId, decimal? DiscountPercent, decimal? CommissionPercent);
 public record UpdatePromoCodeRequest(decimal? DiscountPercent, decimal? CommissionPercent);
 public record CreateAnnouncementRequest(string? Title, string? Body);
 public record CreateAcademyMaterialRequest(string? Title, string? Url);

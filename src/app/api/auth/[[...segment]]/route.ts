@@ -40,6 +40,7 @@ async function proxyReq(request: NextRequest, segment: string[], method: string)
 
   const body = method !== "GET" && method !== "HEAD" ? await request.text() : undefined;
   let lastErr: Error | null = null;
+  let lastRes: { data: string; status: number; contentType: string } | null = null;
 
   for (const base of bases) {
     const url = `${base}${path}`;
@@ -52,16 +53,31 @@ async function proxyReq(request: NextRequest, segment: string[], method: string)
         cache: "no-store",
       });
       const data = await res.text();
-      return new NextResponse(data, {
-        status: res.status,
-        headers: { "Content-Type": res.headers.get("Content-Type") || "application/json" },
-      });
+      const contentType = res.headers.get("Content-Type") || "application/json";
+      if (res.ok) {
+        return new NextResponse(data, { status: res.status, headers: { "Content-Type": contentType } });
+      }
+      lastRes = { data, status: res.status, contentType };
+      if (res.status === 404 || res.status === 502 || data.toLowerCase().includes("application not found")) {
+        if (typeof console !== "undefined" && console.warn) {
+          console.warn("[Auth Proxy] Base returned", res.status, base.replace(/\/$/, ""), "– trying next…");
+        }
+        continue;
+      }
+      return new NextResponse(data, { status: res.status, headers: { "Content-Type": contentType } });
     } catch (e) {
       lastErr = e instanceof Error ? e : new Error(String(e));
       if (typeof console !== "undefined" && console.error) {
         console.error("[Auth Proxy]", lastErr.message, { base: base.replace(/\/$/, "") });
       }
     }
+  }
+
+  if (lastRes) {
+    return new NextResponse(lastRes.data, {
+      status: lastRes.status,
+      headers: { "Content-Type": lastRes.contentType },
+    });
   }
 
   return NextResponse.json(

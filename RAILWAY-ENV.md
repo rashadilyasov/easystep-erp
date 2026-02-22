@@ -41,9 +41,21 @@ Security__RequireAdminMfa=false
 Bu xəta əsasən proxy timeout-dan yaranır: e-poçt göndərmə yavaş olduqda Vercel proxy 20–25 saniyədə abort edir.
 **Düzəliş (deploy edildi):** Şifrə bərpa və əlaqə formunda e-poçt artıq HTTP cavabından sonra arxa planda göndərilir – istifadəçi dərhal cavab alır, proxy timeout-a düşmür.
 
+## Pulsuz e-poçt — Resend (Railway Hobby üçün)
+
+**Railway Hobby-da SMTP bloklanır.** Ödənişsiz həll: **Resend** (3000 e-poçt/ay pulsuz).
+
+1. [resend.com/signup](https://resend.com/signup) — pulsuz hesab
+2. **API Keys** → Create API Key → kopyalayın (`re_xxxx`)
+3. **Admin panel** → E-poçt ayarları → **Resend API key** sahəsinə yapışdırın → Yadda saxla
+4. **Domain:** Resend Dashboard → Domains → `easysteperp.com` əlavə edib DNS (SPF, DKIM) təsdiqləyin. Test üçün `onboarding@resend.dev` istifadə edə bilərsiniz.
+5. Alternativ: Railway env `Resend__ApiKey=re_xxxx` (parolu açıq saxlamamaq üçün Admin paneldə daxil edin)
+
+---
+
 ## Şifrə sıfırlama e-poçtu gəlmir
 
-**Kodda edilən:** TLS 1.2 açıqdır, SMTP timeout 20 saniyədir. Diaqnostika mesajları indi port-a uyğundur (465-də 587 tövsiyə edir, 587-də 465).
+**Kodda edilən:** TLS 1.2 açıqdır, SMTP timeout 20 saniyədir. Resend (HTTPS) Hobby-da işləyir.
 
 Əgər "Şifrə sıfırlama linki göndərildi" yazılsa da e-poçt gəlmirsə:
 
@@ -111,6 +123,7 @@ Bu xəta əsasən proxy timeout-dan yaranır: e-poçt göndərmə yavaş olduqda
 | `Cors__Origins__1` | `https://www.easysteperp.com` |
 | `App__BaseUrl` | `https://www.easysteperp.com` |
 | `App__ApiBaseUrl` | `https://api.easysteperp.com` |
+| `Resend__ApiKey` | Pulsuz: resend.com API key (`re_xxxx`). Railway Hobby-da SMTP bloklanır — Resend işləyir |
 | `Smtp__Host` | `host2080.hostmonster.com`, `mail.easysteperp.com` (A→67.20.113.170) və ya `easysteperp.com` |
 | `Smtp__Port` | `465` |
 | `Smtp__User` | `hello@easysteperp.com` |

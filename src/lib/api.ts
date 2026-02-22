@@ -455,7 +455,7 @@ export const api = {
       apiFetch<{ message: string }>(`/api/admin/plans/${planId}`, { method: "DELETE" }),
     emailSettings: () =>
       apiFetch<{ host: string; port: number; user: string; password: string; from: string; useSsl: boolean; fromAddresses: string[] }>("/api/admin/email-settings"),
-    putEmailSettings: (data: { host: string; port: number; user: string; password?: string; from: string; useSsl: boolean; fromAddresses?: string[] }) =>
+    putEmailSettings: (data: { host?: string; port?: number; user?: string; password?: string; from?: string; useSsl?: boolean; fromAddresses?: string[]; resendApiKey?: string; clearResend?: boolean }) =>
       apiFetch<{ message: string }>("/api/admin/email-settings", {
         method: "PUT",
         body: JSON.stringify(data),

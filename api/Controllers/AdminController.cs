@@ -1080,7 +1080,7 @@ public class AdminController : ControllerBase
     [HttpGet("email-settings")]
     public async Task<IActionResult> GetEmailSettings(CancellationToken ct = default)
     {
-        var s = await _emailSettings.GetSmtpForAdminAsync(ct);
+        var s = await _emailSettings.GetEmailSettingsForAdminAsync(_config, ct);
         return Ok(s);
     }
 
@@ -1104,13 +1104,24 @@ public class AdminController : ControllerBase
             FromAddresses = addrs,
         };
         var newPassword = string.IsNullOrWhiteSpace(req.Password) ? null : req.Password.Trim();
+        var newResendKey = string.IsNullOrWhiteSpace(req.ResendApiKey) || req.ResendApiKey == "********" ? null : req.ResendApiKey.Trim();
+
+        if (newResendKey != null)
+            await _emailSettings.SaveResendApiKeyAsync(newResendKey, ct);
+        else if (req.ClearResend == true)
+            await _emailSettings.SaveResendApiKeyAsync(null, ct);
+
+        var hasResend = newResendKey != null || await _emailSettings.GetResendApiKeyAsync(ct) != null || !string.IsNullOrWhiteSpace(_config["Resend:ApiKey"] ?? _config["Resend__ApiKey"]);
         var existing = await _emailSettings.GetSmtpFromDbAsync(ct);
-        if (string.IsNullOrEmpty(newPassword) && (existing == null || string.IsNullOrEmpty(existing.Password)))
+
+        if (!hasResend)
         {
-            return BadRequest(new { message = "Parol tələb olunur. SMTP ilə e-poçt göndərmək üçün parolu daxil edib saxlayın." });
+            if (string.IsNullOrEmpty(newPassword) && (existing == null || string.IsNullOrEmpty(existing.Password)))
+                return BadRequest(new { message = "Resend API key və ya SMTP parolu tələb olunur. Railway Hobby-da SMTP bloklanır — Resend pulsuz 3000/ay işləyir." });
         }
+
         await _emailSettings.SaveSmtpAsync(config, newPassword, ct);
-        return Ok(new { message = "SMTP ayarları saxlanıldı" });
+        return Ok(new { message = hasResend ? "Resend/SMTP ayarları saxlanıldı" : "SMTP ayarları saxlanıldı" });
     }
 
     [HttpGet("email-templates")]
@@ -1211,7 +1222,7 @@ public class AdminController : ControllerBase
 
 public record TestEmailRequest(string? To);
 public record SendPasswordResetRequest(string? Email);
-public record EmailSettingsRequest(string? Host, int Port, string? User, string? Password, string? From, bool UseSsl = true, string[]? FromAddresses = null);
+public record EmailSettingsRequest(string? Host, int Port, string? User, string? Password, string? From, bool UseSsl = true, string[]? FromAddresses = null, string? ResendApiKey = null, bool? ClearResend = false);
 public record EmailTemplateRequest(string? Subject, string? Body, string? From);
 public record BulkEmailRequest(List<string>? Emails, string? Subject, string? Body);
 

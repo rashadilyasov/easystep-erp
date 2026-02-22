@@ -11,6 +11,8 @@ type SmtpSettings = {
   from: string;
   useSsl: boolean;
   fromAddresses: string[];
+  resendConfigured?: boolean;
+  resendApiKey?: string;
 };
 
 type TemplateItem = { key: string; label: string };
@@ -60,8 +62,13 @@ export default function AdminEmailSettingsPage() {
     setSmtpSaving(true);
     setSmtpError(null);
     try {
-      const payload = { ...smtp };
-      if (!payload.password?.trim()) delete (payload as { password?: string }).password;
+      const payload = { ...smtp } as Record<string, unknown>;
+      if (!payload.password?.trim()) delete payload.password;
+      if (payload.resendApiKey === "********" || !payload.resendApiKey) {
+        if (smtp.resendConfigured && !smtp.resendApiKey?.trim()) payload.clearResend = true;
+        delete payload.resendApiKey;
+      }
+      delete payload.resendConfigured;
       try {
         await api.admin.putEmailSettings(payload);
       } catch (proxyErr) {
@@ -241,10 +248,26 @@ export default function AdminEmailSettingsPage() {
 
       {tab === "smtp" && (
         <div className="bg-white rounded-2xl border border-slate-200 p-6 max-w-2xl">
-          <h2 className="font-semibold text-slate-900 mb-4">SMTP konfiqurasiyası</h2>
-          <p className="text-sm text-slate-500 mb-4">Parol yalnız admin paneldə saxlanılır. İlk dəfə və ya parolu dəyişdirmək üçün mütləq daxil edib saxlayın.</p>
+          <h2 className="font-semibold text-slate-900 mb-4">E-poçt göndərmə konfiqurasiyası</h2>
+          <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-sm text-emerald-800">
+            <strong>Resend (tövsiyə olunur — pulsuz 3000 e-poçt/ay):</strong> Railway Hobby-da SMTP bloklanır. Resend API key daxil edəndə e-poçtlar HTTPS ilə göndərilir. <a href="https://resend.com/signup" target="_blank" rel="noreferrer" className="underline">resend.com</a>-dan pulsuz hesab açıb API key alın.
+          </div>
           {smtpError && <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-lg text-sm">{smtpError}</div>}
           <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Resend API key</label>
+              <input
+                type="password"
+                value={smtp.resendApiKey ?? ""}
+                onChange={(e) => setSmtp((s) => ({ ...s, resendApiKey: e.target.value }))}
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg font-mono"
+                placeholder={smtp.resendConfigured ? "******** (saxlanılıb)" : "re_xxxx — Resend Dashboard → API Keys"}
+              />
+              <p className="text-xs text-slate-500 mt-1">Resend varsa SMTP istifadə olunmur. Yeni key: boş buraxıb «Resend təmizlə» işarələyin, sonra yenidən daxil edin.</p>
+            </div>
+            <div className="border-t border-slate-200 pt-4 mt-4">
+              <h3 className="font-medium text-slate-700 mb-2">SMTP (alternativ — Railway Pro və ya başqa hosting)</h3>
+            </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Host</label>
               <input type="text" value={smtp.host} onChange={(e) => setSmtp((s) => ({ ...s, host: e.target.value }))} className="w-full px-4 py-2 border border-slate-300 rounded-lg" placeholder="smtp.example.com" />
@@ -258,9 +281,9 @@ export default function AdminEmailSettingsPage() {
               <input type="text" value={smtp.user} onChange={(e) => setSmtp((s) => ({ ...s, user: e.target.value }))} className="w-full px-4 py-2 border border-slate-300 rounded-lg" placeholder="hello@example.com" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Parol <span className="text-red-500">*</span></label>
-              <input type="password" value={smtp.password} onChange={(e) => setSmtp((s) => ({ ...s, password: e.target.value }))} className="w-full px-4 py-2 border border-slate-300 rounded-lg" placeholder="Dəyişdirməmək üçün boş buraxın (yalnız əvvəldən saxlanılıbsa)" />
-              <p className="text-xs text-slate-500 mt-1">Təhlükə üçün parol göstərilmir. Köhnə parolu saxlayıb saxlamaq üçün boş buraxın.</p>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Parol {!smtp.resendConfigured && !smtp.resendApiKey?.trim() ? <span className="text-red-500">*</span> : ""}</label>
+              <input type="password" value={smtp.password} onChange={(e) => setSmtp((s) => ({ ...s, password: e.target.value }))} className="w-full px-4 py-2 border border-slate-300 rounded-lg" placeholder="Resend yoxdursa tələb olunur. Köhnə parolu saxlamaq üçün boş buraxın." />
+              <p className="text-xs text-slate-500 mt-1">Resend varsa SMTP parolu tələb olunmur. Köhnə parolu saxlayıb saxlamaq üçün boş buraxın.</p>
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Varsayılan göndərən (From)</label>

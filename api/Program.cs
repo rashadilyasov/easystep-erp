@@ -64,7 +64,10 @@ builder.Services.AddScoped<IPaymentProvider, PayriffService>();
 builder.Services.AddScoped<EmailSettingsService>();
 builder.Services.AddScoped<EmailTemplateService>();
 builder.Services.AddScoped<ConfigurableSmtpEmailService>();
-builder.Services.AddScoped<IEmailService>(sp => sp.GetRequiredService<ConfigurableSmtpEmailService>());
+builder.Services.AddHttpClient<ResendEmailService>().ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler());
+builder.Services.AddScoped<ResendEmailService>();
+builder.Services.AddScoped<ChainedEmailService>();
+builder.Services.AddScoped<IEmailService>(sp => sp.GetRequiredService<ChainedEmailService>());
 builder.Services.AddScoped<ITemplatedEmailService, TemplatedEmailService>();
 
 // Controllers

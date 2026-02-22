@@ -17,26 +17,32 @@ async function proxyReq(request: NextRequest, segment: string[], method: string)
 
   const body = method !== "GET" && method !== "HEAD" ? await request.text() : undefined;
 
-  for (const base of getApiBases()) {
-    try {
-      const res = await fetch(`${base}${path}`, {
-        method,
-        headers,
-        body: body ?? undefined,
-        signal: AbortSignal.timeout(PROXY_TIMEOUT_MS),
-        cache: "no-store",
-      });
-      const data = await res.text();
-      const contentType = res.headers.get("Content-Type") || "application/json";
-      const looksLikeError =
-        data.toLowerCase().includes("application not found") || data.toLowerCase().includes("dns_probe_finished_nxdomain");
-      if (res.ok && !looksLikeError) {
+  const bases = getApiBases();
+  const MAX_RETRIES = 2;
+  const RETRY_DELAY_MS = 1500;
+
+  for (const base of bases) {
+    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+      try {
+        const res = await fetch(`${base}${path}`, {
+          method,
+          headers,
+          body: body ?? undefined,
+          signal: AbortSignal.timeout(PROXY_TIMEOUT_MS),
+          cache: "no-store",
+        });
+        const data = await res.text();
+        const contentType = res.headers.get("Content-Type") || "application/json";
+        const looksLikeError =
+          data.toLowerCase().includes("application not found") || data.toLowerCase().includes("dns_probe_finished_nxdomain");
+        if (res.ok && !looksLikeError) {
+          return new NextResponse(data, { status: res.status, headers: { "Content-Type": contentType } });
+        }
+        if (res.status === 404 || res.status === 502 || res.status === 503 || looksLikeError) break;
         return new NextResponse(data, { status: res.status, headers: { "Content-Type": contentType } });
+      } catch {
+        if (attempt < MAX_RETRIES - 1) await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
       }
-      if (res.status === 404 || res.status === 502 || res.status === 503 || looksLikeError) continue;
-      return new NextResponse(data, { status: res.status, headers: { "Content-Type": contentType } });
-    } catch {
-      continue;
     }
   }
 

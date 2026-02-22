@@ -148,7 +148,7 @@ export const api = {
     login: (email: string, password: string) =>
       apiFetch<{ accessToken?: string; refreshToken?: string; expiresIn?: number; requires2FA?: boolean; pendingToken?: string; message?: string; viaEmail?: boolean }>(
         "/api/auth/login",
-        { method: "POST", body: JSON.stringify({ email, password }), skipAuth: true }
+        { method: "POST", body: JSON.stringify({ email, password }), skipAuth: true, timeoutMs: 45000 }
       ),
     complete2FA: (pendingToken: string, code: string) =>
       apiFetch<{ accessToken: string; refreshToken: string; expiresIn: number }>("/api/auth/2fa/complete", {

@@ -105,18 +105,19 @@ export async function GET(req: NextRequest) {
   }
 
   // 4. Admin tenants: birbaşa (hamısı base-lərə) + proxy vasitəsilə
+  // Admin/tenants daha ağır sorğu olduğu üçün 30s timeout
+  const ADMIN_TIMEOUT_MS = 30000;
   if (accessToken) {
     const authHeaders = { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" };
 
     // Direct — bütün base-ləri sınaqdan keçir
     let directOk = false;
     const directResults: Record<string, unknown>[] = [];
-    for (let i = 0; i < bases.length; i++) {
-      const b = bases[i];
+    for (const b of bases) {
       try {
         const res = await fetch(`${b}/api/admin/tenants`, {
           headers: authHeaders,
-          signal: AbortSignal.timeout(TIMEOUT_MS),
+          signal: AbortSignal.timeout(ADMIN_TIMEOUT_MS),
           cache: "no-store",
         });
         const body = await res.text().catch(() => "");

@@ -3,13 +3,16 @@
  * RAILWAY-ENV.md ilə uyğundur.
  */
 const API_CUSTOM_DOMAIN = "https://api.easysteperp.com";
-const RAILWAY_FALLBACK = "https://2qz1te51.up.railway.app";
+
+/** 404/qeyri-funksional olduğu məlum olan base-lər — siyahıdan çıxarılır */
+const EXCLUDED_BASES = ["2qz1te51.up.railway.app"];
 
 export function getApiBases(): string[] {
   const bases: string[] = [];
-  const norm = (s: string) => s.replace(/\/$/, "").trim();
+  const norm = (s: string) => s.replace(/\/$/, "").trim().toLowerCase();
+  const isExcluded = (u: string) => EXCLUDED_BASES.some((ex) => norm(u).includes(ex.toLowerCase()));
   const add = (u: string) => {
-    if (!u?.trim()) return;
+    if (!u?.trim() || isExcluded(u)) return;
     let full = u.replace(/\/$/, "").trim();
     if (!full.startsWith("http")) full = "https://" + full;
     if (full && !bases.some((b) => norm(b) === norm(full))) bases.push(full);
@@ -17,7 +20,6 @@ export function getApiBases(): string[] {
   add(process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || "");
   add(API_CUSTOM_DOMAIN);
   add(process.env.RAILWAY_PUBLIC_URL || "");
-  if (process.env.VERCEL) add(RAILWAY_FALLBACK);
   if (bases.length === 0) bases.push("http://localhost:5000");
   return bases;
 }

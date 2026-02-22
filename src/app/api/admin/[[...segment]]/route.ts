@@ -1,20 +1,20 @@
 /**
- * Admin API proxy - explicit route for /api/admin/* to avoid catch-all 404.
- * api.easysteperp.com birinci sıralanır, 404/502-də növbəti base sınanır.
+ * Admin API proxy - /api/admin/* müraciətləri backend-ə yönləndirir.
+ * Railway URL birinci (Health işləyən), 404/Application not found-da retry + növbəti base.
  */
 import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-const RAILWAY_FALLBACK = "https://2qz1te51.up.railway.app";
+const RAILWAY_DIRECT = "https://2qz1te51.up.railway.app";
 const API_CUSTOM_DOMAIN = "https://api.easysteperp.com";
 
 function getApiBases(): string[] {
   const bases: string[] = [];
   const norm = (s: string) => s.replace(/\/$/, "").trim();
   if (process.env.VERCEL) {
-    bases.push(API_CUSTOM_DOMAIN);
-    if (!bases.some((b) => norm(b) === RAILWAY_FALLBACK)) bases.push(RAILWAY_FALLBACK);
+    bases.push(RAILWAY_DIRECT);
+    if (!bases.some((b) => norm(b) === API_CUSTOM_DOMAIN)) bases.push(API_CUSTOM_DOMAIN);
   }
   const url = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL;
   if (url) {
@@ -27,6 +27,8 @@ function getApiBases(): string[] {
   if (bases.length === 0) bases.push("http://localhost:5000");
   return bases;
 }
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 async function proxyReq(request: NextRequest, segment: string[], method: string) {
   const pathSegment = segment?.join("/") ?? "";
@@ -46,38 +48,49 @@ async function proxyReq(request: NextRequest, segment: string[], method: string)
   let lastRes: { data: string; status: number; contentType: string } | null = null;
 
   for (const base of bases) {
-    const url = `${base}${path}`;
-    try {
-      const res = await fetch(url, {
-        method,
-        headers,
-        body: body ?? undefined,
-        signal: AbortSignal.timeout(25000),
-        cache: "no-store",
-      });
-      const data = await res.text();
-      const contentType = res.headers.get("Content-Type") || "application/json";
-      const looksLikeErrorPage =
-        data.toLowerCase().includes("application not found") || data.toLowerCase().includes("dns_probe_finished_nxdomain");
-      if (res.ok && !looksLikeErrorPage) {
-        return new NextResponse(data, { status: res.status, headers: { "Content-Type": contentType } });
-      }
-      lastRes = { data, status: res.status, contentType };
-      const isRetryable =
-        res.status === 404 ||
-        res.status === 502 ||
-        res.status === 503 ||
-        looksLikeErrorPage;
-      if (isRetryable) {
-        if (typeof console !== "undefined" && console.warn) {
-          console.warn("[Admin Proxy] Base returned", res.status, base.replace(/\/$/, ""), "– trying next…");
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const url = `${base}${path}`;
+      try {
+        const res = await fetch(url, {
+          method,
+          headers,
+          body: body ?? undefined,
+          signal: AbortSignal.timeout(35000),
+          cache: "no-store",
+        });
+        const data = await res.text();
+        const contentType = res.headers.get("Content-Type") || "application/json";
+        const looksLikeErrorPage =
+          data.toLowerCase().includes("application not found") || data.toLowerCase().includes("dns_probe_finished_nxdomain");
+        if (res.ok && !looksLikeErrorPage) {
+          return new NextResponse(data, { status: res.status, headers: { "Content-Type": contentType } });
         }
-        continue;
-      }
-      return new NextResponse(data, { status: res.status, headers: { "Content-Type": contentType } });
-    } catch (e) {
-      if (typeof console !== "undefined" && console.error) {
-        console.error("[Admin Proxy]", (e instanceof Error ? e : new Error(String(e))).message, { base: base.replace(/\/$/, "") });
+        lastRes = { data, status: res.status, contentType };
+        const isRetryable =
+          res.status === 404 ||
+          res.status === 502 ||
+          res.status === 503 ||
+          looksLikeErrorPage;
+        if (isRetryable) {
+          if (attempt === 0) {
+            await sleep(5000);
+            continue;
+          }
+          if (typeof console !== "undefined" && console.warn) {
+            console.warn("[Admin Proxy] Base returned", res.status, base.replace(/\/$/, ""), "– trying next…");
+          }
+          break;
+        }
+        return new NextResponse(data, { status: res.status, headers: { "Content-Type": contentType } });
+      } catch (e) {
+        if (attempt === 0) {
+          await sleep(3000);
+          continue;
+        }
+        if (typeof console !== "undefined" && console.error) {
+          console.error("[Admin Proxy]", (e instanceof Error ? e : new Error(String(e))).message, { base: base.replace(/\/$/, "") });
+        }
+        break;
       }
     }
   }

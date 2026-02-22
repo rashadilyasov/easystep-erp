@@ -80,12 +80,45 @@ export default function AdminEmailSettingsPage() {
     }
   };
 
+  const directApiBase =
+    (typeof window !== "undefined" && (process.env.NEXT_PUBLIC_API_URL || "https://2qz1te51.up.railway.app").replace(/\/$/, "")) || "";
+
+  const fetchDirect = async (path: string, body: object) => {
+    if (!directApiBase) return null;
+    const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
+    const res = await fetch(`${directApiBase}${path}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(40000),
+    });
+    const text = await res.text();
+    if (!res.ok) throw new Error(text?.slice(0, 200) || res.statusText);
+    return text ? JSON.parse(text) : {};
+  };
+
   const runTestEmail = async () => {
     if (!testEmail.trim()) return;
     setTestSending(true);
     setTestResult(null);
+    const email = testEmail.trim();
     try {
-      const r = await api.admin.testEmail(testEmail.trim());
+      let r: { sent?: boolean; message?: string } = { sent: false, message: "" };
+      try {
+        r = await api.admin.testEmail(email);
+      } catch (proxyErr) {
+        const msg = proxyErr instanceof Error ? proxyErr.message : "";
+        if (msg.toLowerCase().includes("application not found") || msg.toLowerCase().includes("not found") || msg.toLowerCase().includes("502")) {
+          const direct = await fetchDirect("/api/admin/test-email", { to: email });
+          if (direct) r = direct as { sent?: boolean; message?: string };
+          else throw proxyErr;
+        } else {
+          throw proxyErr;
+        }
+      }
       setTestResult({ sent: r.sent ?? false, message: r.message ?? "" });
     } catch (e) {
       setTestResult({ sent: false, message: e instanceof Error ? e.message : "Xəta baş verdi" });
@@ -98,8 +131,21 @@ export default function AdminEmailSettingsPage() {
     if (!testEmail.trim()) return;
     setTestSending(true);
     setTestResult(null);
+    const email = testEmail.trim();
     try {
-      const r = await api.admin.sendPasswordReset(testEmail.trim());
+      let r: { sent?: boolean; message?: string } = { sent: false, message: "" };
+      try {
+        r = await api.admin.sendPasswordReset(email);
+      } catch (proxyErr) {
+        const msg = proxyErr instanceof Error ? proxyErr.message : "";
+        if (msg.toLowerCase().includes("application not found") || msg.toLowerCase().includes("not found") || msg.toLowerCase().includes("502")) {
+          const direct = await fetchDirect("/api/admin/send-password-reset", { email });
+          if (direct) r = direct as { sent?: boolean; message?: string };
+          else throw proxyErr;
+        } else {
+          throw proxyErr;
+        }
+      }
       setTestResult({ sent: r.sent ?? false, message: r.message ?? "" });
     } catch (e) {
       setTestResult({ sent: false, message: e instanceof Error ? e.message : "Xəta baş verdi" });

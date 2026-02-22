@@ -122,11 +122,11 @@ Bu xəta əsasən proxy timeout-dan yaranır: e-poçt göndərmə yavaş olduqda
 4. **Vercel API_URL:** Vercel → layihə → Settings → Environment Variables. `API_URL` = Railway URL (məs. `https://2qz1te51.up.railway.app` — sonunda `/` olmasın). İstəyə görə `NEXT_PUBLIC_API_URL` də eyni dəyər ola bilər. Sonra Vercel-da **Redeploy**. Bağlantı xətası olarsa → [BAGLANTI-TAMIR.md](./BAGLANTI-TAMIR.md)
 5. **Login işləmirsə:** `www.easysteperp.com/api/ping` açın — health, login, adminTenants statusunu göstərər. Əgər health/ok deyilsə — Railway API işləmir.
 
-## TCP_ABORT_D / Postgres bağlantı qırılması
+## TCP_ABORT_O / TCP_ABORT_D — Postgres bağlantı qırılması
 
-Network Flow Logs-da Postgres üçün `TCP_ABORT_D` görünürsə — bağlantı abort olunur, cavab gəlmir.
+Network Flow Logs-da Postgres üçün `TCP_ABORT_O` və ya `TCP_ABORT_D` — bağlantı abort olunur, login/panel işləmir.
 
-**Kodda edilən:** `Connection Idle Lifetime=60`, `Command Timeout=30`, `DATABASE_PRIVATE_URL` prioriteti. Railway deploy edin.
+**Kodda edilən:** `Maximum Pool Size=10` (Railway Hobby ~20 limit), `Connection Idle Lifetime=60`, `Command Timeout=30`, `DATABASE_PRIVATE_URL`. Railway deploy edin.
 
 **Əlavə:** Railway → Postgres servisi → **Variables** — `DATABASE_PRIVATE_URL` avtomatik olmalıdır. API servisi eyni layihədədirsə, bu daxili şəbəkə istifadə edir.
 

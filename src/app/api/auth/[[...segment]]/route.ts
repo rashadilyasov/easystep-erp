@@ -1,9 +1,11 @@
 /**
  * Auth API proxy - explicit route for /api/auth/* to avoid catch-all 404 issues.
+ * Minimal headers (ping kimi) — forwarded headers problem yarada bilər.
  */
 import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 const RAILWAY_FALLBACK = "https://2qz1te51.up.railway.app";
 const API_CUSTOM_DOMAIN = "https://api.easysteperp.com";
@@ -32,13 +34,9 @@ async function proxyReq(request: NextRequest, segment: string[], method: string)
   const path = `/api/auth/${pathSegment}${request.nextUrl.search}`;
 
   const headers = new Headers();
-  request.headers.forEach((v, k) => {
-    if (["host", "connection"].includes(k.toLowerCase())) return;
-    headers.set(k, v);
-  });
-  if (method !== "GET" && method !== "HEAD" && !headers.has("Content-Type")) {
-    headers.set("Content-Type", "application/json");
-  }
+  headers.set("Content-Type", "application/json");
+  const auth = request.headers.get("Authorization");
+  if (auth) headers.set("Authorization", auth);
 
   const body = method !== "GET" && method !== "HEAD" ? await request.text() : undefined;
   let lastErr: Error | null = null;

@@ -1174,6 +1174,10 @@ public class AdminController : ControllerBase
     public async Task<IActionResult> SmtpDiagnose([FromBody] TestEmailRequest req, CancellationToken ct = default)
     {
         var to = req?.To?.Trim() ?? "test@example.com";
+        var hasResend = !string.IsNullOrWhiteSpace(await _emailSettings.GetResendApiKeyAsync(ct))
+            || !string.IsNullOrWhiteSpace(_config["Resend:ApiKey"] ?? _config["Resend__ApiKey"]);
+        if (hasResend)
+            return Ok(new { ok = true, configStatus = "Resend istifadə olunur", errorMessage = (string?)null });
         var smtp = HttpContext.RequestServices.GetService<ConfigurableSmtpEmailService>();
         if (smtp == null)
             return Ok(new { ok = false, configStatus = "ConfigurableSmtpEmailService tapılmadı", errorMessage = (string?)null });

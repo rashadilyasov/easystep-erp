@@ -64,11 +64,12 @@ Bu xəta əsasən proxy timeout-dan yaranır: e-poçt göndərmə yavaş olduqda
 **Düzəliş deploy edildi:** Repo root-a `Dockerfile` və `railway.toml` əlavə edildi. Root Directory boş olsa belə API düzgün build olacaq. **[RAILWAY-NOT-FOUND-FIX.md](./RAILWAY-NOT-FOUND-FIX.md)** — ətraflı addımlar.
 
 **Tez həll:**
-1. **Railway** → API servisi → **Settings** → **General** → **Root Directory** = **boş buraxın** (sıfırlayın)
-2. **Deployments** → **Redeploy**
-3. **Settings** → **Networking** → domain API servisinə bağlı olduğundan əmin olun
+1. **Railway** → **API servisi** (PostgreSQL yox!) → **Settings** → **Networking**
+2. **Generate Domain** basın (domain yoxdursa) — `xxx.up.railway.app` alın
+3. Əgər domain varsa — **hansı servisə** aid olduğunu yoxlayın. Domain **API** servisində olmalıdır.
 4. 2–3 dəqiqə sonra `https://SIZIN-URL.up.railway.app/api/Health` açın
 5. **Vercel** → `API_URL` = bu Railway URL → Redeploy
+6. Ətraflı: [RAILWAY-DOMAIN-FIX.md](./RAILWAY-DOMAIN-FIX.md)
 
 ## «Application not found» / «Bağlantı vaxtı bitdi» / «Failed to fetch» — Admin SMTP
 

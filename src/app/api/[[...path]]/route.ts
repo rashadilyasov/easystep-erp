@@ -1,80 +1,21 @@
 /**
- * API proxy - bütün /api/* müraciətləri backend-ə yönləndirir.
- * Runtime-da API_URL oxunur, build-time constraint yoxdur.
+ * API proxy - /api/* (auth və admin istisna) → backend
  */
 import { NextRequest, NextResponse } from "next/server";
+import { getApiBases, PROXY_TIMEOUT_MS } from "@/lib/api-proxy-config";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-// Railway direct URL — api.easysteperp.com DNS/SSL problemlərində fallback
-const RAILWAY_FALLBACK = "https://2qz1te51.up.railway.app";
-const API_CUSTOM_DOMAIN = "https://api.easysteperp.com";
-
-function getApiBases(): string[] {
-  const bases: string[] = [];
-  const norm = (s: string) => s.replace(/\/$/, "").trim();
-  const add = (u: string) => {
-    let full = u.replace(/\/$/, "").trim();
-    if (!full.startsWith("http")) full = "https://" + full;
-    if (full && !bases.some((b) => norm(b) === norm(full))) bases.push(full);
-  };
-  if (process.env.API_URL) add(process.env.API_URL);
-  if (process.env.NEXT_PUBLIC_API_URL) add(process.env.NEXT_PUBLIC_API_URL);
-  add(API_CUSTOM_DOMAIN);
-  const railPub = process.env.RAILWAY_PUBLIC_URL;
-  if (railPub) add(railPub);
-  if (process.env.VERCEL) add(RAILWAY_FALLBACK);
-  if (bases.length === 0) bases.push("http://localhost:5000");
-  return bases;
-}
-
-export async function GET(request: NextRequest, { params }: { params: Promise<{ path?: string[] }> }) {
-  return proxy(request, params, "GET");
-}
-
-export async function POST(request: NextRequest, { params }: { params: Promise<{ path?: string[] }> }) {
-  return proxy(request, params, "POST");
-}
-
-export async function PUT(request: NextRequest, { params }: { params: Promise<{ path?: string[] }> }) {
-  return proxy(request, params, "PUT");
-}
-
-export async function PATCH(request: NextRequest, { params }: { params: Promise<{ path?: string[] }> }) {
-  return proxy(request, params, "PATCH");
-}
-
-export async function DELETE(request: NextRequest, { params }: { params: Promise<{ path?: string[] }> }) {
-  return proxy(request, params, "DELETE");
-}
-
-export async function HEAD(request: NextRequest, { params }: { params: Promise<{ path?: string[] }> }) {
-  return proxy(request, params, "HEAD");
-}
-
-export async function OPTIONS() {
-  return new NextResponse(null, { status: 204 });
-}
-
-async function proxy(
-  request: NextRequest,
-  params: Promise<{ path?: string[] }>,
-  method: string
-) {
+async function proxy(request: NextRequest, params: Promise<{ path?: string[] }>, method: string) {
   const { path } = await params;
   const pathSegment = path?.join("/") ?? "";
-  const bases = getApiBases();
   const pathWithQuery = `/api/${pathSegment}${request.nextUrl.search}`;
 
   const headers = new Headers();
-  request.headers.forEach((v, k) => {
-    if (k.toLowerCase() === "host" || k.toLowerCase() === "connection") return;
-    headers.set(k, v);
-  });
-  if (method !== "GET" && method !== "HEAD" && !headers.has("Content-Type")) {
-    headers.set("Content-Type", "application/json");
-  }
+  headers.set("Content-Type", "application/json");
+  const auth = request.headers.get("Authorization");
+  if (auth) headers.set("Authorization", auth);
 
   let body: string | ArrayBuffer | undefined;
   if (method !== "GET" && method !== "HEAD") {
@@ -83,57 +24,53 @@ async function proxy(
   }
   const hasBody = body != null && (typeof body === "string" ? body.length > 0 : body.byteLength > 0);
 
-  let lastErr: Error | null = null;
-  let lastRes: { data: string; status: number; contentType: string } | null = null;
-  for (const apiBase of bases) {
-    const url = `${apiBase}${pathWithQuery}`;
+  for (const base of getApiBases()) {
     try {
-      const res = await fetch(url, {
+      const res = await fetch(`${base}${pathWithQuery}`, {
         method,
         headers,
         body: hasBody ? body : undefined,
-        signal: AbortSignal.timeout(25000),
+        signal: AbortSignal.timeout(PROXY_TIMEOUT_MS),
         cache: "no-store",
       });
       const data = await res.text();
       const contentType = res.headers.get("Content-Type") || "application/json";
-      const looksLikeErrorPage =
+      const looksLikeError =
         data.toLowerCase().includes("application not found") || data.toLowerCase().includes("dns_probe_finished_nxdomain");
-      if (res.ok && !looksLikeErrorPage) {
+      if (res.ok && !looksLikeError) {
         return new NextResponse(data, { status: res.status, headers: { "Content-Type": contentType } });
       }
-      lastRes = { data, status: res.status, contentType };
-      const isRetryable =
-        res.status === 404 ||
-        res.status === 502 ||
-        res.status === 503 ||
-        looksLikeErrorPage;
-      if (isRetryable) {
-        if (typeof console !== "undefined" && console.warn) {
-          console.warn("[API Proxy] Base returned", res.status, apiBase.replace(/\/$/, ""), "– trying next…");
-        }
-        continue;
-      }
+      if (res.status === 404 || res.status === 502 || res.status === 503 || looksLikeError) continue;
       return new NextResponse(data, { status: res.status, headers: { "Content-Type": contentType } });
-    } catch (e) {
-      lastErr = e instanceof Error ? e : new Error(String(e));
-      if (typeof console !== "undefined" && console.error) {
-        console.error("[API Proxy]", lastErr.message, { base: apiBase.replace(/\/$/, "") });
-      }
+    } catch {
+      continue;
     }
   }
-  if (lastRes) {
-    return new NextResponse(lastRes.data, { status: lastRes.status, headers: { "Content-Type": lastRes.contentType } });
-  }
 
-  const err = lastErr ?? new Error("Backend çatılmadı");
-  const isTimeout = err.name === "TimeoutError" || err.message?.includes("timeout");
   return NextResponse.json(
-    {
-      message: isTimeout
-        ? "API cavab vermədi (timeout). Bir az sonra yenidən cəhd edin."
-        : "Backend API-ya çıxış yoxdur. www.easysteperp.com/api/ping açıb vəziyyəti yoxlayın.",
-    },
+    { message: "Backend API-ya çıxış yoxdur. www.easysteperp.com/api/ping yoxlayın." },
     { status: 502 }
   );
+}
+
+export async function GET(req: NextRequest, { params }: { params: Promise<{ path?: string[] }> }) {
+  return proxy(req, params, "GET");
+}
+export async function POST(req: NextRequest, { params }: { params: Promise<{ path?: string[] }> }) {
+  return proxy(req, params, "POST");
+}
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ path?: string[] }> }) {
+  return proxy(req, params, "PUT");
+}
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ path?: string[] }> }) {
+  return proxy(req, params, "PATCH");
+}
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ path?: string[] }> }) {
+  return proxy(req, params, "DELETE");
+}
+export async function HEAD(req: NextRequest, { params }: { params: Promise<{ path?: string[] }> }) {
+  return proxy(req, params, "HEAD");
+}
+export async function OPTIONS() {
+  return new NextResponse(null, { status: 204 });
 }

@@ -105,6 +105,12 @@ Bu xəta əsasən proxy timeout-dan yaranır: e-poçt göndərmə yavaş olduqda
 2. `www.easysteperp.com/api/ping` açın — health, login status görünür
 3. Railway deploy **Success** olmalıdır; 1–2 dəqiqə gözləyib yenidən test edin
 
+## adminTenantsDirect «fetch failed» / adminTenantsViaProxy 404
+
+1. **adminRouteOk:** Əgər `adminRouteOk.status === 200` — Next.js admin route-lar işləyir. 404 olarsa — Vercel deploy və ya route konflikt yoxlayın.
+2. **adminTenantsDirect «fetch failed»:** Vercel serverless → Railway şəbəkə xətası (DNS/timeout). Normal: brauzer → Vercel proxy → Railway işləyir. Direct test yalnız diaqnostikadır.
+3. **adminTenantsViaProxy 404:** `adminRouteOk` 200 olub `adminTenantsViaProxy` 404 olarsa — backend `/api/admin/tenants` 404 qaytarır (route səhvi). `adminRouteOk` da 404 olarsa — Next.js admin route tapılmır: Vercel-da Redeploy edin.
+
 ## 404/Profil sil işləməzsə — yoxlama
 
 1. **Railway Build:** Deployments → son deploy **Success** (yaşıl) olmalıdır. **Failed** varsa → logları açıb səbəbə baxın.

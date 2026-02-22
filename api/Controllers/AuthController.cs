@@ -446,7 +446,7 @@ public class AuthController : ControllerBase
         var token = await _auth.CreatePasswordResetTokenAsync(email, ct);
         if (token != null)
         {
-            var baseUrl = _config["App:BaseUrl"] ?? "http://localhost:3000";
+            var baseUrl = _config["App:BaseUrl"] ?? _config["App__BaseUrl"] ?? "https://www.easysteperp.com";
             var resetUrl = $"{baseUrl}/reset-password?token={Uri.EscapeDataString(token)}";
             var to = email;
             var userWithTenant = await _auth.GetUserWithTenantByEmailAsync(email, ct);

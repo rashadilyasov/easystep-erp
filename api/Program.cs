@@ -1,6 +1,7 @@
 using EasyStep.Erp.Api.Data;
 using EasyStep.Erp.Api.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Resend;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -59,7 +60,20 @@ builder.Services.AddHttpClient();
 builder.Services.AddScoped<IPaymentProvider, PayriffService>();
 builder.Services.AddScoped<EmailSettingsService>();
 builder.Services.AddScoped<EmailTemplateService>();
-builder.Services.AddScoped<IEmailService, ConfigurableSmtpEmailService>();
+
+var resendKey = Environment.GetEnvironmentVariable("RESEND_API_KEY") ?? Environment.GetEnvironmentVariable("RESEND_APITOKEN") ?? builder.Configuration["Resend:ApiKey"];
+if (!string.IsNullOrWhiteSpace(resendKey))
+{
+    builder.Services.AddOptions();
+    builder.Services.AddHttpClient<ResendClient>();
+    builder.Services.Configure<ResendClientOptions>(o => o.ApiToken = resendKey.Trim());
+    builder.Services.AddTransient<IResend, ResendClient>();
+    builder.Services.AddScoped<IEmailService, ResendEmailService>();
+}
+else
+{
+    builder.Services.AddScoped<IEmailService, ConfigurableSmtpEmailService>();
+}
 builder.Services.AddScoped<ITemplatedEmailService, TemplatedEmailService>();
 
 // Controllers

@@ -80,6 +80,7 @@ async function proxy(
   const hasBody = body != null && (typeof body === "string" ? body.length > 0 : body.byteLength > 0);
 
   let lastErr: Error | null = null;
+  let lastRes: { data: string; status: number; contentType: string } | null = null;
   for (const apiBase of bases) {
     const url = `${apiBase}${pathWithQuery}`;
     try {
@@ -91,16 +92,27 @@ async function proxy(
         cache: "no-store",
       });
       const data = await res.text();
-      return new NextResponse(data, {
-        status: res.status,
-        headers: { "Content-Type": res.headers.get("Content-Type") || "application/json" },
-      });
+      const contentType = res.headers.get("Content-Type") || "application/json";
+      if (res.ok) {
+        return new NextResponse(data, { status: res.status, headers: { "Content-Type": contentType } });
+      }
+      lastRes = { data, status: res.status, contentType };
+      if (res.status === 404 || res.status === 502 || data.toLowerCase().includes("application not found")) {
+        if (typeof console !== "undefined" && console.warn) {
+          console.warn("[API Proxy] Base returned", res.status, apiBase.replace(/\/$/, ""), "– trying next…");
+        }
+        continue;
+      }
+      return new NextResponse(data, { status: res.status, headers: { "Content-Type": contentType } });
     } catch (e) {
       lastErr = e instanceof Error ? e : new Error(String(e));
       if (typeof console !== "undefined" && console.error) {
         console.error("[API Proxy]", lastErr.message, { base: apiBase.replace(/\/$/, "") });
       }
     }
+  }
+  if (lastRes) {
+    return new NextResponse(lastRes.data, { status: lastRes.status, headers: { "Content-Type": lastRes.contentType } });
   }
 
   const err = lastErr ?? new Error("Backend çatılmadı");

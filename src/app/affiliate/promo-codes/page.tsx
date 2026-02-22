@@ -3,17 +3,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/api";
 
-const DEFAULT_DISCOUNT = 5;
-const DEFAULT_COMMISSION = 5;
-
 export default function AffiliatePromoCodesPage() {
   const [list, setList] = useState<
     { id: string; code: string; discountPercent: number; commissionPercent: number; status: string; createdAt: string; usedAt: string | null; tenantName: string | null }[]
   >([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [createForm, setCreateForm] = useState({ discountPercent: DEFAULT_DISCOUNT, commissionPercent: DEFAULT_COMMISSION });
+  const [defaults, setDefaults] = useState({ discountPercent: 5, commissionPercent: 5 });
 
   const load = useCallback(() => {
     setLoading(true);
@@ -29,10 +25,7 @@ export default function AffiliatePromoCodesPage() {
   useEffect(() => {
     api.affiliate.settings().then((s) => {
       if (s?.defaultDiscountPercent != null || s?.defaultCommissionPercent != null) {
-        setCreateForm((f) => ({
-          discountPercent: s.defaultDiscountPercent ?? f.discountPercent,
-          commissionPercent: s.defaultCommissionPercent ?? f.commissionPercent,
-        }));
+        setDefaults({ discountPercent: s.defaultDiscountPercent ?? 5, commissionPercent: s.defaultCommissionPercent ?? 5 });
       }
     }).catch(() => {});
   }, []);
@@ -40,11 +33,7 @@ export default function AffiliatePromoCodesPage() {
   const handleCreate = async () => {
     setCreating(true);
     try {
-      await api.affiliate.createPromoCode({
-        discountPercent: createForm.discountPercent,
-        commissionPercent: createForm.commissionPercent,
-      });
-      setShowCreateModal(false);
+      await api.affiliate.createPromoCode();
       load();
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Promo kod yaradıla bilmədi";
@@ -57,68 +46,18 @@ export default function AffiliatePromoCodesPage() {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">Promo kodlar</h1>
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Promo kodlar</h1>
+          <p className="text-sm text-slate-600 mt-1">Yeni kodlar Admin tərəfindən təyin olunan endirim {defaults.discountPercent}% və komissiya {defaults.commissionPercent}% ilə yaradılır.</p>
+        </div>
         <button
-          onClick={() => setShowCreateModal(true)}
+          onClick={handleCreate}
           disabled={creating}
           className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50"
         >
-          Yeni promo kod yarat
+          {creating ? "Yaradılır..." : "Yeni promo kod yarat"}
         </button>
       </div>
-
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => !creating && setShowCreateModal(false)}>
-          <div className="bg-white rounded-xl p-6 max-w-sm w-full mx-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <h3 className="font-semibold text-slate-900 mb-4">Yeni promo kod yarat</h3>
-            <p className="text-sm text-slate-600 mb-4">Endirim və komissiya faizlərini təyin edin.</p>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Endirim faizi (%)</label>
-                <input
-                  type="number"
-                  min={0}
-                  max={100}
-                  step={0.5}
-                  value={createForm.discountPercent}
-                  onChange={(e) => setCreateForm((f) => ({ ...f, discountPercent: parseFloat(e.target.value) || 0 }))}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Komissiya faizi (%)</label>
-                <input
-                  type="number"
-                  min={0}
-                  max={100}
-                  step={0.5}
-                  value={createForm.commissionPercent}
-                  onChange={(e) => setCreateForm((f) => ({ ...f, commissionPercent: parseFloat(e.target.value) || 0 }))}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg"
-                />
-              </div>
-            </div>
-            <div className="flex gap-2 mt-6">
-              <button
-                type="button"
-                onClick={handleCreate}
-                disabled={creating}
-                className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50"
-              >
-                {creating ? "Yaradılır..." : "Yarat"}
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowCreateModal(false)}
-                disabled={creating}
-                className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200"
-              >
-                Ləğv et
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {loading ? (
         <div className="h-48 bg-slate-100 rounded-2xl animate-pulse" />
@@ -126,7 +65,7 @@ export default function AffiliatePromoCodesPage() {
         <div className="p-12 bg-white rounded-2xl border border-slate-200 text-center text-slate-500">
           <p>Hələ promo kod yaratmayıbsınız.</p>
           <button
-            onClick={() => setShowCreateModal(true)}
+            onClick={handleCreate}
             disabled={creating}
             className="mt-4 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
           >

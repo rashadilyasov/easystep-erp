@@ -154,11 +154,7 @@ public class AffiliateController : ControllerBase
 
         try
         {
-        var promo = await _affiliate.CreatePromoCodeAsync(
-            aff.Id,
-            req?.DiscountPercent,
-            req?.CommissionPercent,
-            ct);
+        var promo = await _affiliate.CreatePromoCodeAsync(aff.Id, null, null, ct);
         if (promo == null) return BadRequest(new { message = "Promo kod yaradıla bilmədi. Admin təsdiqini yoxlayın." });
 
         var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -210,13 +206,10 @@ public class AffiliateController : ControllerBase
     }
 
     [HttpGet("settings")]
-    public IActionResult GetSettings(CancellationToken ct)
+    public async Task<IActionResult> GetSettings(CancellationToken ct)
     {
-        return Ok(new
-        {
-            defaultDiscountPercent = _affiliate.DefaultDiscountPercent,
-            defaultCommissionPercent = _affiliate.DefaultCommissionPercent,
-        });
+        var (discount, commission) = await _affiliate.GetPromoDefaultsFromDbAsync(ct);
+        return Ok(new { defaultDiscountPercent = discount, defaultCommissionPercent = commission });
     }
 }
 

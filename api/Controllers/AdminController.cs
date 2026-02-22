@@ -772,8 +772,9 @@ public class AdminController : ControllerBase
     {
         if (req == null || !req.AffiliateId.HasValue)
             return BadRequest(new { message = "Partnyor seçilməlidir" });
-        var discount = req.DiscountPercent ?? _affiliateService.DefaultDiscountPercent;
-        var commission = req.CommissionPercent ?? _affiliateService.DefaultCommissionPercent;
+        var (defaultDiscount, defaultCommission) = await _affiliateService.GetPromoDefaultsFromDbAsync(ct);
+        var discount = req.DiscountPercent ?? defaultDiscount;
+        var commission = req.CommissionPercent ?? defaultCommission;
         if (discount < 0 || discount > 100)
             return BadRequest(new { message = "Endirim faizi 0–100 arasında olmalıdır" });
         if (commission < 0 || commission > 100)
@@ -808,6 +809,25 @@ public class AdminController : ControllerBase
         await _db.SaveChangesAsync(ct);
         await _audit.LogAsync("PromoCodeUpdated", GetAdminUserId(), User.Identity?.Name, metadata: $"promoId={id} discountPercent={promo.DiscountPercent} commissionPercent={promo.CommissionPercent}", ct: ct);
         return Ok(new { message = "Promo kod yeniləndi" });
+    }
+
+    [HttpGet("promo-defaults")]
+    public async Task<IActionResult> GetPromoDefaults(CancellationToken ct = default)
+    {
+        var (discount, commission) = await _affiliateService.GetPromoDefaultsFromDbAsync(ct);
+        return Ok(new { discountPercent = discount, commissionPercent = commission });
+    }
+
+    [HttpPut("promo-defaults")]
+    public async Task<IActionResult> PutPromoDefaults([FromBody] PromoDefaultsRequest req, CancellationToken ct = default)
+    {
+        var discount = req?.DiscountPercent ?? 5;
+        var commission = req?.CommissionPercent ?? 5;
+        if (discount < 0 || discount > 100) return BadRequest(new { message = "Endirim faizi 0–100 arasında olmalıdır" });
+        if (commission < 0 || commission > 100) return BadRequest(new { message = "Komissiya faizi 0–100 arasında olmalıdır" });
+        await _affiliateService.SavePromoDefaultsAsync(discount, commission, ct);
+        await _audit.LogAsync("PromoDefaultsUpdated", GetAdminUserId(), User.Identity?.Name, metadata: $"discount={discount}% commission={commission}%", ct: ct);
+        return Ok(new { message = "Promo kod tənzimləməsi saxlanıldı" });
     }
 
     [HttpGet("promo-codes")]
@@ -1161,6 +1181,7 @@ public record UpdateTicketStatusRequest(string Status);
 public record CreatePlanRequest(string Name, int DurationMonths, decimal Price, string? Currency = "AZN", int? MaxDevices = null);
 public record UpdatePlanRequest(string? Name, int? DurationMonths, decimal? Price, string? Currency, int? MaxDevices, bool? IsActive);
 public record AdminCreatePromoCodeRequest(Guid? AffiliateId, decimal? DiscountPercent, decimal? CommissionPercent);
+public record PromoDefaultsRequest(decimal? DiscountPercent, decimal? CommissionPercent);
 public record UpdatePromoCodeRequest(decimal? DiscountPercent, decimal? CommissionPercent);
 public record CreateAnnouncementRequest(string? Title, string? Body);
 public record CreateAcademyMaterialRequest(string? Title, string? Url);

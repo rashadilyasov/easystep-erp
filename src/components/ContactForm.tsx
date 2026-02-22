@@ -7,6 +7,7 @@ export default function ContactForm() {
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [form, setForm] = useState({ name: "", email: "", message: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const validate = () => {
     const e: Record<string, string> = {};
@@ -24,6 +25,7 @@ export default function ContactForm() {
 
     setStatus("loading");
     setErrors({});
+    setErrorMessage(null);
     try {
       await api.contact.submit({
         name: form.name,
@@ -32,7 +34,8 @@ export default function ContactForm() {
       });
       setStatus("success");
       setForm({ name: "", email: "", message: "" });
-    } catch {
+    } catch (e) {
+      setErrorMessage(e instanceof Error ? e.message : "Xəta baş verdi");
       setStatus("error");
     }
   };
@@ -57,7 +60,7 @@ export default function ContactForm() {
     <form className="space-y-6" onSubmit={handleSubmit}>
       {status === "error" && (
         <div className="p-3 bg-red-50 text-red-700 rounded-xl text-sm">
-          Xəta baş verdi. Zəhmət olmasa bir az sonra yenidən cəhd edin.
+          {errorMessage || "Xəta baş verdi. Zəhmət olmasa bir az sonra yenidən cəhd edin."}
         </div>
       )}
       <div>

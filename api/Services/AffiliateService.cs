@@ -20,6 +20,41 @@ public class AffiliateService
     public decimal DefaultDiscountPercent => decimal.TryParse(_config["Affiliate:DefaultDiscountPercent"], out var d) ? d : 5;
     public decimal DefaultCommissionPercent => decimal.TryParse(_config["Affiliate:DefaultCommissionPercent"], out var c) ? c : 5;
 
+    /// <summary>Admin paneldə təyin olunan varsayılanlar. Partnyor promo kod yaradanda bunlar istifadə olunur.</summary>
+    public async Task<(decimal DiscountPercent, decimal CommissionPercent)> GetPromoDefaultsFromDbAsync(CancellationToken ct = default)
+    {
+        var sc = await _db.SiteContents.FirstOrDefaultAsync(c => c.Key == "affiliate:promoDefaults", ct);
+        if (sc != null && !string.IsNullOrEmpty(sc.Value))
+        {
+            try
+            {
+                var j = System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.JsonElement>(sc.Value);
+                var d = j.TryGetProperty("discountPercent", out var dp) && dp.TryGetDecimal(out var dv) ? dv : (decimal?)null;
+                var c = j.TryGetProperty("commissionPercent", out var cp) && cp.TryGetDecimal(out var cv) ? cv : (decimal?)null;
+                if (d.HasValue && c.HasValue && d >= 0 && d <= 100 && c >= 0 && c <= 100)
+                    return (d.Value, c.Value);
+            }
+            catch { /* ignore */ }
+        }
+        return (DefaultDiscountPercent, DefaultCommissionPercent);
+    }
+
+    public async Task SavePromoDefaultsAsync(decimal discountPercent, decimal commissionPercent, CancellationToken ct = default)
+    {
+        var json = System.Text.Json.JsonSerializer.Serialize(new { discountPercent, commissionPercent });
+        var sc = await _db.SiteContents.FirstOrDefaultAsync(c => c.Key == "affiliate:promoDefaults", ct);
+        if (sc != null)
+        {
+            sc.Value = json;
+            sc.UpdatedAt = DateTime.UtcNow;
+        }
+        else
+        {
+            _db.SiteContents.Add(new SiteContent { Id = Guid.NewGuid(), Key = "affiliate:promoDefaults", Value = json, UpdatedAt = DateTime.UtcNow });
+        }
+        await _db.SaveChangesAsync(ct);
+    }
+
     public async Task<PromoCode?> GetByCodeAsync(string code, CancellationToken ct = default)
     {
         var normalized = (code ?? "").Trim().ToUpperInvariant();
@@ -54,8 +89,19 @@ public class AffiliateService
         var affiliate = await _db.Affiliates.FindAsync(new object[] { affiliateId }, ct);
         if (affiliate == null || !affiliate.IsApproved) return null;
 
-        var discount = discountPercent ?? DefaultDiscountPercent;
-        var commission = commissionPercent ?? DefaultCommissionPercent;
+        decimal discount;
+        decimal commission;
+        if (discountPercent.HasValue && commissionPercent.HasValue)
+        {
+            discount = discountPercent.Value;
+            commission = commissionPercent.Value;
+        }
+        else
+        {
+            var defaults = await GetPromoDefaultsFromDbAsync(ct);
+            discount = defaults.DiscountPercent;
+            commission = defaults.CommissionPercent;
+        }
 
         var code = GenerateUniqueCode();
         var promo = new PromoCode

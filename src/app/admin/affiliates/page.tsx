@@ -85,6 +85,8 @@ export default function AdminAffiliatesPage() {
   const [showCreatePromoModal, setShowCreatePromoModal] = useState(false);
   const [createPromoForm, setCreatePromoForm] = useState({ discountPercent: 5, commissionPercent: 5 });
   const [createPromoSaving, setCreatePromoSaving] = useState(false);
+  const [promoDefaults, setPromoDefaults] = useState({ discountPercent: 5, commissionPercent: 5 });
+  const [promoDefaultsSaving, setPromoDefaultsSaving] = useState(false);
 
   const now = new Date();
   const prevMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
@@ -104,14 +106,19 @@ export default function AdminAffiliatesPage() {
         status: bonusFilter || undefined,
       }),
       api.admin.promoCodes({ affiliateId: affiliateFilter || undefined }),
+      api.admin.promoDefaults().catch(() => ({ discountPercent: 5, commissionPercent: 5 })),
     ])
-      .then(([s, aff, com, bon, promos]) => {
+      .then(([s, aff, com, bon, promos, defs]) => {
         setLoadError(null);
         setStats(s ?? null);
         setList(Array.isArray(aff) ? aff : []);
         setCommissions(Array.isArray(com) ? com : []);
         setBonuses(Array.isArray(bon) ? bon ?? [] : []);
         setPromoCodes(Array.isArray(promos) ? promos ?? [] : []);
+        if (defs && typeof defs.discountPercent === "number" && typeof defs.commissionPercent === "number") {
+          setPromoDefaults({ discountPercent: defs.discountPercent, commissionPercent: defs.commissionPercent });
+          setCreatePromoForm({ discountPercent: defs.discountPercent, commissionPercent: defs.commissionPercent });
+        }
         setSelectedIds(new Set());
       })
       .catch((e) => {
@@ -124,6 +131,17 @@ export default function AdminAffiliatesPage() {
       })
       .finally(() => setLoading(false));
   }, [filter, affiliateFilter, bonusFilter]);
+
+  const handleSavePromoDefaults = async () => {
+    setPromoDefaultsSaving(true);
+    try {
+      await api.admin.putPromoDefaults(promoDefaults);
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Xəta");
+    } finally {
+      setPromoDefaultsSaving(false);
+    }
+  };
 
   useEffect(() => load(), [load]);
 
@@ -333,6 +351,46 @@ export default function AdminAffiliatesPage() {
           </button>
         </div>
       )}
+
+      {/* Promo kod tənzimləməsi */}
+      <div className="mb-8 bg-white rounded-2xl border border-slate-200 p-6 shadow-sm max-w-xl">
+        <h2 className="font-semibold text-slate-900 mb-2">Promo kod tənzimləməsi</h2>
+        <p className="text-sm text-slate-600 mb-4">Satış partnyorları promo kod yaratdıqda bu faizlər avtomatik tətbiq olunacaq.</p>
+        <div className="flex flex-wrap gap-6 items-end">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Endirim faizi (%)</label>
+            <input
+              type="number"
+              min={0}
+              max={100}
+              step={0.5}
+              value={promoDefaults.discountPercent}
+              onChange={(e) => setPromoDefaults((f) => ({ ...f, discountPercent: parseFloat(e.target.value) || 0 }))}
+              className="w-24 px-3 py-2 border border-slate-300 rounded-lg"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Komissiya (bonus) faizi (%)</label>
+            <input
+              type="number"
+              min={0}
+              max={100}
+              step={0.5}
+              value={promoDefaults.commissionPercent}
+              onChange={(e) => setPromoDefaults((f) => ({ ...f, commissionPercent: parseFloat(e.target.value) || 0 }))}
+              className="w-24 px-3 py-2 border border-slate-300 rounded-lg"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={handleSavePromoDefaults}
+            disabled={promoDefaultsSaving}
+            className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50"
+          >
+            {promoDefaultsSaving ? "Saxlanır..." : "Saxla"}
+          </button>
+        </div>
+      </div>
 
       {/* Statistik kartlar */}
       {!loading && stats && (

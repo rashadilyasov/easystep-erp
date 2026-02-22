@@ -514,6 +514,10 @@ export const api = {
         { id: string; code: string; discountPercent: number; commissionPercent: number; status: string; createdAt: string; usedAt: string | null; discountValidUntil: string | null; affiliateEmail: string; tenantName: string | null }[]
       >(`/api/admin/promo-codes${search ? `?${search}` : ""}`);
     },
+    promoDefaults: () =>
+      apiFetch<{ discountPercent: number; commissionPercent: number }>("/api/admin/promo-defaults"),
+    putPromoDefaults: (data: { discountPercent: number; commissionPercent: number }) =>
+      apiFetch<{ message: string }>("/api/admin/promo-defaults", { method: "PUT", body: JSON.stringify(data) }),
     createPromoCode: (data: { affiliateId: string; discountPercent?: number; commissionPercent?: number }) =>
       apiFetch<{ id: string; code: string; discountPercent: number; commissionPercent: number; message: string }>("/api/admin/promo-codes", {
         method: "POST",

@@ -9,6 +9,7 @@ export const runtime = "nodejs";
 
 // Railway direct URL — api.easysteperp.com DNS/SSL problemlərində fallback
 const RAILWAY_FALLBACK = "https://2qz1te51.up.railway.app";
+const API_CUSTOM_DOMAIN = "https://api.easysteperp.com";
 
 function getApiBases(): string[] {
   const bases: string[] = [];
@@ -20,7 +21,10 @@ function getApiBases(): string[] {
   }
   const railPub = process.env.RAILWAY_PUBLIC_URL?.replace(/\/$/, "").trim();
   if (railPub && !bases.some((b) => b.replace(/\/$/, "") === railPub)) bases.push(railPub);
-  if (process.env.VERCEL && !bases.includes(RAILWAY_FALLBACK)) bases.push(RAILWAY_FALLBACK);
+  if (process.env.VERCEL) {
+    if (!bases.some((b) => b.replace(/\/$/, "") === API_CUSTOM_DOMAIN)) bases.push(API_CUSTOM_DOMAIN);
+    if (!bases.some((b) => b.replace(/\/$/, "") === RAILWAY_FALLBACK)) bases.push(RAILWAY_FALLBACK);
+  }
   if (bases.length === 0) bases.push("http://localhost:5000");
   return bases;
 }
@@ -93,11 +97,18 @@ async function proxy(
       });
       const data = await res.text();
       const contentType = res.headers.get("Content-Type") || "application/json";
-      if (res.ok) {
+      const looksLikeErrorPage =
+        data.toLowerCase().includes("application not found") || data.toLowerCase().includes("dns_probe_finished_nxdomain");
+      if (res.ok && !looksLikeErrorPage) {
         return new NextResponse(data, { status: res.status, headers: { "Content-Type": contentType } });
       }
       lastRes = { data, status: res.status, contentType };
-      if (res.status === 404 || res.status === 502 || data.toLowerCase().includes("application not found")) {
+      const isRetryable =
+        res.status === 404 ||
+        res.status === 502 ||
+        res.status === 503 ||
+        looksLikeErrorPage;
+      if (isRetryable) {
         if (typeof console !== "undefined" && console.warn) {
           console.warn("[API Proxy] Base returned", res.status, apiBase.replace(/\/$/, ""), "– trying next…");
         }

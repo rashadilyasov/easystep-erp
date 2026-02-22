@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
 
 const RAILWAY_FALLBACK = "https://2qz1te51.up.railway.app";
+const API_CUSTOM_DOMAIN = "https://api.easysteperp.com";
 
 function getApiBases(): string[] {
   const url = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL;
@@ -16,9 +17,10 @@ function getApiBases(): string[] {
     bases.push(u);
   }
   if (process.env.VERCEL) {
-    const pub = process.env.RAILWAY_PUBLIC_URL;
-    if (pub && !bases.includes(pub.replace(/\/$/, ""))) bases.push(pub.replace(/\/$/, ""));
-    if (!bases.includes(RAILWAY_FALLBACK)) bases.push(RAILWAY_FALLBACK);
+    const pub = process.env.RAILWAY_PUBLIC_URL?.replace(/\/$/, "").trim();
+    if (pub && !bases.some((b) => b.replace(/\/$/, "") === pub)) bases.push(pub);
+    if (!bases.some((b) => b.replace(/\/$/, "") === API_CUSTOM_DOMAIN)) bases.push(API_CUSTOM_DOMAIN);
+    if (!bases.some((b) => b.replace(/\/$/, "") === RAILWAY_FALLBACK)) bases.push(RAILWAY_FALLBACK);
   }
   if (bases.length === 0) bases.push("http://localhost:5000");
   return bases;
@@ -54,11 +56,19 @@ async function proxyReq(request: NextRequest, segment: string[], method: string)
       });
       const data = await res.text();
       const contentType = res.headers.get("Content-Type") || "application/json";
-      if (res.ok) {
+      const looksLikeErrorPage =
+        data.toLowerCase().includes("application not found") || data.toLowerCase().includes("dns_probe_finished_nxdomain");
+      if (res.ok && !looksLikeErrorPage) {
         return new NextResponse(data, { status: res.status, headers: { "Content-Type": contentType } });
       }
       lastRes = { data, status: res.status, contentType };
-      if (res.status === 404 || res.status === 502 || data.toLowerCase().includes("application not found")) {
+      const isRetryable =
+        res.status === 404 ||
+        res.status === 502 ||
+        res.status === 503 ||
+        data.toLowerCase().includes("application not found") ||
+        data.toLowerCase().includes("dns_probe_finished_nxdomain");
+      if (isRetryable) {
         if (typeof console !== "undefined" && console.warn) {
           console.warn("[Auth Proxy] Base returned", res.status, base.replace(/\/$/, ""), "– trying next…");
         }

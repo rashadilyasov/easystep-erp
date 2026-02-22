@@ -433,13 +433,16 @@ public class AuthController : ControllerBase
     [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("auth")]
     public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest req, CancellationToken ct)
     {
-        var token = await _auth.CreatePasswordResetTokenAsync(req.Email, ct);
+        var email = req?.Email?.Trim();
+        if (string.IsNullOrEmpty(email))
+            return BadRequest(new { message = "E-poçt daxil edin" });
+        var token = await _auth.CreatePasswordResetTokenAsync(email, ct);
         if (token != null)
         {
             var baseUrl = _config["App:BaseUrl"] ?? "http://localhost:3000";
             var resetUrl = $"{baseUrl}/reset-password?token={Uri.EscapeDataString(token)}";
-            var to = req.Email;
-            var userWithTenant = await _auth.GetUserWithTenantByEmailAsync(req.Email, ct);
+            var to = email;
+            var userWithTenant = await _auth.GetUserWithTenantByEmailAsync(email, ct);
             var userName = (userWithTenant?.tenant?.ContactPerson ?? "").Trim();
             if (string.IsNullOrEmpty(userName)) userName = "Müştəri";
             try

@@ -15,9 +15,10 @@ function getApiBases(): string[] {
     const full = u.startsWith("http") ? u.replace(/\/$/, "") : `https://${u}`.replace(/\/$/, "");
     if (full && !bases.some((b) => norm(b) === norm(full))) bases.push(full);
   };
+  // api.easysteperp.com birinci — ping göstərir işləyir
+  add(API_CUSTOM_DOMAIN);
   const apiUrl = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL;
   if (apiUrl) add(apiUrl);
-  add(API_CUSTOM_DOMAIN);
   const pub = process.env.RAILWAY_PUBLIC_URL;
   if (pub) add(pub);
   if (process.env.VERCEL) add(RAILWAY_FALLBACK);

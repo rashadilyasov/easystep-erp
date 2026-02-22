@@ -156,6 +156,10 @@ public class AuthController : ControllerBase
         if (tenant == null)
             return Unauthorized(new { message = "Hesab tapılmadı" });
 
+        var requireAdminMfa = string.Equals(_config["Security:RequireAdminMfa"], "true", StringComparison.OrdinalIgnoreCase);
+        if (requireAdminMfa && user.Role == UserRole.SuperAdmin && !user.TwoFactorEnabled)
+            return StatusCode(403, new { message = "Admin hesabları üçün 2FA məcburidir. Təhlükəsizlik səhifəsindən 2FA aktivləşdirin (başqa admin vasitəsilə daxil olub bu hesaba 2FA təyin edə bilərsiniz)." });
+
         if (user.TwoFactorEnabled)
         {
             var pendingToken = _auth.GeneratePending2FAToken(user);

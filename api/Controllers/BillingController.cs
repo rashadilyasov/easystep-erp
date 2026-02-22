@@ -7,6 +7,7 @@ using EasyStep.Erp.Api.Data;
 using EasyStep.Erp.Api.Entities;
 using EasyStep.Erp.Api.Services;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -19,16 +20,18 @@ public class BillingController : ControllerBase
     private readonly ApplicationDbContext _db;
     private readonly IPaymentProvider _payment;
     private readonly IConfiguration _config;
+    private readonly IWebHostEnvironment _env;
     private readonly Services.AuditService _audit;
     private readonly AffiliateService _affiliate;
     private readonly ITemplatedEmailService _templatedEmail;
     private readonly ILogger<BillingController> _logger;
 
-    public BillingController(ApplicationDbContext db, IPaymentProvider payment, IConfiguration config, Services.AuditService audit, AffiliateService affiliate, ITemplatedEmailService templatedEmail, ILogger<BillingController> logger)
+    public BillingController(ApplicationDbContext db, IPaymentProvider payment, IConfiguration config, IWebHostEnvironment env, Services.AuditService audit, AffiliateService affiliate, ITemplatedEmailService templatedEmail, ILogger<BillingController> logger)
     {
         _db = db;
         _payment = payment;
         _config = config;
+        _env = env;
         _audit = audit;
         _affiliate = affiliate;
         _templatedEmail = templatedEmail;
@@ -247,7 +250,15 @@ table{{width:100%;border-collapse:collapse}} td{{padding:8px;border-bottom:1px s
             return BadRequest();
 
         var webhookSecret = _config["Payriff:WebhookSecret"];
-        if (!string.IsNullOrEmpty(webhookSecret))
+        if (string.IsNullOrEmpty(webhookSecret))
+        {
+            if (!_env.IsDevelopment())
+            {
+                _logger.LogWarning("Payriff webhook called but Payriff:WebhookSecret is not set in production");
+                return Unauthorized();
+            }
+        }
+        else
         {
             var signature = Request.Headers["X-Webhook-Signature"].FirstOrDefault()
                 ?? Request.Headers["X-Signature"].FirstOrDefault();

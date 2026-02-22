@@ -1,13 +1,13 @@
 "use client";
 
-import Link from "next/link";
 import { useState, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { useAuthModal } from "@/contexts/AuthModalContext";
 import { api } from "@/lib/api";
 
 function LoginFormInner() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const { close, loginRedirect } = useAuthModal();
   const redirect = loginRedirect || searchParams.get("redirect") || "/cabinet";
@@ -139,9 +139,16 @@ function LoginFormInner() {
           <input type="checkbox" className="rounded" />
           <span className="text-sm text-slate-600">Xatırla</span>
         </label>
-        <Link href="/forgot-password" className="text-sm text-primary-600 hover:underline leading-relaxed">
+        <button
+          type="button"
+          onClick={() => {
+            close();
+            router.push("/forgot-password");
+          }}
+          className="text-sm text-primary-600 hover:underline leading-relaxed"
+        >
           Şifrəni unutdum
-        </Link>
+        </button>
       </div>
       <button
         type="submit"

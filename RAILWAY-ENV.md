@@ -24,6 +24,8 @@ Affiliate__DefaultDiscountPercent=5
 Affiliate__DefaultCommissionPercent=5
 App__AcademyYoutubePlaylistId=
 Cron__Secret=RAILWAY_CRON_SECRET_BURAYA_QOYUN
+Payriff__WebhookSecret=PAYRIFF_WEBHOOK_SECRET_BURAYA_QOYUN
+Security__RequireAdminMfa=false
 ```
 
 > **Vacib:** `__` (iki alt xətt) — bir alt xətt `_` işləməz.
@@ -68,3 +70,5 @@ Cron__Secret=RAILWAY_CRON_SECRET_BURAYA_QOYUN
 | `Smtp__UseSsl` | `true` |
 | `App__AcademyYoutubePlaylistId` | YouTube playlist ID (Akademiya videoları; məs: PLxxxxxxxx) |
 | `Cron__Secret` | Bonus hesablama cron üçün gizli açar (Railway Cron job) |
+| `Payriff__WebhookSecret` | Payriff webhook imza yoxlaması üçün (Payriff panelindən alın) |
+| `Security__RequireAdminMfa` | `true` = SuperAdmin 2FA məcburi; `false` = opsional (default) |

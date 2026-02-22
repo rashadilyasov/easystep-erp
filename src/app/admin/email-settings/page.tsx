@@ -62,10 +62,19 @@ export default function AdminEmailSettingsPage() {
     try {
       const payload = { ...smtp };
       if (!payload.password?.trim()) delete (payload as { password?: string }).password;
-      await api.admin.putEmailSettings(payload);
+      try {
+        await api.admin.putEmailSettings(payload);
+      } catch (proxyErr) {
+        const direct = await fetchDirect("/api/admin/email-settings", payload, "PUT");
+        if (direct === null) throw proxyErr;
+      }
       loadSmtp();
     } catch (e) {
-      setSmtpError(e instanceof Error ? e.message : "Xəta baş verdi");
+      const msg = e instanceof Error ? e.message : "Xəta baş verdi";
+      const isAppNotFound = msg.toLowerCase().includes("application not found");
+      setSmtpError(
+        isAppNotFound ? "Proxy API-ya çatmir. Vercel API_URL və Railway domain yoxlayın. RAILWAY-ENV.md → Not Found." : msg
+      );
     } finally {
       setSmtpSaving(false);
     }
@@ -96,12 +105,12 @@ export default function AdminEmailSettingsPage() {
     }
   }, []);
 
-  const fetchDirect = async (path: string, body: object) => {
+  const fetchDirect = async (path: string, body: object, method: "POST" | "PUT" = "POST") => {
     const directApiBase = await getDirectApiBase();
     if (!directApiBase) return null;
     const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
     const res = await fetch(`${directApiBase}${path}`, {
-      method: "POST",
+      method,
       headers: {
         "Content-Type": "application/json",
         ...(token ? { Authorization: `Bearer ${token}` } : {}),

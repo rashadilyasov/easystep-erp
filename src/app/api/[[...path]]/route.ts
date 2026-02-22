@@ -13,18 +13,19 @@ const API_CUSTOM_DOMAIN = "https://api.easysteperp.com";
 
 function getApiBases(): string[] {
   const bases: string[] = [];
+  const norm = (s: string) => s.replace(/\/$/, "").trim();
+  if (process.env.VERCEL) {
+    bases.push(API_CUSTOM_DOMAIN);
+    if (!bases.some((b) => norm(b) === RAILWAY_FALLBACK)) bases.push(RAILWAY_FALLBACK);
+  }
   const url = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL;
   if (url) {
     let u = url.replace(/\/$/, "").trim();
     if (!u.startsWith("http://") && !u.startsWith("https://")) u = "https://" + u;
-    bases.push(u);
+    if (!bases.some((b) => norm(b) === norm(u))) bases.push(u);
   }
   const railPub = process.env.RAILWAY_PUBLIC_URL?.replace(/\/$/, "").trim();
-  if (railPub && !bases.some((b) => b.replace(/\/$/, "") === railPub)) bases.push(railPub);
-  if (process.env.VERCEL) {
-    if (!bases.some((b) => b.replace(/\/$/, "") === API_CUSTOM_DOMAIN)) bases.push(API_CUSTOM_DOMAIN);
-    if (!bases.some((b) => b.replace(/\/$/, "") === RAILWAY_FALLBACK)) bases.push(RAILWAY_FALLBACK);
-  }
+  if (railPub && !bases.some((b) => norm(b) === railPub)) bases.push(railPub);
   if (bases.length === 0) bases.push("http://localhost:5000");
   return bases;
 }

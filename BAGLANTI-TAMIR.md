@@ -21,8 +21,8 @@ Bu səhifə göstərəcək:
 
 | Dəyişən | Dəyər |
 |---------|-------|
-| `API_URL` | `https://2qz1te51.up.railway.app` (və ya öz Railway URL-iniz) |
-| və ya `NEXT_PUBLIC_API_URL` | `https://2qz1te51.up.railway.app` |
+| `API_URL` | `https://api.easysteperp.com` (custom domain — tövsiyə olunur) |
+| və ya `NEXT_PUBLIC_API_URL` | `https://api.easysteperp.com` |
 
 **Öz Railway URL-inizi əldə etmək:**
 - Railway → easystep-erp → **Settings** → **Networking** → **Public Networking**

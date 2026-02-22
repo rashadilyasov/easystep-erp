@@ -115,7 +115,12 @@ export async function GET(req: NextRequest) {
       const bpBody = await bpRes.text().catch(() => "");
       results.adminPingBackend = { status: bpRes.status, ok: bpRes.ok, body: bpBody.slice(0, 150) };
     } catch (e) {
-      results.adminPingBackend = { error: e instanceof Error ? e.message : String(e) };
+      const err = e as Error & { cause?: unknown; code?: string };
+      results.adminPingBackend = {
+        error: err.message || String(e),
+        code: err.code,
+        cause: err.cause ? String(err.cause) : undefined,
+      };
     }
   } else {
     results.adminPingBackend = { error: "No token" };
@@ -146,7 +151,13 @@ export async function GET(req: NextRequest) {
         });
         if (res.ok) directOk = true;
       } catch (e) {
-        directResults.push({ base: b, error: e instanceof Error ? e.message : String(e) });
+        const err = e as Error & { cause?: unknown; code?: string };
+        directResults.push({
+          base: b,
+          error: err.message || String(e),
+          code: err.code,
+          cause: err.cause ? String(err.cause) : undefined,
+        });
       }
     }
     results.adminTenantsDirect = directOk

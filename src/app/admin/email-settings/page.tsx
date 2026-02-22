@@ -104,11 +104,11 @@ export default function AdminEmailSettingsPage() {
     try {
       const r = await fetch("/api/config", { cache: "no-store" });
       const d = (await r.json()) as { apiBase?: string };
-      const base = (d?.apiBase || process.env.NEXT_PUBLIC_API_URL || "https://2qz1te51.up.railway.app" || "").replace(/\/$/, "");
+      const base = (d?.apiBase || process.env.NEXT_PUBLIC_API_URL || "https://api.easysteperp.com" || "").replace(/\/$/, "");
       if (base) apiBaseRef.current = base;
       return base;
     } catch {
-      return (process.env.NEXT_PUBLIC_API_URL || "https://2qz1te51.up.railway.app" || "").replace(/\/$/, "");
+      return (process.env.NEXT_PUBLIC_API_URL || "https://api.easysteperp.com" || "").replace(/\/$/, "");
     }
   }, []);
 

@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 namespace EasyStep.Erp.Api.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/admin")]
 [Authorize(Policy = "AdminOnly")]
 public class AdminController : ControllerBase
 {

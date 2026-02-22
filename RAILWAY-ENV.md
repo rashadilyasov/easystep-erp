@@ -2,6 +2,16 @@
 
 **Qoşulma sxemi:** Brauzer → Vercel (www.easysteperp.com) → `/api/*` proxy → Railway API (api.easysteperp.com) → Postgres.
 
+## Vercel (Öncəli) — Login və Admin panel üçün
+Vercel → layihə → **Settings** → **Environment Variables**:
+| Name | Value |
+|------|-------|
+| `API_URL` | `https://api.easysteperp.com` |
+
+Sonunda `/` olmasın. **Redeploy** edin. `2qz1te51.up.railway.app` admin/tenants üçün 404 qaytarır — istifadə etməyin.
+
+---
+
 Add these in **Railway** → easystep-erp → **Variables** → **Raw Editor**.
 
 ## Raw Editor — kopyala və əlavə et
@@ -119,7 +129,7 @@ Bu xəta əsasən proxy timeout-dan yaranır: e-poçt göndərmə yavaş olduqda
 1. **Railway Build:** Deployments → son deploy **Success** (yaşıl) olmalıdır. **Failed** varsa → logları açıb səbəbə baxın.
 2. **Root Directory:** Railway → API servisi → Settings → **Root Directory** = `api` olmalıdır.
 3. **API Health:** Brauzerdə açın: `https://SIZIN-RAILWAY-URL/api/Health` (məs. `https://2qz1te51.up.railway.app/api/Health`). `{"status":"ok"}` gəlməlidir. Əgər 404 gəlirsə — domain səhvdir və ya API işləmir.
-4. **Vercel API_URL:** Vercel → layihə → Settings → Environment Variables. `API_URL` = Railway URL (məs. `https://2qz1te51.up.railway.app` — sonunda `/` olmasın). İstəyə görə `NEXT_PUBLIC_API_URL` də eyni dəyər ola bilər. Sonra Vercel-da **Redeploy**. Bağlantı xətası olarsa → [BAGLANTI-TAMIR.md](./BAGLANTI-TAMIR.md)
+4. **Vercel API_URL:** Vercel → layihə → Settings → Environment Variables. **`API_URL`** = `https://api.easysteperp.com` (custom domain — Railway `2qz1te51.up.railway.app` admin/tenants üçün 404 qaytarır, istifadə etməyin). Sonunda `/` olmasın. Sonra Vercel-da **Redeploy**.
 5. **Login işləmirsə:** `www.easysteperp.com/api/ping` açın — health, login, adminTenants statusunu göstərər. Əgər health/ok deyilsə — Railway API işləmir.
 
 ## TCP_ABORT_O / TCP_ABORT_D — Postgres bağlantı qırılması

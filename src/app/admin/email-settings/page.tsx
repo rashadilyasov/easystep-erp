@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 
 type SmtpSettings = {
@@ -80,10 +80,23 @@ export default function AdminEmailSettingsPage() {
     }
   };
 
-  const directApiBase =
-    (typeof window !== "undefined" && (process.env.NEXT_PUBLIC_API_URL || "https://2qz1te51.up.railway.app").replace(/\/$/, "")) || "";
+  const apiBaseRef = useRef<string | null>(null);
+
+  const getDirectApiBase = useCallback(async () => {
+    if (apiBaseRef.current) return apiBaseRef.current;
+    try {
+      const r = await fetch("/api/config", { cache: "no-store" });
+      const d = (await r.json()) as { apiBase?: string };
+      const base = (d?.apiBase || process.env.NEXT_PUBLIC_API_URL || "https://2qz1te51.up.railway.app" || "").replace(/\/$/, "");
+      if (base) apiBaseRef.current = base;
+      return base;
+    } catch {
+      return (process.env.NEXT_PUBLIC_API_URL || "https://2qz1te51.up.railway.app" || "").replace(/\/$/, "");
+    }
+  }, []);
 
   const fetchDirect = async (path: string, body: object) => {
+    const directApiBase = await getDirectApiBase();
     if (!directApiBase) return null;
     const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
     const res = await fetch(`${directApiBase}${path}`, {
@@ -110,14 +123,9 @@ export default function AdminEmailSettingsPage() {
       try {
         r = await api.admin.testEmail(email);
       } catch (proxyErr) {
-        const msg = proxyErr instanceof Error ? proxyErr.message : "";
-        if (msg.toLowerCase().includes("application not found") || msg.toLowerCase().includes("not found") || msg.toLowerCase().includes("502")) {
-          const direct = await fetchDirect("/api/admin/test-email", { to: email });
-          if (direct) r = direct as { sent?: boolean; message?: string };
-          else throw proxyErr;
-        } else {
-          throw proxyErr;
-        }
+        const direct = await fetchDirect("/api/admin/test-email", { to: email });
+        if (direct) r = direct as { sent?: boolean; message?: string };
+        else throw proxyErr;
       }
       setTestResult({ sent: r.sent ?? false, message: r.message ?? "" });
     } catch (e) {
@@ -147,14 +155,9 @@ export default function AdminEmailSettingsPage() {
       try {
         r = await api.admin.sendPasswordReset(email);
       } catch (proxyErr) {
-        const msg = proxyErr instanceof Error ? proxyErr.message : "";
-        if (msg.toLowerCase().includes("application not found") || msg.toLowerCase().includes("not found") || msg.toLowerCase().includes("502")) {
-          const direct = await fetchDirect("/api/admin/send-password-reset", { email });
-          if (direct) r = direct as { sent?: boolean; message?: string };
-          else throw proxyErr;
-        } else {
-          throw proxyErr;
-        }
+        const direct = await fetchDirect("/api/admin/send-password-reset", { email });
+        if (direct) r = direct as { sent?: boolean; message?: string };
+        else throw proxyErr;
       }
       setTestResult({ sent: r.sent ?? false, message: r.message ?? "" });
     } catch (e) {

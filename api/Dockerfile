@@ -9,10 +9,7 @@ FROM mcr.microsoft.com/dotnet/aspnet:8.0
 WORKDIR /app
 COPY --from=build /app/publish .
 
-# Entrypoint with PORT from Railway
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
-
 ENV PORT=8080
 EXPOSE 8080
-ENTRYPOINT ["/entrypoint.sh"]
+# Inline entrypoint avoids CRLF issues with entrypoint.sh on Windows
+ENTRYPOINT ["sh", "-c", "export ASPNETCORE_URLS=http://0.0.0.0:${PORT:-8080} && exec dotnet EasyStep.Erp.Api.dll"]

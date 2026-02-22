@@ -17,6 +17,7 @@ App__ApiBaseUrl=https://api.easysteperp.com
 Smtp__Host=easysteperp.com
 Smtp__Port=465
 Smtp__User=hello@easysteperp.com
+Smtp__Password=BURAYA_SMTP_PAROL
 Smtp__From=hello@easysteperp.com
 Smtp__UseSsl=true
 Affiliate__DefaultDiscountPercent=5
@@ -28,7 +29,7 @@ Security__RequireAdminMfa=false
 ```
 
 > **Vacib:** `__` (iki alt xətt) — bir alt xətt `_` işləməz.
-> **SMTP parol:** Parol yalnız Admin panel → E-poçt ayarları → SMTP-də saxlanılır. Railway env-də parol tələb olunmur.
+> **SMTP parol:** Parol ya Admin panel → E-poçt ayarları → SMTP-də, ya da Railway env-də `Smtp__Password` ilə təyin edilə bilər. Admin paneldə doldursanız env lazım deyil.
 > `${{Postgres.DATABASE_URL}}` — Railway-də Postgres **Add Reference** etdikdə avtomatik yaranır.
 
 > **Profil sil 404/405:** API yenilənəndən sonra Railway-də **Deployments** → **Redeploy** edin.
@@ -82,7 +83,7 @@ Bu xəta əsasən proxy timeout-dan yaranır: e-poçt göndərmə yavaş olduqda
 1. **Railway Build:** Deployments → son deploy **Success** (yaşıl) olmalıdır. **Failed** varsa → logları açıb səbəbə baxın.
 2. **Root Directory:** Railway → API servisi → Settings → **Root Directory** = `api` olmalıdır.
 3. **API Health:** Brauzerdə açın: `https://SIZIN-RAILWAY-URL/api/Health` (məs. `https://2qz1te51.up.railway.app/api/Health`). `{"status":"ok"}` gəlməlidir. Əgər 404 gəlirsə — domain səhvdir və ya API işləmir.
-4. **Vercel API_URL:** Vercel → layihə → Settings → Environment Variables. `API_URL` və ya `NEXT_PUBLIC_API_URL` = Railway URL (`https://xxxx.up.railway.app`) və ya `https://api.easysteperp.com`. Sonra Vercel-da **Redeploy**. Bağlantı xətası olarsa → [BAGLANTI-TAMIR.md](./BAGLANTI-TAMIR.md)
+4. **Vercel API_URL:** Vercel → layihə → Settings → Environment Variables. `API_URL` = Railway URL (məs. `https://2qz1te51.up.railway.app` — sonunda `/` olmasın). İstəyə görə `NEXT_PUBLIC_API_URL` də eyni dəyər ola bilər. Sonra Vercel-da **Redeploy**. Bağlantı xətası olarsa → [BAGLANTI-TAMIR.md](./BAGLANTI-TAMIR.md)
 5. **Login işləmirsə:** `www.easysteperp.com/api/ping` açın — health, login, adminTenants statusunu göstərər. Əgər health/ok deyilsə — Railway API işləmir.
 
 ## Cədvəl formatı
@@ -98,6 +99,7 @@ Bu xəta əsasən proxy timeout-dan yaranır: e-poçt göndərmə yavaş olduqda
 | `Smtp__Host` | `mail.easysteperp.com` və ya `easysteperp.com` (Admin paneldə doldurulubsa istifadə olunmur; hosting provayderdən yoxlayın) |
 | `Smtp__Port` | `465` |
 | `Smtp__User` | `hello@easysteperp.com` |
+| `Smtp__Password` | SMTP parol (opsional — Admin paneldə doldurulsa istifadə olunmur) |
 | `Smtp__From` | `hello@easysteperp.com` |
 | `Smtp__UseSsl` | `true` |
 | `App__AcademyYoutubePlaylistId` | YouTube playlist ID (Akademiya videoları; məs: PLxxxxxxxx) |

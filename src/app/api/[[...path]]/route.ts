@@ -14,18 +14,17 @@ const API_CUSTOM_DOMAIN = "https://api.easysteperp.com";
 function getApiBases(): string[] {
   const bases: string[] = [];
   const norm = (s: string) => s.replace(/\/$/, "").trim();
-  if (process.env.VERCEL) {
-    bases.push(API_CUSTOM_DOMAIN);
-    if (!bases.some((b) => norm(b) === RAILWAY_FALLBACK)) bases.push(RAILWAY_FALLBACK);
-  }
-  const url = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL;
-  if (url) {
-    let u = url.replace(/\/$/, "").trim();
-    if (!u.startsWith("http://") && !u.startsWith("https://")) u = "https://" + u;
-    if (!bases.some((b) => norm(b) === norm(u))) bases.push(u);
-  }
-  const railPub = process.env.RAILWAY_PUBLIC_URL?.replace(/\/$/, "").trim();
-  if (railPub && !bases.some((b) => norm(b) === railPub)) bases.push(railPub);
+  const add = (u: string) => {
+    let full = u.replace(/\/$/, "").trim();
+    if (!full.startsWith("http")) full = "https://" + full;
+    if (full && !bases.some((b) => norm(b) === norm(full))) bases.push(full);
+  };
+  if (process.env.API_URL) add(process.env.API_URL);
+  if (process.env.NEXT_PUBLIC_API_URL) add(process.env.NEXT_PUBLIC_API_URL);
+  add(API_CUSTOM_DOMAIN);
+  const railPub = process.env.RAILWAY_PUBLIC_URL;
+  if (railPub) add(railPub);
+  if (process.env.VERCEL) add(RAILWAY_FALLBACK);
   if (bases.length === 0) bases.push("http://localhost:5000");
   return bases;
 }

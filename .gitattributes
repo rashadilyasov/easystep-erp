@@ -1,0 +1,2 @@
+# Ensure entrypoint.sh has LF line endings (Windows CRLF causes "bad interpreter" in Linux)
+api/entrypoint.sh text eol=lf

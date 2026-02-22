@@ -71,17 +71,24 @@ public class ConfigurableSmtpEmailService : IEmailService
 
     private SmtpConfig? FromConfig()
     {
-        var host = _config["Smtp:Host"];
+        // Dəstəklənir: Smtp__Host (__) və Smtp_Host (_) — Railway env formatından asılı olmayaraq
+        var host = _config["Smtp:Host"] ?? _config["Smtp_Host"];
         if (string.IsNullOrEmpty(host)) return null;
-        var port = int.Parse(_config["Smtp:Port"] ?? "587");
+        var portStr = _config["Smtp:Port"] ?? _config["Smtp_Port"] ?? "587";
+        var port = int.TryParse(portStr, out var p) ? p : 587;
+        var user = _config["Smtp:User"] ?? _config["Smtp_User"] ?? "";
+        var password = _config["Smtp:Password"] ?? _config["Smtp_Password"];
+        var from = _config["Smtp:From"] ?? _config["Smtp_From"] ?? "hello@easysteperp.com";
+        var useSslStr = _config["Smtp:UseSsl"] ?? _config["Smtp_UseSsl"] ?? "true";
+        var useSsl = port == 465 || bool.TryParse(useSslStr, out var ssl) && ssl;
         return new SmtpConfig
         {
             Host = host,
             Port = port,
-            User = _config["Smtp:User"] ?? "",
-            Password = _config["Smtp:Password"],
-            From = _config["Smtp:From"] ?? "hello@easysteperp.com",
-            UseSsl = port == 465 || bool.Parse(_config["Smtp:UseSsl"] ?? "true"),
+            User = user,
+            Password = password,
+            From = from,
+            UseSsl = useSsl,
         };
     }
 }

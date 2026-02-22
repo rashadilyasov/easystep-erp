@@ -6,24 +6,23 @@ import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-const RAILWAY_DIRECT = "https://2qz1te51.up.railway.app";
+const RAILWAY_FALLBACK = "https://2qz1te51.up.railway.app";
 const API_CUSTOM_DOMAIN = "https://api.easysteperp.com";
 
 function getApiBases(): string[] {
   const bases: string[] = [];
   const norm = (s: string) => s.replace(/\/$/, "").trim();
-  if (process.env.VERCEL) {
-    bases.push(RAILWAY_DIRECT);
-    if (!bases.some((b) => norm(b) === API_CUSTOM_DOMAIN)) bases.push(API_CUSTOM_DOMAIN);
-  }
-  const url = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL;
-  if (url) {
-    const u = url.replace(/\/$/, "").trim();
-    const full = u.startsWith("http") ? u : `https://${u}`;
-    if (!bases.some((b) => norm(b) === norm(full))) bases.push(full);
-  }
-  const pub = process.env.RAILWAY_PUBLIC_URL?.replace(/\/$/, "").trim();
-  if (pub && !bases.some((b) => norm(b) === pub)) bases.push(pub);
+  const add = (u: string) => {
+    const full = u.startsWith("http") ? u.replace(/\/$/, "") : `https://${u}`.replace(/\/$/, "");
+    if (full && !bases.some((b) => norm(b) === norm(full))) bases.push(full);
+  };
+  // API_URL prioritet — Vercel-da təyin olunan Railway URL birinci
+  const apiUrl = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL;
+  if (apiUrl) add(apiUrl);
+  add(API_CUSTOM_DOMAIN);
+  const pub = process.env.RAILWAY_PUBLIC_URL;
+  if (pub) add(pub);
+  if (process.env.VERCEL) add(RAILWAY_FALLBACK);
   if (bases.length === 0) bases.push("http://localhost:5000");
   return bases;
 }
@@ -55,7 +54,7 @@ async function proxyReq(request: NextRequest, segment: string[], method: string)
           method,
           headers,
           body: body ?? undefined,
-          signal: AbortSignal.timeout(25000),
+          signal: AbortSignal.timeout(60000),
           cache: "no-store",
         });
         const data = await res.text();

@@ -1,4 +1,3 @@
 # Railway API — Root Directory = api
 [deploy]
-# healthcheck söndürülüb — deploy keçsin
-healthcheckPath = ""
+healthcheckPath = "/"

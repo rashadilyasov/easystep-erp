@@ -2,7 +2,9 @@
 
 ## Düzəliş (deploy edildi)
 
-Repo root-a **Dockerfile** və **railway.toml** əlavə edildi. İndi **Root Directory boş olsa belə** Railway .NET API-ni build edəcək (əvvəl Next.js build olurdu, ona görə "Not Found" gəlirdi).
+- Repo root-a **Dockerfile** və **railway.toml** əlavə edildi. Root Directory boş olsa belə Railway .NET API-ni build edir.
+- **healthcheckPath = "/"** — Railway artıq `/` üzərindən health yoxlayır; deploy vaxtı düzgün routing təmin olunur.
+- **Inline ENTRYPOINT** — `entrypoint.sh` əvəzinə Docker-da inline `sh -c` istifadə olunur (Windows CRLF/bad interpreter xətaları aradan qalxdı).
 
 ---
 

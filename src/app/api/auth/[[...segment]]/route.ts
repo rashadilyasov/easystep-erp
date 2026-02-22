@@ -11,18 +11,16 @@ const API_CUSTOM_DOMAIN = "https://api.easysteperp.com";
 function getApiBases(): string[] {
   const bases: string[] = [];
   const norm = (s: string) => s.replace(/\/$/, "").trim();
-  if (process.env.VERCEL) {
-    bases.push(API_CUSTOM_DOMAIN);
-    if (!bases.some((b) => norm(b) === RAILWAY_FALLBACK)) bases.push(RAILWAY_FALLBACK);
-  }
-  const url = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL;
-  if (url) {
-    let u = url.replace(/\/$/, "").trim();
-    if (!u.startsWith("http://") && !u.startsWith("https://")) u = "https://" + u;
-    if (!bases.some((b) => norm(b) === norm(u))) bases.push(u);
-  }
-  const pub = process.env.RAILWAY_PUBLIC_URL?.replace(/\/$/, "").trim();
-  if (pub && !bases.some((b) => norm(b) === pub)) bases.push(pub);
+  const add = (u: string) => {
+    const full = u.startsWith("http") ? u.replace(/\/$/, "") : `https://${u}`.replace(/\/$/, "");
+    if (full && !bases.some((b) => norm(b) === norm(full))) bases.push(full);
+  };
+  const apiUrl = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL;
+  if (apiUrl) add(apiUrl);
+  add(API_CUSTOM_DOMAIN);
+  const pub = process.env.RAILWAY_PUBLIC_URL;
+  if (pub) add(pub);
+  if (process.env.VERCEL) add(RAILWAY_FALLBACK);
   if (bases.length === 0) bases.push("http://localhost:5000");
   return bases;
 }
@@ -52,7 +50,7 @@ async function proxyReq(request: NextRequest, segment: string[], method: string)
         method,
         headers,
         body: body ?? undefined,
-        signal: AbortSignal.timeout(20000),
+        signal: AbortSignal.timeout(60000),
         cache: "no-store",
       });
       const data = await res.text();
@@ -85,6 +83,13 @@ async function proxyReq(request: NextRequest, segment: string[], method: string)
   }
 
   if (lastRes) {
+    const isAppNotFound = lastRes.data?.toLowerCase().includes("application not found");
+    if (isAppNotFound) {
+      return NextResponse.json(
+        { message: "API çatılmır. Vercel-da API_URL yoxlayın, www.easysteperp.com/api/ping açın." },
+        { status: 502 }
+      );
+    }
     return new NextResponse(lastRes.data, {
       status: lastRes.status,
       headers: { "Content-Type": lastRes.contentType },

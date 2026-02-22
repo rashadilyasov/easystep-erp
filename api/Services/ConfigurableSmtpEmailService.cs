@@ -46,7 +46,7 @@ public class ConfigurableSmtpEmailService : IEmailService
             {
                 EnableSsl = smtp.Port == 465 || smtp.UseSsl,
                 Credentials = new NetworkCredential(smtp.User, smtp.Password ?? ""),
-                Timeout = 15000,
+                Timeout = 12000,
             };
             var msg = new MailMessage
             {
@@ -85,13 +85,15 @@ public class ConfigurableSmtpEmailService : IEmailService
             return (false, $"Host={smtp.Host}, User={smtp.User} — parol boşdur. Admin paneldə parol daxil edib saxlayın.", null);
 
         var configInfo = $"Host={smtp.Host}, Port={smtp.Port}, User={smtp.User}, SSL={smtp.UseSsl}";
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        cts.CancelAfter(TimeSpan.FromSeconds(25));
         try
         {
             using var client = new SmtpClient(smtp.Host, smtp.Port)
             {
                 EnableSsl = smtp.Port == 465 || smtp.UseSsl,
                 Credentials = new NetworkCredential(smtp.User, smtp.Password ?? ""),
-                Timeout = 20000,
+                Timeout = 12000,
             };
             var msg = new MailMessage
             {
@@ -101,8 +103,12 @@ public class ConfigurableSmtpEmailService : IEmailService
                 IsBodyHtml = true,
             };
             msg.To.Add(to);
-            await client.SendMailAsync(msg, ct);
+            await client.SendMailAsync(msg, cts.Token);
             return (true, configInfo, null);
+        }
+        catch (OperationCanceledException)
+        {
+            return (false, configInfo, "Bağlantı vaxtı bitdi (25 saniyə). Railway → Bluehost SMTP portu bloklana bilər. Port 587 sınayın.");
         }
         catch (Exception ex)
         {

@@ -44,8 +44,9 @@ Bu xəta əsasən proxy timeout-dan yaranır: e-poçt göndərmə yavaş olduqda
 ## Şifrə sıfırlama e-poçtu gəlmir
 
 Əgər "Şifrə sıfırlama linki göndərildi" yazılsa da e-poçt gəlmirsə:
-1. **Admin panel** → E-poçt ayarları → SMTP: Host (`host2080.hostmonster.com` Bluehost üçün), Port 465, İstifadəçi, **Parol**, From doldurun → «Yadda saxla»
-2. **SMTP diaqnostika** düyməsinə basın — real xəta mesajı görünəcək (məs. "Authentication failed", "Connection timed out")
+1. **Admin panel** → E-poçt ayarları → SMTP: Host (`host2080.hostmonster.com` Bluehost üçün), İstifadəçi, **Parol**, From doldurun → «Yadda saxla»
+2. **Port 465 timeout verirsə:** Portu **587** edin, SSL işarəsini saxlayın, yenidən saxlayın və diaqnostika edin
+3. **SMTP diaqnostika** düyməsinə basın — real xəta mesajı görünəcək
 3. **Parol mütləqdir:** İlk dəfə parol sahəsinə daxil edib saxlayın (təhlükə üçün sahə boş göstərilir)
 4. **Spam:** E-poçt spam qovluğuna düşə bilər
 5. **Railway logs:** Deployments → View Logs — "SMTP" və ya "forgot-password" axtarın

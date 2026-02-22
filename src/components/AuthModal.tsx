@@ -6,6 +6,7 @@ import { useAuthModal } from "@/contexts/AuthModalContext";
 import LoginForm from "./LoginForm";
 import RegisterForm from "./RegisterForm";
 import RegisterAffiliateForm from "./RegisterAffiliateForm";
+import ForgotPasswordForm from "./ForgotPasswordForm";
 import Logo from "./Logo";
 
 export default function AuthModal() {
@@ -44,10 +45,17 @@ export default function AuthModal() {
   const title =
     mode === "login"
       ? "Daxil ol"
+      : mode === "forgotPassword"
+        ? "Şifrəni bərpa et"
+        : mode === "affiliate"
+          ? "Satış partnyoru qeydiyyatı"
+          : "Qeydiyyat";
+  const description =
+    mode === "forgotPassword"
+      ? "E-poçt ünvanınızı daxil edin. Sizə şifrə sıfırlama linki göndərəcəyik."
       : mode === "affiliate"
-        ? "Satış partnyoru qeydiyyatı"
-        : "Qeydiyyat";
-  const description = mode === "affiliate" ? "Promo kodlar yaradın və müştəri cəlb edərək komissiya qazanın." : null;
+        ? "Promo kodlar yaradın və müştəri cəlb edərək komissiya qazanın."
+        : null;
 
   const content = (
     <div
@@ -88,6 +96,8 @@ export default function AuthModal() {
           <Suspense fallback={<div className="h-48 bg-slate-100 rounded-xl animate-pulse" />}>
             {mode === "login" ? (
               <LoginForm />
+            ) : mode === "forgotPassword" ? (
+              <ForgotPasswordForm inModal />
             ) : mode === "affiliate" ? (
               <RegisterAffiliateForm />
             ) : (
@@ -105,6 +115,17 @@ export default function AuthModal() {
                   className="text-primary-600 font-medium hover:underline"
                 >
                   Qeydiyyat
+                </button>
+              </>
+            ) : mode === "forgotPassword" ? (
+              <>
+                Yadda saldınız?{" "}
+                <button
+                  type="button"
+                  onClick={openLogin}
+                  className="text-primary-600 font-medium hover:underline"
+                >
+                  Daxil ol
                 </button>
               </>
             ) : (

@@ -9,7 +9,7 @@ import { api } from "@/lib/api";
 function LoginFormInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { close, loginRedirect } = useAuthModal();
+  const { close, loginRedirect, openForgotPassword } = useAuthModal();
   const redirect = loginRedirect || searchParams.get("redirect") || "/cabinet";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -141,10 +141,7 @@ function LoginFormInner() {
         </label>
         <button
           type="button"
-          onClick={() => {
-            close();
-            router.push("/forgot-password");
-          }}
+          onClick={openForgotPassword}
           className="text-sm text-primary-600 hover:underline leading-relaxed"
         >
           Şifrəni unutdum

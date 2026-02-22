@@ -8,7 +8,7 @@ import {
   type ReactNode,
 } from "react";
 
-type AuthModalMode = "login" | "register" | "affiliate" | null;
+type AuthModalMode = "login" | "register" | "affiliate" | "forgotPassword" | null;
 
 type AuthModalContextValue = {
   isOpen: boolean;
@@ -17,6 +17,7 @@ type AuthModalContextValue = {
   openLogin: (redirect?: string) => void;
   openRegister: () => void;
   openRegisterAffiliate: () => void;
+  openForgotPassword: () => void;
   close: () => void;
 };
 
@@ -38,6 +39,10 @@ export function AuthModalProvider({ children }: { children: ReactNode }) {
     setLoginRedirect(null);
     setMode("affiliate");
   }, []);
+  const openForgotPassword = useCallback(() => {
+    setLoginRedirect(null);
+    setMode("forgotPassword");
+  }, []);
   const close = useCallback(() => {
     setMode(null);
     setLoginRedirect(null);
@@ -52,6 +57,7 @@ export function AuthModalProvider({ children }: { children: ReactNode }) {
         openLogin,
         openRegister,
         openRegisterAffiliate,
+        openForgotPassword,
         close,
       }}
     >
@@ -70,6 +76,7 @@ export function useAuthModal() {
       openLogin: (_redirect?: string) => {},
       openRegister: () => {},
       openRegisterAffiliate: () => {},
+      openForgotPassword: () => {},
       close: () => {},
     };
   }

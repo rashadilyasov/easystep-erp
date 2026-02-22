@@ -5,9 +5,11 @@ import { useRouter } from "next/navigation";
 import { useAuthModal } from "@/contexts/AuthModalContext";
 import { api } from "@/lib/api";
 
-export default function ForgotPasswordForm() {
+type Props = { inModal?: boolean };
+
+export default function ForgotPasswordForm({ inModal }: Props) {
   const router = useRouter();
-  const { openLogin } = useAuthModal();
+  const { openLogin, close } = useAuthModal();
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
@@ -22,14 +24,26 @@ export default function ForgotPasswordForm() {
       await api.auth.forgotPassword(email);
       setStatus("success");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Xəta baş verdi");
+      const msg = e instanceof Error ? e.message : "Xəta baş verdi";
+      const friendly =
+        msg.toLowerCase().includes("application not found") ||
+        msg.toLowerCase().includes("not found") ||
+        msg.toLowerCase().includes("502")
+          ? "Xidmət hazırda əlçatan deyil. Bir az sonra yenidən cəhd edin və ya API ayarlarını yoxlayın."
+          : msg;
+      setError(friendly);
       setStatus("error");
     }
   };
 
   const goToLogin = () => {
-    openLogin();
-    router.push("/");
+    if (inModal) {
+      close();
+      openLogin();
+    } else {
+      openLogin();
+      router.push("/");
+    }
   };
 
   if (status === "success") {

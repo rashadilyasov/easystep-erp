@@ -6,6 +6,7 @@ import { NextResponse } from "next/server";
 import { getApiBases } from "@/lib/api-proxy-config";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 export async function GET() {
   const bases = getApiBases();

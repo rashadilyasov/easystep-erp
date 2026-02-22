@@ -92,11 +92,14 @@ export async function apiFetch<T>(path: string, options: FetchOptions = {}): Pro
       const refresh = getRefreshToken();
       if (refresh) {
         try {
+          const refreshCtrl = new AbortController();
+          const refreshTimeout = setTimeout(() => refreshCtrl.abort(), 15000);
           const refreshRes = await fetch(`${getApiBase()}/api/auth/refresh`, {
             method: "POST",
             body: JSON.stringify({ refreshToken: refresh }),
             headers: { "Content-Type": "application/json" },
-          });
+            signal: refreshCtrl.signal,
+          }).finally(() => clearTimeout(refreshTimeout));
           const tok = await refreshRes.json() as { accessToken?: string; refreshToken?: string };
           if (tok.accessToken && tok.refreshToken) {
             setTokens(tok.accessToken, tok.refreshToken);

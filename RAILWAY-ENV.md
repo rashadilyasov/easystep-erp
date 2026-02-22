@@ -1,5 +1,7 @@
 # Railway Environment Variables
 
+**Qoşulma sxemi:** Brauzer → Vercel (www.easysteperp.com) → `/api/*` proxy → Railway API (api.easysteperp.com) → Postgres.
+
 Add these in **Railway** → easystep-erp → **Variables** → **Raw Editor**.
 
 ## Raw Editor — kopyala və əlavə et

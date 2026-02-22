@@ -1166,8 +1166,8 @@ public class AdminController : ControllerBase
         var to = req?.To?.Trim();
         if (string.IsNullOrEmpty(to))
             return BadRequest(new { message = "E-poçt ünvanı tələb olunur", sent = false });
-        var ok = await _email.SendAsync(to, "Easy Step ERP - Test e-poçt", "<p>Salam,</p><p>Bu Easy Step ERP test e-poçtudur. Göndərmə uğurludur.</p><p>— Easy Step ERP</p>", from: "onboarding@resend.dev", ct);
-        return Ok(new { sent = ok, message = ok ? "Test e-poçtu göndərildi" : "Göndərmə uğursuz. Resend: Domains → easysteperp.com əlavə edib DNS doğrulayın. Test üçün onboarding@resend.dev işlədilir." });
+        var ok = await _email.SendAsync(to, "Easy Step ERP - Test e-poçt", "<p>Salam,</p><p>Bu Easy Step ERP test e-poçtudur. Göndərmə uğurludur.</p><p>— Easy Step ERP</p>", from: null, ct);
+        return Ok(new { sent = ok, message = ok ? "Test e-poçtu göndərildi" : "Göndərmə uğursuz. Spam qovluğunu yoxlayın. Resend Domains-da easysteperp.com Verified olmalıdır." });
     }
 
     [HttpPost("smtp-diagnose")]

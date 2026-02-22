@@ -1064,7 +1064,13 @@ public class AdminController : ControllerBase
             UseSsl = req.UseSsl,
             FromAddresses = addrs,
         };
-        await _emailSettings.SaveSmtpAsync(config, req.Password, ct);
+        var newPassword = string.IsNullOrWhiteSpace(req.Password) ? null : req.Password.Trim();
+        var existing = await _emailSettings.GetSmtpFromDbAsync(ct);
+        if (string.IsNullOrEmpty(newPassword) && (existing == null || string.IsNullOrEmpty(existing.Password)))
+        {
+            return BadRequest(new { message = "Parol tələb olunur. SMTP ilə e-poçt göndərmək üçün parolu daxil edib saxlayın." });
+        }
+        await _emailSettings.SaveSmtpAsync(config, newPassword, ct);
         return Ok(new { message = "SMTP ayarları saxlanıldı" });
     }
 

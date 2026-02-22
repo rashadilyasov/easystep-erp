@@ -17,7 +17,6 @@ App__ApiBaseUrl=https://api.easysteperp.com
 Smtp__Host=easysteperp.com
 Smtp__Port=465
 Smtp__User=hello@easysteperp.com
-Smtp__Password=BURADA_PAROLUNU_QOY
 Smtp__From=hello@easysteperp.com
 Smtp__UseSsl=true
 Affiliate__DefaultDiscountPercent=5
@@ -29,6 +28,7 @@ Security__RequireAdminMfa=false
 ```
 
 > **Vacib:** `__` (iki alt xətt) — bir alt xətt `_` işləməz.
+> **SMTP parol:** Parol yalnız Admin panel → E-poçt ayarları → SMTP-də saxlanılır. Railway env-də parol tələb olunmur.
 > `${{Postgres.DATABASE_URL}}` — Railway-də Postgres **Add Reference** etdikdə avtomatik yaranır.
 
 > **Profil sil 404/405:** API yenilənəndən sonra Railway-də **Deployments** → **Redeploy** edin.
@@ -38,10 +38,10 @@ Security__RequireAdminMfa=false
 ## Şifrə sıfırlama e-poçtu gəlmir
 
 Əgər "Şifrə sıfırlama linki göndərildi" yazılsa da e-poçt gəlmirsə:
-1. **SMTP ayarları:** Railway-da `Smtp__Host`, `Smtp__User`, `Smtp__Password`, `Smtp__From` təyin olunmalıdır
-2. **Admin panel:** E-poçt ayarları → SMTP hissəsi doldurulubsa orada üstünlük var
+1. **Admin panel:** E-poçt ayarları → SMTP — Host, İstifadəçi, **Parol**, From doldurulub «Yadda saxla» vurulmalıdır. Parol yalnız admin paneldə saxlanılır
+2. **Parol mütləqdir:** İlk dəfə və ya parolu dəyişdirmək üçün parol sahəsinə daxil edib saxlayın (təhlükə üçün sahə boş göstərilir)
 3. **Spam:** E-poçt spam qovluğuna düşə bilər
-4. **Railway logs:** Deployments → View Logs — "forgot-password email failed" axtarın
+4. **Railway logs:** Deployments → View Logs — "SMTP Password is empty" və ya "forgot-password email failed" axtarın
 
 ---
 
@@ -72,10 +72,9 @@ Security__RequireAdminMfa=false
 | `Cors__Origins__1` | `https://www.easysteperp.com` |
 | `App__BaseUrl` | `https://www.easysteperp.com` |
 | `App__ApiBaseUrl` | `https://api.easysteperp.com` |
-| `Smtp__Host` | `easysteperp.com` |
+| `Smtp__Host` | `easysteperp.com` (Admin paneldə doldurulubsa istifadə olunmur) |
 | `Smtp__Port` | `465` |
 | `Smtp__User` | `hello@easysteperp.com` |
-| `Smtp__Password` | e-poçt parolu |
 | `Smtp__From` | `hello@easysteperp.com` |
 | `Smtp__UseSsl` | `true` |
 | `App__AcademyYoutubePlaylistId` | YouTube playlist ID (Akademiya videoları; məs: PLxxxxxxxx) |

@@ -33,7 +33,8 @@ public class ConfigurableSmtpEmailService : IEmailService
         }
         if (string.IsNullOrEmpty(smtp.Password))
         {
-            _log.LogWarning("SMTP Password is empty. Email to {To} may fail (auth required). Host={Host}", to, smtp.Host);
+            _log.LogWarning("SMTP Password is empty (Admin paneldə parol daxil edib saxlayın). Email to {To} NOT sent. Host={Host}", to, smtp.Host);
+            return false;
         }
 
         var fromAddr = !string.IsNullOrWhiteSpace(from) ? from.Trim() : smtp.From;

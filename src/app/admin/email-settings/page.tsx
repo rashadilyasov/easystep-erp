@@ -19,6 +19,7 @@ export default function AdminEmailSettingsPage() {
   const [tab, setTab] = useState<"smtp" | "templates" | "bulk">("smtp");
   const [smtp, setSmtp] = useState<SmtpSettings>({ host: "", port: 587, user: "", password: "", from: "hello@easysteperp.com", useSsl: true, fromAddresses: [] });
   const [smtpSaving, setSmtpSaving] = useState(false);
+  const [smtpError, setSmtpError] = useState<string | null>(null);
   const [templates, setTemplates] = useState<TemplateItem[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [templateData, setTemplateData] = useState({ subject: "", body: "", from: "" });
@@ -53,11 +54,14 @@ export default function AdminEmailSettingsPage() {
 
   const saveSmtp = async () => {
     setSmtpSaving(true);
+    setSmtpError(null);
     try {
       const payload = { ...smtp };
       if (!payload.password?.trim()) delete (payload as { password?: string }).password;
       await api.admin.putEmailSettings(payload);
       loadSmtp();
+    } catch (e) {
+      setSmtpError(e instanceof Error ? e.message : "Xəta baş verdi");
     } finally {
       setSmtpSaving(false);
     }
@@ -108,7 +112,8 @@ export default function AdminEmailSettingsPage() {
       {tab === "smtp" && (
         <div className="bg-white rounded-2xl border border-slate-200 p-6 max-w-2xl">
           <h2 className="font-semibold text-slate-900 mb-4">SMTP konfiqurasiyası</h2>
-          <p className="text-sm text-slate-500 mb-4">Bu ayarlar appsettings-dəki SMTP dəyərlərini əvəz edir. Boş buraxılsa, appsettings istifadə olunur.</p>
+          <p className="text-sm text-slate-500 mb-4">Parol yalnız admin paneldə saxlanılır. İlk dəfə və ya parolu dəyişdirmək üçün mütləq daxil edib saxlayın.</p>
+          {smtpError && <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-lg text-sm">{smtpError}</div>}
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Host</label>
@@ -123,8 +128,9 @@ export default function AdminEmailSettingsPage() {
               <input type="text" value={smtp.user} onChange={(e) => setSmtp((s) => ({ ...s, user: e.target.value }))} className="w-full px-4 py-2 border border-slate-300 rounded-lg" placeholder="hello@example.com" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Parol</label>
-              <input type="password" value={smtp.password} onChange={(e) => setSmtp((s) => ({ ...s, password: e.target.value }))} className="w-full px-4 py-2 border border-slate-300 rounded-lg" placeholder="Dəyişdirməmək üçün boş buraxın" />
+              <label className="block text-sm font-medium text-slate-700 mb-1">Parol <span className="text-red-500">*</span></label>
+              <input type="password" value={smtp.password} onChange={(e) => setSmtp((s) => ({ ...s, password: e.target.value }))} className="w-full px-4 py-2 border border-slate-300 rounded-lg" placeholder="Dəyişdirməmək üçün boş buraxın (yalnız əvvəldən saxlanılıbsa)" />
+              <p className="text-xs text-slate-500 mt-1">Təhlükə üçün parol göstərilmir. Köhnə parolu saxlayıb saxlamaq üçün boş buraxın.</p>
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Varsayılan göndərən (From)</label>

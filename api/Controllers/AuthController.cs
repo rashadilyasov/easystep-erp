@@ -39,7 +39,7 @@ public class AuthController : ControllerBase
         {
             var (ok, token, errorCode) = await _auth.RegisterAsync(req, ct);
             if (!ok)
-                return BadRequest(new { message = errorCode == "InvalidPromoCode" ? "Promo kod mövcud deyil və ya artıq istifadə olunub" : "Bu e-poçt artıq qeydiyyatdadır" });
+                return BadRequest(new { message = errorCode == "PromoCodeAlreadyUsed" ? "Bu promo kod artıq istifadə olunub" : errorCode == "InvalidPromoCode" ? "Promo kod mövcud deyil" : "Bu e-poçt artıq qeydiyyatdadır" });
 
             if (!string.IsNullOrEmpty(token))
             {

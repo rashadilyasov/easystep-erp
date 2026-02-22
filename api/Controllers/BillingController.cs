@@ -68,8 +68,12 @@ public class BillingController : ControllerBase
             var tenant = await _db.Tenants
                 .Include(t => t.PromoCode)
                 .FirstOrDefaultAsync(t => t.Id == tenantId.Value, ct);
-            object? promoInfo = tenant?.PromoCodeId != null && tenant?.PromoCode != null
-                ? new { code = tenant.PromoCode!.Code, discountPercent = tenant.PromoCode.DiscountPercent }
+            var now = DateTime.UtcNow;
+            var promoValid = tenant?.PromoCode != null
+                && tenant.PromoCode.Status == PromoCodeStatus.Used
+                && (tenant.PromoCode.DiscountValidUntil == null || tenant.PromoCode.DiscountValidUntil > now);
+            object? promoInfo = promoValid
+                ? new { code = tenant!.PromoCode!.Code, discountPercent = tenant.PromoCode.DiscountPercent, discountValidUntil = tenant.PromoCode.DiscountValidUntil }
                 : null;
 
             var plan = sub?.Plan;
@@ -100,17 +104,19 @@ public class BillingController : ControllerBase
         }
     }
 
-    /// <summary>Qiymətlər səhifəsində promo endirimi önizləməsi üçün. Sadece mövcud və istifadə olunmamış kodları yoxlayır.</summary>
+    /// <summary>Qiymətlər səhifəsində promo endirimi önizləməsi üçün. İstifadə olunubsa errorCode: AlreadyUsed qaytarır.</summary>
     [HttpGet("validate-promo")]
     [AllowAnonymous]
     public async Task<IActionResult> ValidatePromo([FromQuery] string? code, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(code))
             return Ok(new { valid = false });
-        var promo = await _affiliate.GetByCodeAsync(code.Trim(), ct);
-        if (promo == null)
+        var (status, promo) = await _affiliate.GetPromoCodeStatusAsync(code.Trim(), ct);
+        if (status == AffiliateService.PromoCodeCheckStatus.NotFound)
             return Ok(new { valid = false });
-        return Ok(new { valid = true, discountPercent = promo.DiscountPercent });
+        if (status == AffiliateService.PromoCodeCheckStatus.AlreadyUsed)
+            return Ok(new { valid = false, errorCode = "AlreadyUsed" });
+        return Ok(new { valid = true, discountPercent = promo!.DiscountPercent });
     }
 
     [HttpGet("receipt/{paymentId:guid}")]
@@ -178,9 +184,13 @@ table{{width:100%;border-collapse:collapse}} td{{padding:8px;border-bottom:1px s
             .FirstOrDefaultAsync(t => t.Id == tenantId.Value, ct);
         var originalAmount = plan.Price;
         var discountAmount = 0m;
-        if (tenant?.PromoCodeId != null && tenant.PromoCode != null && tenant.PromoCode.Status == PromoCodeStatus.Used)
+        var now = DateTime.UtcNow;
+        var discountStillValid = tenant?.PromoCodeId != null && tenant.PromoCode != null
+            && tenant.PromoCode.Status == PromoCodeStatus.Used
+            && (tenant.PromoCode.DiscountValidUntil == null || tenant.PromoCode.DiscountValidUntil > now);
+        if (discountStillValid)
         {
-            discountAmount = Math.Round(originalAmount * (tenant.PromoCode.DiscountPercent / 100), 2);
+            discountAmount = Math.Round(originalAmount * (tenant!.PromoCode!.DiscountPercent / 100), 2);
         }
         var finalAmount = originalAmount - discountAmount;
         if (finalAmount <= 0) finalAmount = 0.01m;

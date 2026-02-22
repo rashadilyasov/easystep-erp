@@ -252,6 +252,8 @@ using (var scope = app.Services.CreateScope())
             catch { }
             await DbInitializer.SeedAsync(db);
             await DbInitializer.MigratePlanPricesAsync(db);
+            var emailTemplatesSqlite = scope.ServiceProvider.GetRequiredService<EmailTemplateService>();
+            await emailTemplatesSqlite.EnsureDefaultTemplatesAsync(ct: default);
         }
         else
         {
@@ -292,6 +294,8 @@ using (var scope = app.Services.CreateScope())
             catch { }
             await DbInitializer.SeedAsync(db);
             await DbInitializer.MigratePlanPricesAsync(db);
+            var emailTemplatesPg = scope.ServiceProvider.GetRequiredService<EmailTemplateService>();
+            await emailTemplatesPg.EnsureDefaultTemplatesAsync(ct: default);
         }
         logger.LogInformation("DB migration and seed completed");
     }

@@ -271,7 +271,7 @@ export const api = {
       payments: { id: string; date: string; amount: number; discountAmount?: number; currency: string; status: string; trxId: string | null; invoiceNumber?: string | null }[];
     }>("/api/billing"),
   validatePromo: (code: string) =>
-    apiFetch<{ valid: boolean; discountPercent?: number }>(`/api/billing/validate-promo?code=${encodeURIComponent(code)}`, { skipAuth: true }),
+    apiFetch<{ valid: boolean; discountPercent?: number; errorCode?: string }>(`/api/billing/validate-promo?code=${encodeURIComponent(code)}`, { skipAuth: true }),
   receiptUrl: (paymentId: string) => `/cabinet/billing/receipt/${paymentId}`,
   downloadUrl: (releaseId: string) =>
     apiFetch<{ url: string; expiresIn: number }>(`/api/downloads/${releaseId}/url`),
@@ -514,6 +514,11 @@ export const api = {
         { id: string; code: string; discountPercent: number; commissionPercent: number; status: string; createdAt: string; usedAt: string | null; discountValidUntil: string | null; affiliateEmail: string; tenantName: string | null }[]
       >(`/api/admin/promo-codes${search ? `?${search}` : ""}`);
     },
+    updatePromoCode: (id: string, data: { discountPercent?: number; commissionPercent?: number }) =>
+      apiFetch<{ message: string }>(`/api/admin/promo-codes/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify(data),
+      }),
     affiliateCommissions: (params?: { status?: string; affiliateId?: string }) => {
       const sp = new URLSearchParams();
       if (params?.status) sp.set("status", params.status);

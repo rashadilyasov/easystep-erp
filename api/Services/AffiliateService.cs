@@ -29,6 +29,26 @@ public class AffiliateService
             .FirstOrDefaultAsync(p => p.Code == normalized && p.Status == PromoCodeStatus.Available, ct);
     }
 
+    /// <summary>Promo kod statusu: mövcud deyil, mövcuddur/istifadə oluna bilər, artıq başqa müştəri tərəfindən istifadə olunub.</summary>
+    public enum PromoCodeCheckStatus { NotFound, Available, AlreadyUsed }
+
+    public async Task<(PromoCodeCheckStatus Status, PromoCode? Promo)> GetPromoCodeStatusAsync(string code, CancellationToken ct = default)
+    {
+        var normalized = (code ?? "").Trim().ToUpperInvariant();
+        if (string.IsNullOrEmpty(normalized))
+            return (PromoCodeCheckStatus.NotFound, null);
+
+        var promo = await _db.PromoCodes
+            .Include(p => p.Affiliate)
+            .FirstOrDefaultAsync(p => p.Code == normalized, ct);
+
+        if (promo == null)
+            return (PromoCodeCheckStatus.NotFound, null);
+        if (promo.Status == PromoCodeStatus.Used)
+            return (PromoCodeCheckStatus.AlreadyUsed, promo);
+        return (PromoCodeCheckStatus.Available, promo);
+    }
+
     public async Task<PromoCode?> CreatePromoCodeAsync(Guid affiliateId, decimal? discountPercent, decimal? commissionPercent, CancellationToken ct = default)
     {
         var affiliate = await _db.Affiliates.FindAsync(new object[] { affiliateId }, ct);

@@ -136,9 +136,11 @@ public class AuthService
 
         if (!string.IsNullOrWhiteSpace(req.PromoCode))
         {
-            var promo = await _affiliate.GetByCodeAsync(req.PromoCode.Trim(), ct);
-            if (promo == null)
+            var (status, _) = await _affiliate.GetPromoCodeStatusAsync(req.PromoCode.Trim(), ct);
+            if (status == AffiliateService.PromoCodeCheckStatus.NotFound)
                 return (false, null, "InvalidPromoCode");
+            if (status == AffiliateService.PromoCodeCheckStatus.AlreadyUsed)
+                return (false, null, "PromoCodeAlreadyUsed");
         }
 
         var tenant = new Tenant

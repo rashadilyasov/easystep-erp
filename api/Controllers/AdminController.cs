@@ -767,6 +767,31 @@ public class AdminController : ControllerBase
         return Ok(new { message = "Partnyor təsdiqləndi" });
     }
 
+    [HttpPatch("promo-codes/{id:guid}")]
+    public async Task<IActionResult> UpdatePromoCode(Guid id, [FromBody] UpdatePromoCodeRequest req, CancellationToken ct = default)
+    {
+        var promo = await _db.PromoCodes.FindAsync(new object[] { id }, ct);
+        if (promo == null)
+            return NotFound(new { message = "Promo kod tapılmadı" });
+
+        if (req.DiscountPercent.HasValue)
+        {
+            if (req.DiscountPercent.Value < 0 || req.DiscountPercent.Value > 100)
+                return BadRequest(new { message = "Endirim faizi 0–100 arasında olmalıdır" });
+            promo.DiscountPercent = req.DiscountPercent.Value;
+        }
+        if (req.CommissionPercent.HasValue)
+        {
+            if (req.CommissionPercent.Value < 0 || req.CommissionPercent.Value > 100)
+                return BadRequest(new { message = "Komissiya faizi 0–100 arasında olmalıdır" });
+            promo.CommissionPercent = req.CommissionPercent.Value;
+        }
+
+        await _db.SaveChangesAsync(ct);
+        await _audit.LogAsync("PromoCodeUpdated", GetAdminUserId(), User.Identity?.Name, metadata: $"promoId={id} discountPercent={promo.DiscountPercent} commissionPercent={promo.CommissionPercent}", ct: ct);
+        return Ok(new { message = "Promo kod yeniləndi" });
+    }
+
     [HttpGet("promo-codes")]
     public async Task<IActionResult> GetPromoCodes([FromQuery] Guid? affiliateId, [FromQuery] string? status, [FromQuery] int limit = 200, CancellationToken ct = default)
     {
@@ -1111,5 +1136,6 @@ public record AdminUpdateUserRequest(string? Email, string? Phone);
 public record UpdateTicketStatusRequest(string Status);
 public record CreatePlanRequest(string Name, int DurationMonths, decimal Price, string? Currency = "AZN", int? MaxDevices = null);
 public record UpdatePlanRequest(string? Name, int? DurationMonths, decimal? Price, string? Currency, int? MaxDevices, bool? IsActive);
+public record UpdatePromoCodeRequest(decimal? DiscountPercent, decimal? CommissionPercent);
 public record CreateAnnouncementRequest(string? Title, string? Body);
 public record CreateAcademyMaterialRequest(string? Title, string? Url);

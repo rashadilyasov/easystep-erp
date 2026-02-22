@@ -79,6 +79,9 @@ export default function AdminAffiliatesPage() {
   const [bonusFilter, setBonusFilter] = useState<string>("");
   const [calcBonusLoading, setCalcBonusLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [editingPromo, setEditingPromo] = useState<PromoCode | null>(null);
+  const [promoEditForm, setPromoEditForm] = useState({ discountPercent: 0, commissionPercent: 0 });
+  const [promoEditSaving, setPromoEditSaving] = useState(false);
 
   const now = new Date();
   const prevMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
@@ -120,6 +123,32 @@ export default function AdminAffiliatesPage() {
   }, [filter, affiliateFilter, bonusFilter]);
 
   useEffect(() => load(), [load]);
+
+  useEffect(() => {
+    if (editingPromo) {
+      setPromoEditForm({
+        discountPercent: editingPromo.discountPercent,
+        commissionPercent: editingPromo.commissionPercent,
+      });
+    }
+  }, [editingPromo]);
+
+  const handleSavePromoEdit = async () => {
+    if (!editingPromo) return;
+    setPromoEditSaving(true);
+    try {
+      await api.admin.updatePromoCode(editingPromo.id, {
+        discountPercent: promoEditForm.discountPercent,
+        commissionPercent: promoEditForm.commissionPercent,
+      });
+      setEditingPromo(null);
+      load();
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Xəta baş verdi");
+    } finally {
+      setPromoEditSaving(false);
+    }
+  };
 
   const handleApprove = async (id: string) => {
     try {
@@ -655,9 +684,12 @@ export default function AdminAffiliatesPage() {
                   <th className="text-left px-6 py-3 font-medium text-slate-700">Kod</th>
                   <th className="text-left px-6 py-3 font-medium text-slate-700">Partnyor</th>
                   <th className="text-left px-6 py-3 font-medium text-slate-700">Müştəri</th>
+                  <th className="text-left px-6 py-3 font-medium text-slate-700">Endirim %</th>
+                  <th className="text-left px-6 py-3 font-medium text-slate-700">Komissiya %</th>
                   <th className="text-left px-6 py-3 font-medium text-slate-700">Vəziyyət</th>
                   <th className="text-left px-6 py-3 font-medium text-slate-700">İstifadə</th>
                   <th className="text-left px-6 py-3 font-medium text-slate-700">Endirim bitir</th>
+                  <th className="text-left px-6 py-3 font-medium text-slate-700"></th>
                 </tr>
               </thead>
               <tbody>
@@ -666,11 +698,22 @@ export default function AdminAffiliatesPage() {
                     <td className="px-6 py-3 font-mono">{p.code}</td>
                     <td className="px-6 py-3">{p.affiliateEmail}</td>
                     <td className="px-6 py-3">{p.tenantName ?? "—"}</td>
+                    <td className="px-6 py-3">{p.discountPercent}%</td>
+                    <td className="px-6 py-3">{p.commissionPercent}%</td>
                     <td className="px-6 py-3">
                       <span className={p.status === "Used" ? "text-green-600" : "text-amber-600"}>{p.status === "Used" ? "İstifadə olunub" : "Aktiv"}</span>
                     </td>
                     <td className="px-6 py-3">{p.usedAt ?? "—"}</td>
                     <td className="px-6 py-3">{p.discountValidUntil ?? "—"}</td>
+                    <td className="px-6 py-3">
+                      <button
+                        type="button"
+                        onClick={() => setEditingPromo(p)}
+                        className="text-xs px-2 py-1 bg-slate-100 text-slate-700 rounded hover:bg-slate-200"
+                      >
+                        Dəyiş
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -678,6 +721,57 @@ export default function AdminAffiliatesPage() {
           </div>
         )}
       </div>
+
+      {editingPromo && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setEditingPromo(null)}>
+          <div className="bg-white rounded-xl p-6 max-w-sm w-full mx-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <h3 className="font-semibold text-slate-900 mb-4">Promo kod: {editingPromo.code}</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Endirim faizi (%)</label>
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  step={0.5}
+                  value={promoEditForm.discountPercent}
+                  onChange={(e) => setPromoEditForm((f) => ({ ...f, discountPercent: parseFloat(e.target.value) || 0 }))}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Komissiya faizi (%)</label>
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  step={0.5}
+                  value={promoEditForm.commissionPercent}
+                  onChange={(e) => setPromoEditForm((f) => ({ ...f, commissionPercent: parseFloat(e.target.value) || 0 }))}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                />
+              </div>
+            </div>
+            <div className="flex gap-2 mt-6">
+              <button
+                type="button"
+                onClick={handleSavePromoEdit}
+                disabled={promoEditSaving}
+                className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50"
+              >
+                {promoEditSaving ? "Saxlanır..." : "Saxla"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setEditingPromo(null)}
+                className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200"
+              >
+                Ləğv et
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

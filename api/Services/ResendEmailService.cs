@@ -27,7 +27,10 @@ public class ResendEmailService : IEmailService
         if (string.IsNullOrWhiteSpace(apiKey))
             return false;
 
-        var fromAddr = from?.Trim() ?? "Easy Step ERP <hello@easysteperp.com>";
+        var overrideFrom = _config["Resend:From"] ?? _config["Resend__From"];
+        var fromAddr = !string.IsNullOrWhiteSpace(overrideFrom)
+            ? (overrideFrom!.Contains('<') ? overrideFrom : $"Easy Step ERP <{overrideFrom}>")
+            : (from?.Trim() ?? "Easy Step ERP <hello@easysteperp.com>");
         if (!fromAddr.Contains('<'))
             fromAddr = $"Easy Step ERP <{fromAddr}>";
 

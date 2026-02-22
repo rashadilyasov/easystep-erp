@@ -1,3 +1,4 @@
+using System.Net;
 using EasyStep.Erp.Api.Data;
 using EasyStep.Erp.Api.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -6,6 +7,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
+
+// SMTP üçün TLS 1.2 — Bluehost və bir çox server tələb edir
+ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12;
 
 var builder = WebApplication.CreateBuilder(args);
 

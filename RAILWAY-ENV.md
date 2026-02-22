@@ -43,8 +43,10 @@ Bu xəta əsasən proxy timeout-dan yaranır: e-poçt göndərmə yavaş olduqda
 
 ## Şifrə sıfırlama e-poçtu gəlmir
 
+**Kodda edilən:** TLS 1.2 açıqdır, SMTP timeout 20 saniyədir — Bluehost ilə uyğunluq üçün.
+
 Əgər "Şifrə sıfırlama linki göndərildi" yazılsa da e-poçt gəlmirsə:
-1. **Admin panel** → E-poçt ayarları → SMTP: Host (`host2080.hostmonster.com` Bluehost üçün), İstifadəçi, **Parol**, From doldurun → «Yadda saxla»
+1. **Admin panel** → E-poçt ayarları → SMTP: Host — Bluehost üçün sıra ilə sınayın: **`mail.easysteperp.com`** (standart), **`easysteperp.com`** və ya **`host2080.hostmonster.com`** (Bluehost dəstəyi göstərsə). İstifadəçi, **Parol**, From doldurun → «Yadda saxla»
 2. **Port 465 timeout verirsə:** Portu **587** edin, SSL işarəsini saxlayın, yenidən saxlayın və diaqnostika edin
 3. **SMTP diaqnostika** düyməsinə basın — real xəta mesajı görünəcək
 3. **Parol mütləqdir:** İlk dəfə parol sahəsinə daxil edib saxlayın (təhlükə üçün sahə boş göstərilir)

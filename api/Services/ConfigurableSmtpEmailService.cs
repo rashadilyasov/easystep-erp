@@ -46,7 +46,7 @@ public class ConfigurableSmtpEmailService : IEmailService
             {
                 EnableSsl = smtp.Port == 465 || smtp.UseSsl,
                 Credentials = new NetworkCredential(smtp.User, smtp.Password ?? ""),
-                Timeout = 12000,
+                Timeout = 20000,
             };
             var msg = new MailMessage
             {
@@ -93,7 +93,7 @@ public class ConfigurableSmtpEmailService : IEmailService
             {
                 EnableSsl = smtp.Port == 465 || smtp.UseSsl,
                 Credentials = new NetworkCredential(smtp.User, smtp.Password ?? ""),
-                Timeout = 12000,
+                Timeout = 20000,
             };
             var msg = new MailMessage
             {

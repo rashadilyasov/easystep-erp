@@ -1,25 +1,29 @@
 /**
  * Admin API proxy - explicit route for /api/admin/* to avoid catch-all 404.
- * Auth proxy ilə eyni prinsip — tenants/delete və digər admin route-lar.
+ * api.easysteperp.com birinci sıralanır, 404/502-də növbəti base sınanır.
  */
 import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
 const RAILWAY_FALLBACK = "https://2qz1te51.up.railway.app";
+const API_CUSTOM_DOMAIN = "https://api.easysteperp.com";
 
 function getApiBases(): string[] {
   const bases: string[] = [];
+  const norm = (s: string) => s.replace(/\/$/, "").trim();
+  if (process.env.VERCEL) {
+    bases.push(API_CUSTOM_DOMAIN);
+    if (!bases.some((b) => norm(b) === RAILWAY_FALLBACK)) bases.push(RAILWAY_FALLBACK);
+  }
   const url = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL;
   if (url) {
     const u = url.replace(/\/$/, "").trim();
-    bases.push(u.startsWith("http") ? u : `https://${u}`);
+    const full = u.startsWith("http") ? u : `https://${u}`;
+    if (!bases.some((b) => norm(b) === norm(full))) bases.push(full);
   }
-  if (process.env.VERCEL) {
-    const pub = process.env.RAILWAY_PUBLIC_URL;
-    if (pub && !bases.includes(pub.replace(/\/$/, ""))) bases.push(pub.replace(/\/$/, ""));
-    if (!bases.includes(RAILWAY_FALLBACK)) bases.push(RAILWAY_FALLBACK);
-  }
+  const pub = process.env.RAILWAY_PUBLIC_URL?.replace(/\/$/, "").trim();
+  if (pub && !bases.some((b) => norm(b) === pub)) bases.push(pub);
   if (bases.length === 0) bases.push("http://localhost:5000");
   return bases;
 }
@@ -39,6 +43,7 @@ async function proxyReq(request: NextRequest, segment: string[], method: string)
 
   const body = method !== "GET" && method !== "HEAD" ? await request.text() : undefined;
   const bases = getApiBases();
+  let lastRes: { data: string; status: number; contentType: string } | null = null;
 
   for (const base of bases) {
     const url = `${base}${path}`;
@@ -51,15 +56,34 @@ async function proxyReq(request: NextRequest, segment: string[], method: string)
         cache: "no-store",
       });
       const data = await res.text();
-      return new NextResponse(data, {
-        status: res.status,
-        headers: { "Content-Type": res.headers.get("Content-Type") || "application/json" },
-      });
+      const contentType = res.headers.get("Content-Type") || "application/json";
+      const looksLikeErrorPage =
+        data.toLowerCase().includes("application not found") || data.toLowerCase().includes("dns_probe_finished_nxdomain");
+      if (res.ok && !looksLikeErrorPage) {
+        return new NextResponse(data, { status: res.status, headers: { "Content-Type": contentType } });
+      }
+      lastRes = { data, status: res.status, contentType };
+      const isRetryable =
+        res.status === 404 ||
+        res.status === 502 ||
+        res.status === 503 ||
+        looksLikeErrorPage;
+      if (isRetryable) {
+        if (typeof console !== "undefined" && console.warn) {
+          console.warn("[Admin Proxy] Base returned", res.status, base.replace(/\/$/, ""), "– trying next…");
+        }
+        continue;
+      }
+      return new NextResponse(data, { status: res.status, headers: { "Content-Type": contentType } });
     } catch (e) {
       if (typeof console !== "undefined" && console.error) {
         console.error("[Admin Proxy]", (e instanceof Error ? e : new Error(String(e))).message, { base: base.replace(/\/$/, "") });
       }
     }
+  }
+
+  if (lastRes) {
+    return new NextResponse(lastRes.data, { status: lastRes.status, headers: { "Content-Type": lastRes.contentType } });
   }
 
   return NextResponse.json(

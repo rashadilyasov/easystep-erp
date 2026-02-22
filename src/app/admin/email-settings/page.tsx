@@ -33,6 +33,7 @@ export default function AdminEmailSettingsPage() {
   const [testEmail, setTestEmail] = useState("rashadilyasov@yahoo.com");
   const [testSending, setTestSending] = useState(false);
   const [testResult, setTestResult] = useState<{ sent: boolean; message: string } | null>(null);
+  const [diagnoseResult, setDiagnoseResult] = useState<{ ok: boolean; configStatus?: string; errorMessage?: string } | null>(null);
 
   const loadSmtp = useCallback(() => {
     api.admin.emailSettings().then(setSmtp).catch(() => {}).finally(() => setLoading(false));
@@ -140,6 +141,26 @@ export default function AdminEmailSettingsPage() {
           ? "API çatılmır. www.easysteperp.com/api/ping açıb Railway statusunu yoxlayın. RAILWAY-ENV.md → Not Found."
           : msg,
       });
+    } finally {
+      setTestSending(false);
+    }
+  };
+
+  const runSmtpDiagnose = async () => {
+    const email = testEmail.trim() || "test@example.com";
+    setTestSending(true);
+    setDiagnoseResult(null);
+    try {
+      let r: { ok?: boolean; configStatus?: string; errorMessage?: string };
+      try {
+        r = await api.admin.smtpDiagnose(email);
+      } catch {
+        const direct = await fetchDirect("/api/admin/smtp-diagnose", { to: email });
+        r = (direct || {}) as { ok?: boolean; configStatus?: string; errorMessage?: string };
+      }
+      setDiagnoseResult({ ok: r.ok ?? false, configStatus: r.configStatus, errorMessage: r.errorMessage });
+    } catch (e) {
+      setDiagnoseResult({ ok: false, errorMessage: e instanceof Error ? e.message : "API çatılmadı" });
     } finally {
       setTestSending(false);
     }
@@ -267,7 +288,17 @@ export default function AdminEmailSettingsPage() {
               <button onClick={runSendPasswordReset} disabled={testSending} className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50">
                 {testSending ? "…" : "Şifrə sıfırlama göndər"}
               </button>
+              <button onClick={runSmtpDiagnose} disabled={testSending} className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 disabled:opacity-50" title="Real SMTP xəta mesajını göstərir">
+                {testSending ? "…" : "SMTP diaqnostika"}
+              </button>
             </div>
+            {diagnoseResult && (
+              <div className={`mt-3 p-3 rounded-lg text-sm font-mono ${diagnoseResult.ok ? "bg-green-50 text-green-800" : "bg-amber-50 text-amber-900 border border-amber-200"}`}>
+                <div className="font-semibold mb-1">{diagnoseResult.ok ? "Konfiqurasiya OK" : "Xəta"}</div>
+                {diagnoseResult.configStatus && <div className="text-xs opacity-80">Konfiq: {diagnoseResult.configStatus}</div>}
+                {diagnoseResult.errorMessage && <div className="mt-1 text-red-700">{diagnoseResult.errorMessage}</div>}
+              </div>
+            )}
             {testResult && (
               <div className={`mt-3 p-3 rounded-lg text-sm ${testResult.sent ? "bg-green-50 text-green-800" : "bg-red-50 text-red-700"}`}>
                 {testResult.message}

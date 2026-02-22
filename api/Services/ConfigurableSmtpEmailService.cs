@@ -69,6 +69,50 @@ public class ConfigurableSmtpEmailService : IEmailService
         }
     }
 
+    /// <summary>Admin diagnostika üçün: test göndərir və real xəta mesajını qaytarır.</summary>
+    public async Task<(bool Ok, string? ConfigStatus, string? ErrorMessage)> DiagnosticTestAsync(string to, CancellationToken ct = default)
+    {
+        SmtpConfig? smtp = await _emailSettings.GetSmtpFromDbAsync(ct);
+        if (smtp == null || string.IsNullOrEmpty(smtp.Host))
+        {
+            smtp = FromConfig();
+        }
+        if (smtp == null || string.IsNullOrEmpty(smtp.Host))
+            return (false, "SMTP konfiqurasiya tapılmadı. Admin paneldə Host, Port, User doldurun və Yadda saxla basın.", null);
+        if (string.IsNullOrEmpty(smtp.User))
+            return (false, $"Host={smtp.Host}, Port={smtp.Port} — lakin User boşdur.", null);
+        if (string.IsNullOrEmpty(smtp.Password))
+            return (false, $"Host={smtp.Host}, User={smtp.User} — parol boşdur. Admin paneldə parol daxil edib saxlayın.", null);
+
+        var configInfo = $"Host={smtp.Host}, Port={smtp.Port}, User={smtp.User}, SSL={smtp.UseSsl}";
+        try
+        {
+            using var client = new SmtpClient(smtp.Host, smtp.Port)
+            {
+                EnableSsl = smtp.Port == 465 || smtp.UseSsl,
+                Credentials = new NetworkCredential(smtp.User, smtp.Password ?? ""),
+                Timeout = 20000,
+            };
+            var msg = new MailMessage
+            {
+                From = new MailAddress(smtp.From ?? "hello@easysteperp.com", "Easy Step ERP"),
+                Subject = "Easy Step ERP - SMTP test",
+                Body = "<p>SMTP diaqnostika uğurludur.</p>",
+                IsBodyHtml = true,
+            };
+            msg.To.Add(to);
+            await client.SendMailAsync(msg, ct);
+            return (true, configInfo, null);
+        }
+        catch (Exception ex)
+        {
+            var inner = ex.InnerException?.Message ?? "";
+            var err = $"{ex.Message}";
+            if (!string.IsNullOrEmpty(inner)) err += $" | İçəri: {inner}";
+            return (false, configInfo, err);
+        }
+    }
+
     private SmtpConfig? FromConfig()
     {
         // Dəstəklənir: Smtp__Host (__) və Smtp_Host (_) — Railway env formatından asılı olmayaraq

@@ -5,6 +5,7 @@ using EasyStep.Erp.Api.Entities;
 using EasyStep.Erp.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 
 namespace EasyStep.Erp.Api.Controllers;
@@ -1155,7 +1156,18 @@ public class AdminController : ControllerBase
         if (string.IsNullOrEmpty(to))
             return BadRequest(new { message = "E-poçt ünvanı tələb olunur", sent = false });
         var ok = await _email.SendAsync(to, "Easy Step ERP - Test e-poçt", "<p>Salam,</p><p>Bu Easy Step ERP SMTP test e-poçtudur. Göndərmə uğurludur.</p><p>— Easy Step ERP</p>", from: null, ct);
-        return Ok(new { sent = ok, message = ok ? "Test e-poçtu göndərildi" : "SMTP göndərmə uğursuz oldu (parol boş və ya SMTP xətası). Railway loglara baxın." });
+        return Ok(new { sent = ok, message = ok ? "Test e-poçtu göndərildi" : "SMTP göndərmə uğursuz. «SMTP diaqnostika» düyməsi ilə real xəta mesajını görün." });
+    }
+
+    [HttpPost("smtp-diagnose")]
+    public async Task<IActionResult> SmtpDiagnose([FromBody] TestEmailRequest req, CancellationToken ct = default)
+    {
+        var to = req?.To?.Trim() ?? "test@example.com";
+        var smtp = HttpContext.RequestServices.GetService<ConfigurableSmtpEmailService>();
+        if (smtp == null)
+            return Ok(new { ok = false, configStatus = "ConfigurableSmtpEmailService tapılmadı", errorMessage = (string?)null });
+        var (ok, configStatus, errorMessage) = await smtp.DiagnosticTestAsync(to, ct);
+        return Ok(new { ok, configStatus, errorMessage });
     }
 
     [HttpPost("send-password-reset")]

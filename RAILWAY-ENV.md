@@ -29,25 +29,10 @@ Security__RequireAdminMfa=false
 ```
 
 > **Vacib:** `__` (iki alt xətt) — bir alt xətt `_` işləməz.
-> **E-poçt — Resend (tövsiyə olunur):** SMTP Bluehost/Railway kombinasiyasında problem yaradırsa, **Resend** istifadə edin. [resend.com](https://resend.com) qeydiyyat → API Keys → Create → `RESEND_API_KEY` Railway Variables-a əlavə edin. Resend avtomatik aktiv olacaq, SMTP konfiqurasiyası lazım olmayacaq.
 > **SMTP parol:** Parol ya Admin panel → E-poçt ayarları → SMTP-də, ya da Railway env-də `Smtp__Password` ilə təyin edilə bilər.
 > `${{Postgres.DATABASE_URL}}` — Railway-də Postgres **Add Reference** etdikdə avtomatik yaranır.
 
 > **Profil sil 404/405:** API yenilənəndən sonra Railway-də **Deployments** → **Redeploy** edin.
-
----
-
-## E-poçt gəlmirsə — Resend istifadə edin (ən etibarlı həll)
-
-SMTP (Bluehost, host2080 və s.) Railway-dan düzgün işləmirsə:
-
-1. [resend.com](https://resend.com) qeydiyyat olun
-2. **API Keys** → **Create API Key** → kopyalayın
-3. **Railway** → easystep-erp → **Variables** → əlavə edin: `RESEND_API_KEY` = (api key)
-4. **Redeploy** edin
-5. Test edin — şifrə sıfırlama, qeydiyyat mailləri artıq gələcək
-
-Resend 3000 e-poçt/ay pulsuz. Domain verify etsəniz `hello@easysteperp.com` göndərəndən istifadə olunacaq; verify olmadan `onboarding@resend.dev` işləyir.
 
 ---
 
@@ -59,10 +44,11 @@ Bu xəta əsasən proxy timeout-dan yaranır: e-poçt göndərmə yavaş olduqda
 ## Şifrə sıfırlama e-poçtu gəlmir
 
 Əgər "Şifrə sıfırlama linki göndərildi" yazılsa da e-poçt gəlmirsə:
-1. **Admin panel:** E-poçt ayarları → SMTP — Host, İstifadəçi, **Parol**, From doldurulub «Yadda saxla» vurulmalıdır. Parol yalnız admin paneldə saxlanılır
-2. **Parol mütləqdir:** İlk dəfə və ya parolu dəyişdirmək üçün parol sahəsinə daxil edib saxlayın (təhlükə üçün sahə boş göstərilir)
-3. **Spam:** E-poçt spam qovluğuna düşə bilər
-4. **Railway logs:** Deployments → View Logs — "SMTP Password is empty" və ya "forgot-password email failed" axtarın
+1. **Admin panel** → E-poçt ayarları → SMTP: Host (`host2080.hostmonster.com` Bluehost üçün), Port 465, İstifadəçi, **Parol**, From doldurun → «Yadda saxla»
+2. **SMTP diaqnostika** düyməsinə basın — real xəta mesajı görünəcək (məs. "Authentication failed", "Connection timed out")
+3. **Parol mütləqdir:** İlk dəfə parol sahəsinə daxil edib saxlayın (təhlükə üçün sahə boş göstərilir)
+4. **Spam:** E-poçt spam qovluğuna düşə bilər
+5. **Railway logs:** Deployments → View Logs — "SMTP" və ya "forgot-password" axtarın
 
 ---
 
@@ -121,4 +107,3 @@ Bu xəta əsasən proxy timeout-dan yaranır: e-poçt göndərmə yavaş olduqda
 | `Cron__Secret` | Bonus hesablama cron üçün gizli açar (Railway Cron job) |
 | `Payriff__WebhookSecret` | Payriff webhook imza yoxlaması üçün (Payriff panelindən alın) |
 | `Security__RequireAdminMfa` | `true` = SuperAdmin 2FA məcburi; `false` = opsional (default) |
-| `RESEND_API_KEY` | [resend.com](https://resend.com) API key — təyin olunanda e-poçt Resend vasitəsilə göndərilir (SMTP lazım olmur) |

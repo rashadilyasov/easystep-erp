@@ -466,6 +466,12 @@ export const api = {
         body: JSON.stringify({ to }),
         timeoutMs: 90000,
       }),
+    smtpDiagnose: (to: string) =>
+      apiFetch<{ ok: boolean; configStatus?: string; errorMessage?: string }>("/api/admin/smtp-diagnose", {
+        method: "POST",
+        body: JSON.stringify({ to }),
+        timeoutMs: 90000,
+      }),
     sendPasswordReset: (email: string) =>
       apiFetch<{ sent: boolean; message: string }>("/api/admin/send-password-reset", {
         method: "POST",

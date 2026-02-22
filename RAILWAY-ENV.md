@@ -35,6 +35,16 @@ Security__RequireAdminMfa=false
 
 ---
 
+## Şifrə sıfırlama e-poçtu gəlmir
+
+Əgər "Şifrə sıfırlama linki göndərildi" yazılsa da e-poçt gəlmirsə:
+1. **SMTP ayarları:** Railway-da `Smtp__Host`, `Smtp__User`, `Smtp__Password`, `Smtp__From` təyin olunmalıdır
+2. **Admin panel:** E-poçt ayarları → SMTP hissəsi doldurulubsa orada üstünlük var
+3. **Spam:** E-poçt spam qovluğuna düşə bilər
+4. **Railway logs:** Deployments → View Logs — "forgot-password email failed" axtarın
+
+---
+
 ## Satış partnyoru qeydiyyat xətası
 
 Əgər "Qeydiyyat zamanı xəta baş verdi" mesajı alırsınızsa:

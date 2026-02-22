@@ -442,11 +442,16 @@ public class AuthController : ControllerBase
             var userWithTenant = await _auth.GetUserWithTenantByEmailAsync(req.Email, ct);
             var userName = (userWithTenant?.tenant?.ContactPerson ?? "").Trim();
             if (string.IsNullOrEmpty(userName)) userName = "Müştəri";
-            _ = Task.Run(async () =>
+            try
             {
-                try { await _templatedEmail.SendTemplatedAsync(to, EmailTemplateKeys.PasswordReset, new Dictionary<string, string> { ["resetUrl"] = resetUrl, ["userName"] = userName }, CancellationToken.None); }
-                catch (Exception ex) { _logger.LogError(ex, "Background forgot-password email failed for {To}", to); }
-            });
+                var sent = await _templatedEmail.SendTemplatedAsync(to, EmailTemplateKeys.PasswordReset, new Dictionary<string, string> { ["resetUrl"] = resetUrl, ["userName"] = userName }, ct);
+                if (!sent) _logger.LogWarning("Forgot-password email to {To} returned false (SMTP not configured or send failed)", to);
+            }
+            catch (Exception ex)
+            {
+                var inner = ex.InnerException?.Message ?? "";
+                _logger.LogError(ex, "Forgot-password email failed for {To}: {Message} Inner: {Inner}", to, ex.Message, inner);
+            }
         }
         return Ok(new { message = "Şifrə sıfırlama linki e-poçtunuza göndərildi." });
     }

@@ -28,8 +28,12 @@ public class ConfigurableSmtpEmailService : IEmailService
 
         if (smtp == null || string.IsNullOrEmpty(smtp.Host) || string.IsNullOrEmpty(smtp.User))
         {
-            _log.LogWarning("SMTP not configured. Email to {To} NOT sent.", to);
+            _log.LogWarning("SMTP not configured (Host/User required). Email to {To} NOT sent.", to);
             return false;
+        }
+        if (string.IsNullOrEmpty(smtp.Password))
+        {
+            _log.LogWarning("SMTP Password is empty. Email to {To} may fail (auth required). Host={Host}", to, smtp.Host);
         }
 
         var fromAddr = !string.IsNullOrWhiteSpace(from) ? from.Trim() : smtp.From;

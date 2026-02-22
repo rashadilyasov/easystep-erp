@@ -1,10 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import AuthModalTrigger from "./AuthModalTrigger";
+import { useRouter } from "next/navigation";
+import { useAuthModal } from "@/contexts/AuthModalContext";
 import { api } from "@/lib/api";
 
 export default function ForgotPasswordForm() {
+  const router = useRouter();
+  const { openLogin } = useAuthModal();
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
@@ -24,14 +27,23 @@ export default function ForgotPasswordForm() {
     }
   };
 
+  const goToLogin = () => {
+    openLogin();
+    router.push("/");
+  };
+
   if (status === "success") {
     return (
       <div className="p-6 bg-green-50 border border-green-200 rounded-xl text-green-800 text-center">
         <p className="font-medium">Şifrə sıfırlama linki e-poçtunuza göndərildi.</p>
-        <p className="text-sm mt-1">Spam qovluğunu da yoxlayın.</p>
-        <AuthModalTrigger mode="login" className="mt-4 inline-block text-primary-600 hover:underline text-sm font-medium">
+        <p className="text-sm mt-1">Spam qovluğunu da yoxlayın. 5 dəqiqə ərzində gəlmədisə yenidən cəhd edin.</p>
+        <button
+          type="button"
+          onClick={goToLogin}
+          className="mt-4 inline-block text-primary-600 hover:underline text-sm font-medium"
+        >
           ← Daxil ol səhifəsinə qayıt
-        </AuthModalTrigger>
+        </button>
       </div>
     );
   }
@@ -58,9 +70,9 @@ export default function ForgotPasswordForm() {
         {status === "loading" ? "Göndərilir..." : "Göndər"}
       </button>
       <p className="text-center text-slate-600 text-sm">
-        <AuthModalTrigger mode="login" className="text-primary-600 font-medium hover:underline">
+        <button type="button" onClick={goToLogin} className="text-primary-600 font-medium hover:underline">
           ← Daxil ol səhifəsinə qayıt
-        </AuthModalTrigger>
+        </button>
       </p>
     </form>
   );

@@ -37,7 +37,7 @@ public class EmailSettingsService
 
     private static readonly string[] DefaultFromAddresses = ["hello@easysteperp.com", "noreply@easysteperp.com", "security@easysteperp.com", "partners@easysteperp.com", "billing@easysteperp.com", "notifications@easysteperp.com"];
 
-    /// <summary>Admin üçün — parol maskalanır.</summary>
+    /// <summary>Admin üçün — parol qaytarılmır (boş); saxlanarkən boş buraxılsa köhnə parol saxlanır.</summary>
     public async Task<object> GetSmtpForAdminAsync(CancellationToken ct = default)
     {
         var c = await GetSmtpFromDbAsync(ct);
@@ -50,7 +50,7 @@ public class EmailSettingsService
             c.Host,
             c.Port,
             c.User,
-            password = string.IsNullOrEmpty(c.Password) ? "" : "********",
+            password = "",
             c.From,
             c.UseSsl,
             fromAddresses = addrs,

@@ -54,7 +54,9 @@ export default function AdminEmailSettingsPage() {
   const saveSmtp = async () => {
     setSmtpSaving(true);
     try {
-      await api.admin.putEmailSettings(smtp);
+      const payload = { ...smtp };
+      if (!payload.password?.trim()) delete (payload as { password?: string }).password;
+      await api.admin.putEmailSettings(payload);
       loadSmtp();
     } finally {
       setSmtpSaving(false);

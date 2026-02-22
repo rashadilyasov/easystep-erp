@@ -61,16 +61,14 @@ Bu xəta əsasən proxy timeout-dan yaranır: e-poçt göndərmə yavaş olduqda
 
 ## Railway «Not Found» / «The train has not arrived» / «Failed to fetch»
 
-Bu xəta API domain-i işləməyəndə görünür. **Addım-addım:** [RAILWAY-NOT-FOUND-FIX.md](./RAILWAY-NOT-FOUND-FIX.md)
+**Düzəliş deploy edildi:** Repo root-a `Dockerfile` və `railway.toml` əlavə edildi. Root Directory boş olsa belə API düzgün build olacaq. **[RAILWAY-NOT-FOUND-FIX.md](./RAILWAY-NOT-FOUND-FIX.md)** — ətraflı addımlar.
 
-**Tez yoxlama:**
-1. **Railway Dashboard** → API servisi → **Settings** → **Networking**
-2. **Generate Domain** basın (domain yoxdursa) — `xxxxx.up.railway.app` alacaqsınız
-3. **Root Directory** = `api` olmalıdır (Settings → General)
-4. Brauzerdə açın: `https://SIZIN-URL.up.railway.app/api/Health` → `{"status":"ok"}` gəlməlidir
-5. **Vercel** → Environment Variables → `API_URL` = bu Railway URL
-
-Əgər `2qz1te51.up.railway.app` "Not Found" verirsə — domain dəyişə bilər. Railway-da **Networking** bölməsində **cari domain**-i yoxlayın.
+**Tez həll:**
+1. **Railway** → API servisi → **Settings** → **General** → **Root Directory** = **boş buraxın** (sıfırlayın)
+2. **Deployments** → **Redeploy**
+3. **Settings** → **Networking** → domain API servisinə bağlı olduğundan əmin olun
+4. 2–3 dəqiqə sonra `https://SIZIN-URL.up.railway.app/api/Health` açın
+5. **Vercel** → `API_URL` = bu Railway URL → Redeploy
 
 ## «Application not found» / «Bağlantı vaxtı bitdi» / «Failed to fetch» — Admin SMTP
 

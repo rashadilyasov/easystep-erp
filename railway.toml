@@ -1,0 +1,8 @@
+# Railway — repo root config. Root Directory boş olsa bu istifadə olunur.
+# Bu fayl API-nin düzgün deploy olmasını təmin edir (Next.js yox, .NET API).
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "./Dockerfile"
+
+[deploy]
+healthcheckPath = ""

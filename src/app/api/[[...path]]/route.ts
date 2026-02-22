@@ -7,18 +7,22 @@ import { NextRequest, NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-// Railway default — api.easysteperp.com DNS problemləri ola bilər
+// Railway direct URL — api.easysteperp.com DNS/SSL problemlərində fallback
 const RAILWAY_FALLBACK = "https://2qz1te51.up.railway.app";
 
-function getApiBase(): string {
+function getApiBases(): string[] {
+  const bases: string[] = [];
   const url = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL;
   if (url) {
     let u = url.replace(/\/$/, "").trim();
     if (!u.startsWith("http://") && !u.startsWith("https://")) u = "https://" + u;
-    return u;
+    bases.push(u);
   }
-  if (process.env.VERCEL) return process.env.RAILWAY_PUBLIC_URL || RAILWAY_FALLBACK;
-  return "http://localhost:5000";
+  const railPub = process.env.RAILWAY_PUBLIC_URL?.replace(/\/$/, "").trim();
+  if (railPub && !bases.some((b) => b.replace(/\/$/, "") === railPub)) bases.push(railPub);
+  if (process.env.VERCEL && !bases.includes(RAILWAY_FALLBACK)) bases.push(RAILWAY_FALLBACK);
+  if (bases.length === 0) bases.push("http://localhost:5000");
+  return bases;
 }
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ path?: string[] }> }) {
@@ -56,8 +60,8 @@ async function proxy(
 ) {
   const { path } = await params;
   const pathSegment = path?.join("/") ?? "";
-  const apiBase = getApiBase();
-  const url = `${apiBase}/api/${pathSegment}${request.nextUrl.search}`;
+  const bases = getApiBases();
+  const pathWithQuery = `/api/${pathSegment}${request.nextUrl.search}`;
 
   const headers = new Headers();
   request.headers.forEach((v, k) => {
@@ -75,30 +79,38 @@ async function proxy(
   }
   const hasBody = body != null && (typeof body === "string" ? body.length > 0 : body.byteLength > 0);
 
-  try {
-    const res = await fetch(url, {
-      method,
-      headers,
-      body: hasBody ? body : undefined,
-      signal: AbortSignal.timeout(25000),
-      cache: "no-store",
-    });
-    const data = await res.text();
-    return new NextResponse(data, {
-      status: res.status,
-      headers: { "Content-Type": res.headers.get("Content-Type") || "application/json" },
-    });
-  } catch (e) {
-    const err = e instanceof Error ? e : new Error(String(e));
-    console.error("[API Proxy]", err.message, { url: url.replace(/[?].*/, "") });
-    const isTimeout = err.name === "TimeoutError" || err.message?.includes("timeout");
-    return NextResponse.json(
-      {
-        message: isTimeout
-          ? "API cavab vermədi (timeout). Bir az sonra yenidən cəhd edin."
-          : "Backend API-ya çıxış yoxdur. API_URL və Railway statusunu yoxlayın.",
-      },
-      { status: 502 }
-    );
+  let lastErr: Error | null = null;
+  for (const apiBase of bases) {
+    const url = `${apiBase}${pathWithQuery}`;
+    try {
+      const res = await fetch(url, {
+        method,
+        headers,
+        body: hasBody ? body : undefined,
+        signal: AbortSignal.timeout(25000),
+        cache: "no-store",
+      });
+      const data = await res.text();
+      return new NextResponse(data, {
+        status: res.status,
+        headers: { "Content-Type": res.headers.get("Content-Type") || "application/json" },
+      });
+    } catch (e) {
+      lastErr = e instanceof Error ? e : new Error(String(e));
+      if (typeof console !== "undefined" && console.error) {
+        console.error("[API Proxy]", lastErr.message, { base: apiBase.replace(/\/$/, "") });
+      }
+    }
   }
+
+  const err = lastErr ?? new Error("Backend çatılmadı");
+  const isTimeout = err.name === "TimeoutError" || err.message?.includes("timeout");
+  return NextResponse.json(
+    {
+      message: isTimeout
+        ? "API cavab vermədi (timeout). Bir az sonra yenidən cəhd edin."
+        : "Backend API-ya çıxış yoxdur. www.easysteperp.com/api/ping açıb vəziyyəti yoxlayın.",
+    },
+    { status: 502 }
+  );
 }

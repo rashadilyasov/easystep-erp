@@ -26,6 +26,7 @@ type FetchOptions = RequestInit & {
   params?: Record<string, string>;
   skipAuth?: boolean;
   _retrying?: boolean;
+  timeoutMs?: number;
 };
 
 const FETCH_TIMEOUT_MS = 30000;
@@ -63,7 +64,7 @@ export async function apiFetchForm<T>(path: string, files: FileList | File[]): P
 
 export async function apiFetch<T>(path: string, options: FetchOptions = {}): Promise<T> {
   try {
-    const { params, skipAuth, _retrying, ...init } = options;
+    const { params, skipAuth, _retrying, timeoutMs, ...init } = options;
     const base = getApiBase();
     let url = path.startsWith("http") ? path : `${base}${path}`;
     if (params) {
@@ -82,7 +83,8 @@ export async function apiFetch<T>(path: string, options: FetchOptions = {}): Pro
       if (token) headers["Authorization"] = `Bearer ${token}`;
     }
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+    const timeout = timeoutMs ?? FETCH_TIMEOUT_MS;
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
     const res = await fetch(url, { ...init, headers, signal: controller.signal }).finally(() =>
       clearTimeout(timeoutId)
     );
@@ -462,11 +464,13 @@ export const api = {
       apiFetch<{ sent: boolean; message: string }>("/api/admin/test-email", {
         method: "POST",
         body: JSON.stringify({ to }),
+        timeoutMs: 90000,
       }),
     sendPasswordReset: (email: string) =>
       apiFetch<{ sent: boolean; message: string }>("/api/admin/send-password-reset", {
         method: "POST",
         body: JSON.stringify({ email }),
+        timeoutMs: 90000,
       }),
     emailTemplates: () =>
       apiFetch<{ key: string; label: string }[]>("/api/admin/email-templates"),

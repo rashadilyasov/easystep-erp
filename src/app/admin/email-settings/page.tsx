@@ -93,7 +93,7 @@ export default function AdminEmailSettingsPage() {
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
       body: JSON.stringify(body),
-      signal: AbortSignal.timeout(40000),
+      signal: AbortSignal.timeout(90000),
     });
     const text = await res.text();
     if (!res.ok) throw new Error(text?.slice(0, 200) || res.statusText);

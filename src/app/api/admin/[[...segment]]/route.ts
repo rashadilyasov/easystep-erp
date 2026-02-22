@@ -55,7 +55,7 @@ async function proxyReq(request: NextRequest, segment: string[], method: string)
           method,
           headers,
           body: body ?? undefined,
-          signal: AbortSignal.timeout(35000),
+          signal: AbortSignal.timeout(25000),
           cache: "no-store",
         });
         const data = await res.text();
@@ -73,7 +73,7 @@ async function proxyReq(request: NextRequest, segment: string[], method: string)
           looksLikeErrorPage;
         if (isRetryable) {
           if (attempt === 0) {
-            await sleep(5000);
+            await sleep(2000);
             continue;
           }
           if (typeof console !== "undefined" && console.warn) {
@@ -84,7 +84,7 @@ async function proxyReq(request: NextRequest, segment: string[], method: string)
         return new NextResponse(data, { status: res.status, headers: { "Content-Type": contentType } });
       } catch (e) {
         if (attempt === 0) {
-          await sleep(3000);
+          await sleep(1500);
           continue;
         }
         if (typeof console !== "undefined" && console.error) {

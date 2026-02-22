@@ -59,12 +59,20 @@ Bu xəta əsasən proxy timeout-dan yaranır: e-poçt göndərmə yavaş olduqda
 
 ---
 
-## «Application not found» — Admin SMTP test və digər API
+## Railway «Not Found» / «The train has not arrived»
 
-Bu xəta Vercel proxy API-yə çatanda Railway 404 qaytardıqda görünür. **Düzəliş:** Proxy artıq `api.easysteperp.com`-u birinci sınayır.
-1. **api.easysteperp.com DNS:** Domain DNS-də Railway-ə yönləndirilməlidir (Railway → Settings → Domains).
-2. **Birbaşa test:** `https://api.easysteperp.com/api/Health` brauzerdə açın. `{"status":"ok"}` gəlməlidir.
-3. **Vercel API_URL:** Əgər api.easysteperp.com işləmirsə, Vercel-da `API_URL=https://2qz1te51.up.railway.app` (Railway URL) təyin edib Redeploy edin.
+Bu xəta domain provision olunmayanda görünür.
+1. **Railway → layihə → Settings → Networking:**
+   - **Public Networking** açıq olmalıdır
+   - **Custom Domain** əlavə etsəniz (api.easysteperp.com), DNS CNAME record bu domainə yönləndirilməlidir
+2. **Default domain:** `https://2qz1te51.up.railway.app` (və ya layihənizin *.up.railway.app URL-i) işləməlidir.
+3. **Yoxlama:** `https://2qz1te51.up.railway.app/api/Health` brauzerdə açın. `{"status":"ok"}` gəlməlidir.
+
+## «Application not found» / «Bağlantı vaxtı bitdi» — Admin SMTP
+
+Proxy və frontend timeout artırıldı (90 saniyə). Əgər hələ də timeout olursa:
+1. Railway-da **Deployments** → son deploy **Success** olduğundan əmin olun
+2. `https://2qz1te51.up.railway.app/api/Health` açılırsa, API işləyir; bir neçə dəqiqə gözləyib yenidən test edin (cold start)
 
 ## 404/Profil sil işləməzsə — yoxlama
 

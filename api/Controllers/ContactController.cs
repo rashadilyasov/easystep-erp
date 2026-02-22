@@ -4,6 +4,7 @@ using EasyStep.Erp.Api.Entities;
 using EasyStep.Erp.Api.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace EasyStep.Erp.Api.Controllers;
 
@@ -14,12 +15,16 @@ public class ContactController : ControllerBase
     private readonly ApplicationDbContext _db;
     private readonly IEmailService _email;
     private readonly IConfiguration _config;
+    private readonly IServiceScopeFactory _scopeFactory;
+    private readonly ILogger<ContactController> _logger;
 
-    public ContactController(ApplicationDbContext db, IEmailService email, IConfiguration config)
+    public ContactController(ApplicationDbContext db, IEmailService email, IConfiguration config, IServiceScopeFactory scopeFactory, ILogger<ContactController> logger)
     {
         _db = db;
         _email = email;
         _config = config;
+        _scopeFactory = scopeFactory;
+        _logger = logger;
     }
 
     [HttpPost]
@@ -44,17 +49,35 @@ public class ContactController : ControllerBase
         var adminEmail = _config["App:AdminEmail"] ?? _config["Smtp:AdminNotify"];
         if (!string.IsNullOrEmpty(adminEmail))
         {
+            var name = req.Name;
+            var emailAddr = req.Email;
+            var message = req.Message ?? "";
             var html = $@"
 <!DOCTYPE html>
 <html><body style='font-family:Arial,sans-serif'>
 <h2>Yeni əlaqə mesajı</h2>
-<p><strong>Ad:</strong> {WebUtility.HtmlEncode(req.Name)}</p>
-<p><strong>E-poçt:</strong> {WebUtility.HtmlEncode(req.Email)}</p>
+<p><strong>Ad:</strong> {WebUtility.HtmlEncode(name)}</p>
+<p><strong>E-poçt:</strong> {WebUtility.HtmlEncode(emailAddr)}</p>
 <p><strong>Mesaj:</strong></p>
-<p>{WebUtility.HtmlEncode(req.Message).Replace("\n", "<br/>")}</p>
+<p>{WebUtility.HtmlEncode(message).Replace("\n", "<br/>")}</p>
 <p>— Easy Step ERP Portal</p>
 </body></html>";
-            await _email.SendAsync(adminEmail, "Easy Step ERP - Yeni əlaqə mesajı", html, from: null, ct);
+
+            var scopeFactory = _scopeFactory;
+            var logger = _logger;
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await using var scope = scopeFactory.CreateAsyncScope();
+                    var emailSvc = scope.ServiceProvider.GetRequiredService<IEmailService>();
+                    await emailSvc.SendAsync(adminEmail, "Easy Step ERP - Yeni əlaqə mesajı", html, from: null, CancellationToken.None);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Contact form admin notification failed for {Email}", emailAddr);
+                }
+            });
         }
 
         return Ok(new { message = "Mesajınız uğurla qəbul edildi. Tezliklə əlaqə saxlayacağıq." });

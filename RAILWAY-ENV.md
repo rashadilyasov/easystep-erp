@@ -35,6 +35,11 @@ Security__RequireAdminMfa=false
 
 ---
 
+## «Xidmət hazırda əlçatan deyil» – şifrə bərpa / əlaqə formu
+
+Bu xəta əsasən proxy timeout-dan yaranır: e-poçt göndərmə yavaş olduqda Vercel proxy 20–25 saniyədə abort edir.
+**Düzəliş (deploy edildi):** Şifrə bərpa və əlaqə formunda e-poçt artıq HTTP cavabından sonra arxa planda göndərilir – istifadəçi dərhal cavab alır, proxy timeout-a düşmür.
+
 ## Şifrə sıfırlama e-poçtu gəlmir
 
 Əgər "Şifrə sıfırlama linki göndərildi" yazılsa da e-poçt gəlmirsə:

@@ -4,6 +4,7 @@ using EasyStep.Erp.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace EasyStep.Erp.Api.Controllers;
 
@@ -17,8 +18,9 @@ public class AuthController : ControllerBase
     private readonly ITemplatedEmailService _templatedEmail;
     private readonly IConfiguration _config;
     private readonly ILogger<AuthController> _logger;
+    private readonly IServiceScopeFactory _scopeFactory;
 
-    public AuthController(AuthService auth, AuditService audit, IEmailService email, ITemplatedEmailService templatedEmail, IConfiguration config, ILogger<AuthController> logger)
+    public AuthController(AuthService auth, AuditService audit, IEmailService email, ITemplatedEmailService templatedEmail, IConfiguration config, ILogger<AuthController> logger, IServiceScopeFactory scopeFactory)
     {
         _auth = auth;
         _audit = audit;
@@ -26,6 +28,7 @@ public class AuthController : ControllerBase
         _templatedEmail = templatedEmail;
         _config = config;
         _logger = logger;
+        _scopeFactory = scopeFactory;
     }
 
     [HttpPost("register")]
@@ -445,16 +448,24 @@ public class AuthController : ControllerBase
             var userWithTenant = await _auth.GetUserWithTenantByEmailAsync(email, ct);
             var userName = (userWithTenant?.tenant?.ContactPerson ?? "").Trim();
             if (string.IsNullOrEmpty(userName)) userName = "Müştəri";
-            try
+
+            var scopeFactory = _scopeFactory;
+            var logger = _logger;
+            _ = Task.Run(async () =>
             {
-                var sent = await _templatedEmail.SendTemplatedAsync(to, EmailTemplateKeys.PasswordReset, new Dictionary<string, string> { ["resetUrl"] = resetUrl, ["userName"] = userName }, ct);
-                if (!sent) _logger.LogWarning("Forgot-password email to {To} returned false (SMTP not configured or send failed)", to);
-            }
-            catch (Exception ex)
-            {
-                var inner = ex.InnerException?.Message ?? "";
-                _logger.LogError(ex, "Forgot-password email failed for {To}: {Message} Inner: {Inner}", to, ex.Message, inner);
-            }
+                try
+                {
+                    await using var scope = scopeFactory.CreateAsyncScope();
+                    var svc = scope.ServiceProvider.GetRequiredService<ITemplatedEmailService>();
+                    var sent = await svc.SendTemplatedAsync(to, EmailTemplateKeys.PasswordReset, new Dictionary<string, string> { ["resetUrl"] = resetUrl, ["userName"] = userName }, CancellationToken.None);
+                    if (!sent) logger.LogWarning("Forgot-password email to {To} returned false (SMTP not configured or send failed)", to);
+                }
+                catch (Exception ex)
+                {
+                    var inner = ex.InnerException?.Message ?? "";
+                    logger.LogError(ex, "Forgot-password email failed for {To}: {Message} Inner: {Inner}", to, ex.Message, inner);
+                }
+            });
         }
         return Ok(new { message = "Şifrə sıfırlama linki e-poçtunuza göndərildi." });
     }

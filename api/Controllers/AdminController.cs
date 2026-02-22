@@ -48,6 +48,10 @@ public class AdminController : ControllerBase
     private static readonly Guid SystemTenantId = Guid.Parse("b0000000-0000-0000-0000-000000000001");
     private static readonly Guid AffiliatesTenantId = Guid.Parse("b0000000-0000-0000-0000-000000000002");
 
+    /// <summary>Diaqnostika: cavab dərhal qaytarır, DB yoxdur. Admin route işləyir‑mi yoxlamaq üçün.</summary>
+    [HttpGet("ping")]
+    public IActionResult AdminPing() => Ok(new { ok = true, route = "admin/ping", ts = DateTime.UtcNow });
+
     [HttpGet("stats")]
     public async Task<IActionResult> GetStats(CancellationToken ct = default)
     {
@@ -69,11 +73,13 @@ public class AdminController : ControllerBase
     [HttpGet("tenants")]
     public async Task<IActionResult> GetTenants(CancellationToken ct)
     {
+        _logger.LogInformation("GetTenants: start");
         var list = await _db.Tenants
             .Where(t => t.Id != SystemTenantId && t.Id != AffiliatesTenantId)
             .Select(t => new { t.Id, t.Name, t.ContactPerson, t.CreatedAt })
             .ToListAsync(ct);
 
+        _logger.LogInformation("GetTenants: tenants={Count}", list.Count);
         var tenantIds = list.Select(t => t.Id).ToList();
         var subs = await _db.Subscriptions
             .Include(s => s.Plan)
@@ -81,15 +87,17 @@ public class AdminController : ControllerBase
             .OrderByDescending(s => s.EndDate)
             .ToListAsync(ct);
 
+        _logger.LogInformation("GetTenants: subs={Count}", subs.Count);
         var users = await _db.Users
             .Where(u => tenantIds.Contains(u.TenantId))
             .Select(u => new { u.Id, u.TenantId, u.Email, u.EmailVerified, u.CreatedAt })
             .ToListAsync(ct);
 
+        _logger.LogInformation("GetTenants: users={Count}, building response", users.Count);
         var usersByTenant = list.ToDictionary(t => t.Id, t => users.Where(u => u.TenantId == t.Id).ToList());
         var subByTenant = subs.GroupBy(s => s.TenantId).ToDictionary(g => g.Key, g => g.First());
 
-        return Ok(list.Select(t => new
+        var result = list.Select(t => new
         {
             t.Id,
             t.Name,
@@ -99,7 +107,9 @@ public class AdminController : ControllerBase
                 ? new { planName = sub.Plan.Name, status = sub.Status.ToString(), endDate = sub.EndDate.ToString("yyyy-MM-dd") }
                 : (object?)null,
             users = usersByTenant[t.Id].Select(u => new { u.Id, u.Email, u.EmailVerified, createdAt = u.CreatedAt.ToString("yyyy-MM-dd") }),
-        }));
+        });
+        _logger.LogInformation("GetTenants: done");
+        return Ok(result);
     }
 
     [HttpGet("pending-verifications")]

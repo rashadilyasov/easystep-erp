@@ -105,11 +105,12 @@ Bu xəta əsasən proxy timeout-dan yaranır: e-poçt göndərmə yavaş olduqda
 2. `www.easysteperp.com/api/ping` açın — health, login status görünür
 3. Railway deploy **Success** olmalıdır; 1–2 dəqiqə gözləyib yenidən test edin
 
-## adminTenantsDirect «fetch failed» / adminTenantsViaProxy 502
+## adminTenantsDirect «fetch failed» / adminTenantsViaProxy 502 / «gedib qayıtmır»
 
-1. **adminRouteOk:** Əgər `adminRouteOk.status === 200` — Next.js admin route-lar işləyir.
-2. **adminTenantsDirect «fetch failed»:** Vercel serverless → api.easysteperp.com şəbəkə xətası (timeout/transient). Brauzer → Vercel proxy → API adətən işləyir — ping serverless-dan fərqli region.
-3. **adminTenantsViaProxy 502:** Proxy bütün base-lərə çatmadı. Vercel env: `API_URL=https://api.easysteperp.com` (sonunda `/` olmasın). Fallback 2qz1te51 404 qaytardığı üçün silindi — yalnız `API_URL` və ya `RAILWAY_PUBLIC_URL` istifadə edin.
+1. **adminPingBackend:** Yeni diaqnostika. Əgər `ok: true` — backend admin route işləyir. `fetch failed` olarsa — şəbəkə problemi.
+2. **adminTenantsDirect «fetch failed»:** Vercel serverless → api.easysteperp.com şəbəkə. Brauzer → Vercel proxy → API çox vaxt işləyir.
+3. **Railway logları:** Deployments → View Logs. `GetTenants: start`, `tenants=N`, `subs=N`, `users=N`, `done` mesajları — harada dayandığını göstərir. Əgər `start` var `done` yox — DB sorğusu (subs/users) yavaş və ya asılı qalır.
+4. **admin/ping (backend):** DB-siz yüngül endpoint. İşləyirsə problem GetTenants-da (DB, məlumat ölçüsü).
 
 ## 404/Profil sil işləməzsə — yoxlama
 
@@ -118,6 +119,16 @@ Bu xəta əsasən proxy timeout-dan yaranır: e-poçt göndərmə yavaş olduqda
 3. **API Health:** Brauzerdə açın: `https://SIZIN-RAILWAY-URL/api/Health` (məs. `https://2qz1te51.up.railway.app/api/Health`). `{"status":"ok"}` gəlməlidir. Əgər 404 gəlirsə — domain səhvdir və ya API işləmir.
 4. **Vercel API_URL:** Vercel → layihə → Settings → Environment Variables. `API_URL` = Railway URL (məs. `https://2qz1te51.up.railway.app` — sonunda `/` olmasın). İstəyə görə `NEXT_PUBLIC_API_URL` də eyni dəyər ola bilər. Sonra Vercel-da **Redeploy**. Bağlantı xətası olarsa → [BAGLANTI-TAMIR.md](./BAGLANTI-TAMIR.md)
 5. **Login işləmirsə:** `www.easysteperp.com/api/ping` açın — health, login, adminTenants statusunu göstərər. Əgər health/ok deyilsə — Railway API işləmir.
+
+## TCP_ABORT_D / Postgres bağlantı qırılması
+
+Network Flow Logs-da Postgres üçün `TCP_ABORT_D` görünürsə — bağlantı abort olunur, cavab gəlmir.
+
+**Kodda edilən:** `Connection Idle Lifetime=60`, `Command Timeout=30`, `DATABASE_PRIVATE_URL` prioriteti. Railway deploy edin.
+
+**Əlavə:** Railway → Postgres servisi → **Variables** — `DATABASE_PRIVATE_URL` avtomatik olmalıdır. API servisi eyni layihədədirsə, bu daxili şəbəkə istifadə edir.
+
+---
 
 ## Cədvəl formatı
 

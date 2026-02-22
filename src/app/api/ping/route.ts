@@ -104,6 +104,23 @@ export async function GET(req: NextRequest) {
     results.adminRouteOk = { error: e instanceof Error ? e.message : String(e) };
   }
 
+  // 3c. Backend admin/ping — yüngül endpoint (DB yoxdur), route işləyir‑mi
+  if (accessToken) {
+    try {
+      const bpRes = await fetch(`${base}/api/admin/ping`, {
+        headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+        signal: AbortSignal.timeout(5000),
+        cache: "no-store",
+      });
+      const bpBody = await bpRes.text().catch(() => "");
+      results.adminPingBackend = { status: bpRes.status, ok: bpRes.ok, body: bpBody.slice(0, 150) };
+    } catch (e) {
+      results.adminPingBackend = { error: e instanceof Error ? e.message : String(e) };
+    }
+  } else {
+    results.adminPingBackend = { error: "No token" };
+  }
+
   // 4. Admin tenants: birbaşa (hamısı base-lərə) + proxy vasitəsilə
   // Admin/tenants daha ağır sorğu olduğu üçün 30s timeout
   const ADMIN_TIMEOUT_MS = 30000;
@@ -141,7 +158,7 @@ export async function GET(req: NextRequest) {
       const proxyUrl = `${origin}/api/admin/tenants`;
       const proxyRes = await fetch(proxyUrl, {
         headers: authHeaders,
-        signal: AbortSignal.timeout(TIMEOUT_MS),
+        signal: AbortSignal.timeout(ADMIN_TIMEOUT_MS),
         cache: "no-store",
       });
       const proxyBody = await proxyRes.text().catch(() => "");

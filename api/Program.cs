@@ -20,10 +20,10 @@ if (string.IsNullOrEmpty(port))
 builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 
 // DbContext — Development-da SQLite, əks halda PostgreSQL (hosting üçün)
-// Railway: ConnectionStrings, DATABASE_URL, DATABASE_PRIVATE_URL (hamısı dəstəklənir)
+// Railway: DATABASE_PRIVATE_URL daxili şəbəkə — TCP_ABORT_D azaldır; DATABASE_URL public
 var conn = builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? Environment.GetEnvironmentVariable("DATABASE_URL")
     ?? Environment.GetEnvironmentVariable("DATABASE_PRIVATE_URL")
+    ?? Environment.GetEnvironmentVariable("DATABASE_URL")
     ?? Environment.GetEnvironmentVariable("PGDATABASE_URL")
     ?? "Host=localhost;Database=easystep_erp;Username=postgres;Password=postgres";
 conn = (conn ?? "").Trim();
@@ -44,6 +44,10 @@ if (conn.StartsWith("postgresql://", StringComparison.OrdinalIgnoreCase) || conn
 }
 var useSqlite = conn.StartsWith("Data Source=", StringComparison.OrdinalIgnoreCase)
     || conn.EndsWith(".db", StringComparison.OrdinalIgnoreCase);
+
+// PostgreSQL: TCP_ABORT_D əleyhinə — bağlantıları tez-tez yenilə, stale connection istifadə etmə
+if (!useSqlite && !conn.Contains("Connection Idle Lifetime", StringComparison.OrdinalIgnoreCase))
+    conn += ";Connection Idle Lifetime=60;Command Timeout=30";
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {

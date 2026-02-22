@@ -77,7 +77,7 @@ export async function GET() {
   }
 
   // 4. Admin tenants: birbaşa backend + proxy vasitəsilə
-  const origin = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://www.easysteperp.com";
+  const origin = "https://www.easysteperp.com";
   if (accessToken) {
     try {
       const directRes = await fetch(`${base}/api/admin/tenants`, {

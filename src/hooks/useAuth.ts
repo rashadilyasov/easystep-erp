@@ -1,24 +1,13 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
-
-async function getApiBase(): Promise<string> {
-  try {
-    const r = await fetch("/api/config", { cache: "no-store" });
-    const d = (await r.json()) as { apiBase?: string };
-    return (d?.apiBase || process.env.NEXT_PUBLIC_API_URL || "https://api.easysteperp.com").replace(/\/$/, "");
-  } catch {
-    return (process.env.NEXT_PUBLIC_API_URL || "https://api.easysteperp.com").replace(/\/$/, "");
-  }
-}
 
 export function useAuth() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const apiBaseRef = useRef<string | null>(null);
 
   const login = useCallback(
     async (
@@ -29,22 +18,7 @@ export function useAuth() {
       setLoading(true);
       setError(null);
       try {
-        let res: Awaited<ReturnType<typeof api.auth.login>>;
-        try {
-          res = await api.auth.login(email, password);
-        } catch (proxyErr) {
-          const base = apiBaseRef.current ?? (apiBaseRef.current = await getApiBase());
-          const directRes = await fetch(`${base}/api/auth/login`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email, password }),
-            signal: AbortSignal.timeout(30000),
-          });
-          const text = await directRes.text();
-          if (!directRes.ok) throw new Error(text?.slice(0, 300) || directRes.statusText);
-          res = text ? (JSON.parse(text) as Awaited<ReturnType<typeof api.auth.login>>) : {};
-          if (!res.accessToken && !res.requires2FA) throw proxyErr;
-        }
+        const res = await api.auth.login(email, password);
         if (res.requires2FA && res.pendingToken) {
           return { requires2FA: true, pendingToken: res.pendingToken, viaEmail: res.viaEmail, message: res.message };
         }

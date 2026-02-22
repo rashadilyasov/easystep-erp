@@ -14,7 +14,7 @@ Cors__Origins__0=https://easysteperp.com
 Cors__Origins__1=https://www.easysteperp.com
 App__BaseUrl=https://www.easysteperp.com
 App__ApiBaseUrl=https://api.easysteperp.com
-Smtp__Host=easysteperp.com
+Smtp__Host=host2080.hostmonster.com
 Smtp__Port=465
 Smtp__User=hello@easysteperp.com
 Smtp__Password=BURAYA_SMTP_PAROL
@@ -43,15 +43,26 @@ Bu xəta əsasən proxy timeout-dan yaranır: e-poçt göndərmə yavaş olduqda
 
 ## Şifrə sıfırlama e-poçtu gəlmir
 
-**Kodda edilən:** TLS 1.2 açıqdır, SMTP timeout 20 saniyədir — Bluehost ilə uyğunluq üçün.
+**Kodda edilən:** TLS 1.2 açıqdır, SMTP timeout 20 saniyədir. Diaqnostika mesajları indi port-a uyğundur (465-də 587 tövsiyə edir, 587-də 465).
 
 Əgər "Şifrə sıfırlama linki göndərildi" yazılsa da e-poçt gəlmirsə:
-1. **Admin panel** → E-poçt ayarları → SMTP: Host — Bluehost üçün sıra ilə sınayın: **`mail.easysteperp.com`** (standart), **`easysteperp.com`** və ya **`host2080.hostmonster.com`** (Bluehost dəstəyi göstərsə). İstifadəçi, **Parol**, From doldurun → «Yadda saxla»
-2. **Port 465 timeout verirsə:** Portu **587** edin, SSL işarəsini saxlayın, yenidən saxlayın və diaqnostika edin
-3. **SMTP diaqnostika** düyməsinə basın — real xəta mesajı görünəcək
-3. **Parol mütləqdir:** İlk dəfə parol sahəsinə daxil edib saxlayın (təhlükə üçün sahə boş göstərilir)
-4. **Spam:** E-poçt spam qovluğuna düşə bilər
-5. **Railway logs:** Deployments → View Logs — "SMTP" və ya "forgot-password" axtarın
+
+### Xəta növləri
+
+| Xəta | Səbəb | Həll |
+|------|-------|------|
+| **"Name or service not known"** | DNS propagasiyası və ya Railway DNS lookup uğursuzluğu. A record varsa (mail.easysteperp.com → 67.20.113.170) 15–30 dəq gözləyin | **Host:** `host2080.hostmonster.com` və ya `easysteperp.com` (dərhal işləyir). Propagasiyadan sonra `mail.easysteperp.com` da işləməlidir |
+| **"Bağlantı vaxtı bitdi"** (465 və 587-də) | Railway **Hobby/Trial** planda SMTP portları (465, 587) **bloklanır** | Railway **Pro** plana keçin VƏ YA Resend/SendGrid kimi HTTPS API istifadə edin |
+| **Port 465 timeout, 587 işləyir** (və ya əksinə) | Bəzi provayderlər bir portu blok edir | Alternativ portu sınayın (diaqnostika indi düzgün tövsiyə verir) |
+
+### Addımlar
+
+1. **Admin panel** → E-poçt ayarları → SMTP: Host — **`host2080.hostmonster.com`**, **`mail.easysteperp.com`** (A record: 67.20.113.170) və ya **`easysteperp.com`**. "Name or service not known" alarsa — propagasiya gözləyin və ya host2080 istifadə edin.
+2. **Port:** 465 və ya 587 sınayın, hər iki halda SSL işarəli saxlayın.
+3. **Railway plan:** Hobby/Trial-da SMTP işləməz. Pro plan və ya Resend/SendGrid kimi API lazımdır.
+4. **SMTP diaqnostika** düyməsinə basın — real xəta mesajı görünəcək.
+5. **Parol mütləqdir:** İlk dəfə parol sahəsinə daxil edib saxlayın.
+6. **Spam:** E-poçt spam qovluğuna düşə bilər.
 
 ---
 
@@ -100,7 +111,7 @@ Bu xəta əsasən proxy timeout-dan yaranır: e-poçt göndərmə yavaş olduqda
 | `Cors__Origins__1` | `https://www.easysteperp.com` |
 | `App__BaseUrl` | `https://www.easysteperp.com` |
 | `App__ApiBaseUrl` | `https://api.easysteperp.com` |
-| `Smtp__Host` | `mail.easysteperp.com` və ya `easysteperp.com` (Admin paneldə doldurulubsa istifadə olunmur; hosting provayderdən yoxlayın) |
+| `Smtp__Host` | `host2080.hostmonster.com`, `mail.easysteperp.com` (A→67.20.113.170) və ya `easysteperp.com` |
 | `Smtp__Port` | `465` |
 | `Smtp__User` | `hello@easysteperp.com` |
 | `Smtp__Password` | SMTP parol (opsional — Admin paneldə doldurulsa istifadə olunmur) |

@@ -108,13 +108,25 @@ public class ConfigurableSmtpEmailService : IEmailService
         }
         catch (OperationCanceledException)
         {
-            return (false, configInfo, "Bağlantı vaxtı bitdi (25 saniyə). Railway → Bluehost SMTP portu bloklana bilər. Port 587 sınayın.");
+            var altPort = smtp.Port == 465 ? "587" : "465";
+            return (false, configInfo,
+                $"Bağlantı vaxtı bitdi (25 saniyə). Port {smtp.Port} işləmir. Sırayla sınayın:\n" +
+                $"• Port {altPort} — SSL saxlayın\n" +
+                "• Railway Hobby/Trial: SMTP portları (465/587) bloklanır. Pro plan lazımdır. Əks halda Resend/SendGrid kimi HTTPS API.");
         }
         catch (Exception ex)
         {
             var inner = ex.InnerException?.Message ?? "";
             var err = $"{ex.Message}";
             if (!string.IsNullOrEmpty(inner)) err += $" | İçəri: {inner}";
+
+            // DNS uğursuzluğu — host adı həll olunmur
+            if (err.Contains("Name or service not known", StringComparison.OrdinalIgnoreCase) ||
+                err.Contains("No such host", StringComparison.OrdinalIgnoreCase))
+            {
+                err += "\n\n→ Host DNS-də yoxdur. Bluehost: Zone Editor → mail.easysteperp.com üçün A record əlavə edin və ya host2080.hostmonster.com istifadə edin.";
+            }
+
             return (false, configInfo, err);
         }
     }

@@ -59,20 +59,24 @@ Bu xəta əsasən proxy timeout-dan yaranır: e-poçt göndərmə yavaş olduqda
 
 ---
 
-## Railway «Not Found» / «The train has not arrived»
+## Railway «Not Found» / «The train has not arrived» / «Failed to fetch»
 
-Bu xəta domain provision olunmayanda görünür.
-1. **Railway → layihə → Settings → Networking:**
-   - **Public Networking** açıq olmalıdır
-   - **Custom Domain** əlavə etsəniz (api.easysteperp.com), DNS CNAME record bu domainə yönləndirilməlidir
-2. **Default domain:** `https://2qz1te51.up.railway.app` (və ya layihənizin *.up.railway.app URL-i) işləməlidir.
-3. **Yoxlama:** `https://2qz1te51.up.railway.app/api/Health` brauzerdə açın. `{"status":"ok"}` gəlməlidir.
+Bu xəta API domain-i işləməyəndə görünür. **Addım-addım:** [RAILWAY-NOT-FOUND-FIX.md](./RAILWAY-NOT-FOUND-FIX.md)
 
-## «Application not found» / «Bağlantı vaxtı bitdi» — Admin SMTP
+**Tez yoxlama:**
+1. **Railway Dashboard** → API servisi → **Settings** → **Networking**
+2. **Generate Domain** basın (domain yoxdursa) — `xxxxx.up.railway.app` alacaqsınız
+3. **Root Directory** = `api` olmalıdır (Settings → General)
+4. Brauzerdə açın: `https://SIZIN-URL.up.railway.app/api/Health` → `{"status":"ok"}` gəlməlidir
+5. **Vercel** → Environment Variables → `API_URL` = bu Railway URL
 
-Proxy və frontend timeout artırıldı (90 saniyə). Əgər hələ də timeout olursa:
-1. Railway-da **Deployments** → son deploy **Success** olduğundan əmin olun
-2. `https://2qz1te51.up.railway.app/api/Health` açılırsa, API işləyir; bir neçə dəqiqə gözləyib yenidən test edin (cold start)
+Əgər `2qz1te51.up.railway.app` "Not Found" verirsə — domain dəyişə bilər. Railway-da **Networking** bölməsində **cari domain**-i yoxlayın.
+
+## «Application not found» / «Bağlantı vaxtı bitdi» / «Failed to fetch» — Admin SMTP
+
+1. Yuxarıdakı Railway domain yoxlamasını edin
+2. `www.easysteperp.com/api/ping` açın — health, login status görünür
+3. Railway deploy **Success** olmalıdır; 1–2 dəqiqə gözləyib yenidən test edin
 
 ## 404/Profil sil işləməzsə — yoxlama
 

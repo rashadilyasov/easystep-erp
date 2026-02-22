@@ -121,7 +121,17 @@ export default function AdminEmailSettingsPage() {
       }
       setTestResult({ sent: r.sent ?? false, message: r.message ?? "" });
     } catch (e) {
-      setTestResult({ sent: false, message: e instanceof Error ? e.message : "Xəta baş verdi" });
+      const msg = e instanceof Error ? e.message : "Xəta baş verdi";
+      const isNetworkErr =
+        msg.toLowerCase().includes("failed to fetch") ||
+        msg.toLowerCase().includes("network") ||
+        msg.toLowerCase().includes("bağlantı");
+      setTestResult({
+        sent: false,
+        message: isNetworkErr
+          ? "API çatılmır. www.easysteperp.com/api/ping açıb Railway statusunu yoxlayın. RAILWAY-ENV.md → Not Found."
+          : msg,
+      });
     } finally {
       setTestSending(false);
     }
@@ -148,7 +158,17 @@ export default function AdminEmailSettingsPage() {
       }
       setTestResult({ sent: r.sent ?? false, message: r.message ?? "" });
     } catch (e) {
-      setTestResult({ sent: false, message: e instanceof Error ? e.message : "Xəta baş verdi" });
+      const msg = e instanceof Error ? e.message : "Xəta baş verdi";
+      const isNetworkErr =
+        msg.toLowerCase().includes("failed to fetch") ||
+        msg.toLowerCase().includes("network") ||
+        msg.toLowerCase().includes("bağlantı");
+      setTestResult({
+        sent: false,
+        message: isNetworkErr
+          ? "API çatılmır. www.easysteperp.com/api/ping açıb Railway statusunu yoxlayın. RAILWAY-ENV.md → Not Found."
+          : msg,
+      });
     } finally {
       setTestSending(false);
     }

@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { api } from "@/lib/api";
+import { api, clearAuth } from "@/lib/api";
 
 export function useAuth() {
   const router = useRouter();
@@ -81,8 +81,7 @@ export function useAuth() {
     try {
       await api.auth.logout();
     } catch { /* ignore - still log out locally */ }
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
+    clearAuth();
     if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("auth-changed"));
     router.push("/");
   }, [router]);

@@ -1,8 +1,10 @@
-// Brauzer həmişə relative /api/* istifadə edir — Next.js proxy backend-ə yönləndirir.
-// Bu CORS və DNS (api.easysteperp.com) problemlərini aradan qaldırır.
+// Brauzer əsasən relative /api/* (proxy) istifadə edir. Proxy uğursuz olanda birbaşa fallback.
+const DIRECT_API_BASE = "https://api.easysteperp.com";
+
 export function getApiBase(): string {
   if (typeof window === "undefined") return "";
-  return ""; // relative URL = proxy vasitəsilə
+  if (localStorage.getItem("useDirectApi") === "1") return DIRECT_API_BASE.replace(/\/$/, "");
+  return "";
 }
 
 function getAccessToken(): string | null {
@@ -22,10 +24,19 @@ function setTokens(access: string, refresh: string) {
   }
 }
 
+export function clearAuth() {
+  if (typeof window !== "undefined") {
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("useDirectApi");
+  }
+}
+
 type FetchOptions = RequestInit & {
   params?: Record<string, string>;
   skipAuth?: boolean;
   _retrying?: boolean;
+  _directFallback?: boolean;
   timeoutMs?: number;
 };
 
@@ -136,6 +147,17 @@ export async function apiFetch<T>(path: string, options: FetchOptions = {}): Pro
       return {} as T;
     }
   } catch (e) {
+    const isProxyFailure =
+      !options._directFallback &&
+      getApiBase() === "" &&
+      typeof window !== "undefined" &&
+      (e instanceof Error
+        ? /fetch|network|502|abort|failed|Backend API|çıxış yoxdur|çatılmır/i.test(e.message) || e.name === "AbortError"
+        : false);
+    if (isProxyFailure) {
+      localStorage.setItem("useDirectApi", "1");
+      return apiFetch<T>(path, { ...options, _directFallback: true });
+    }
     if (e instanceof Error) {
       if (e.name === "AbortError" || e.message?.includes("aborted")) {
         throw new Error("Bağlantı vaxtı bitdi. Zəhmət olmasa yenidən cəhd edin.");
@@ -146,13 +168,70 @@ export async function apiFetch<T>(path: string, options: FetchOptions = {}): Pro
   }
 }
 
+async function loginWithDirectFallback(
+  email: string,
+  password: string
+): Promise<{
+  accessToken?: string;
+  refreshToken?: string;
+  expiresIn?: number;
+  requires2FA?: boolean;
+  pendingToken?: string;
+  message?: string;
+  viaEmail?: boolean;
+}> {
+  try {
+    return await apiFetch<{
+      accessToken?: string;
+      refreshToken?: string;
+      expiresIn?: number;
+      requires2FA?: boolean;
+      pendingToken?: string;
+      message?: string;
+      viaEmail?: boolean;
+    }>("/api/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ email, password }),
+      skipAuth: true,
+      timeoutMs: 45000,
+    });
+  } catch {
+    const directUrl = `${DIRECT_API_BASE.replace(/\/$/, "")}/api/auth/login`;
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 20000);
+    const res = await fetch(directUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+      signal: ctrl.signal,
+    }).finally(() => clearTimeout(t));
+    const text = await res.text();
+    if (!res.ok) {
+      let msg = "";
+      try {
+        const j = JSON.parse(text) as { message?: string };
+        msg = j.message || text || res.statusText;
+      } catch {
+        msg = text || res.statusText;
+      }
+      throw new Error(msg || `Login uğursuz (${res.status})`);
+    }
+    if (typeof localStorage !== "undefined") localStorage.setItem("useDirectApi", "1");
+    return (text ? JSON.parse(text) : {}) as {
+      accessToken?: string;
+      refreshToken?: string;
+      expiresIn?: number;
+      requires2FA?: boolean;
+      pendingToken?: string;
+      message?: string;
+      viaEmail?: boolean;
+    };
+  }
+}
+
 export const api = {
   auth: {
-    login: (email: string, password: string) =>
-      apiFetch<{ accessToken?: string; refreshToken?: string; expiresIn?: number; requires2FA?: boolean; pendingToken?: string; message?: string; viaEmail?: boolean }>(
-        "/api/auth/login",
-        { method: "POST", body: JSON.stringify({ email, password }), skipAuth: true, timeoutMs: 45000 }
-      ),
+    login: (email: string, password: string) => loginWithDirectFallback(email, password),
     complete2FA: (pendingToken: string, code: string) =>
       apiFetch<{ accessToken: string; refreshToken: string; expiresIn: number }>("/api/auth/2fa/complete", {
         method: "POST",

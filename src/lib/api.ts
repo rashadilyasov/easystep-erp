@@ -458,6 +458,16 @@ export const api = {
         method: "PUT",
         body: JSON.stringify(data),
       }),
+    testEmail: (to: string) =>
+      apiFetch<{ sent: boolean; message: string }>("/api/admin/test-email", {
+        method: "POST",
+        body: JSON.stringify({ to }),
+      }),
+    sendPasswordReset: (email: string) =>
+      apiFetch<{ sent: boolean; message: string }>("/api/admin/send-password-reset", {
+        method: "POST",
+        body: JSON.stringify({ email }),
+      }),
     emailTemplates: () =>
       apiFetch<{ key: string; label: string }[]>("/api/admin/email-templates"),
     getEmailTemplate: (key: string) =>

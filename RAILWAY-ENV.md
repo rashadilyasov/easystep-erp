@@ -77,7 +77,7 @@ Bu xəta əsasən proxy timeout-dan yaranır: e-poçt göndərmə yavaş olduqda
 | `Cors__Origins__1` | `https://www.easysteperp.com` |
 | `App__BaseUrl` | `https://www.easysteperp.com` |
 | `App__ApiBaseUrl` | `https://api.easysteperp.com` |
-| `Smtp__Host` | `easysteperp.com` (Admin paneldə doldurulubsa istifadə olunmur) |
+| `Smtp__Host` | `mail.easysteperp.com` və ya `easysteperp.com` (Admin paneldə doldurulubsa istifadə olunmur; hosting provayderdən yoxlayın) |
 | `Smtp__Port` | `465` |
 | `Smtp__User` | `hello@easysteperp.com` |
 | `Smtp__From` | `hello@easysteperp.com` |

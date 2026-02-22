@@ -62,7 +62,9 @@ public class ConfigurableSmtpEmailService : IEmailService
         }
         catch (Exception ex)
         {
-            _log.LogError(ex, "Failed to send email to {To}", to);
+            var inner = ex.InnerException?.Message ?? "";
+            var full = ex.ToString();
+            _log.LogError(ex, "Failed to send email to {To}. Message: {Msg} Inner: {Inner}. Trace: {Trace}", to, ex.Message, inner, full.Length > 500 ? full[..500] + "…" : full);
             return false;
         }
     }

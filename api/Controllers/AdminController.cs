@@ -1148,6 +1148,34 @@ public class AdminController : ControllerBase
         return Ok(new { message = "Şablon saxlanıldı" });
     }
 
+    [HttpPost("test-email")]
+    public async Task<IActionResult> TestEmail([FromBody] TestEmailRequest req, CancellationToken ct = default)
+    {
+        var to = req?.To?.Trim();
+        if (string.IsNullOrEmpty(to))
+            return BadRequest(new { message = "E-poçt ünvanı tələb olunur", sent = false });
+        var ok = await _email.SendAsync(to, "Easy Step ERP - Test e-poçt", "<p>Salam,</p><p>Bu Easy Step ERP SMTP test e-poçtudur. Göndərmə uğurludur.</p><p>— Easy Step ERP</p>", from: null, ct);
+        return Ok(new { sent = ok, message = ok ? "Test e-poçtu göndərildi" : "SMTP göndərmə uğursuz oldu (parol boş və ya SMTP xətası). Railway loglara baxın." });
+    }
+
+    [HttpPost("send-password-reset")]
+    public async Task<IActionResult> SendPasswordReset([FromBody] SendPasswordResetRequest req, CancellationToken ct = default)
+    {
+        var email = req?.Email?.Trim();
+        if (string.IsNullOrEmpty(email))
+            return BadRequest(new { message = "E-poçt tələb olunur", sent = false });
+        var token = await _auth.CreatePasswordResetTokenAsync(email, ct);
+        if (token == null)
+            return BadRequest(new { message = "Bu e-poçtla qeydiyyatda istifadəçi tapılmadı", sent = false });
+        var baseUrl = _config["App:BaseUrl"] ?? "https://www.easysteperp.com";
+        var resetUrl = $"{baseUrl}/reset-password?token={Uri.EscapeDataString(token)}";
+        var userWithTenant = await _auth.GetUserWithTenantByEmailAsync(email, ct);
+        var userName = (userWithTenant?.tenant?.ContactPerson ?? "").Trim();
+        if (string.IsNullOrEmpty(userName)) userName = "Müştəri";
+        var sent = await _templatedEmail.SendTemplatedAsync(email, EmailTemplateKeys.PasswordReset, new Dictionary<string, string> { ["resetUrl"] = resetUrl, ["userName"] = userName }, ct);
+        return Ok(new { sent, message = sent ? "Şifrə sıfırlama linki göndərildi" : "SMTP göndərmə uğursuz oldu. Admin panel → E-poçt ayarları → SMTP parolunu yoxlayın." });
+    }
+
     [HttpPost("email-bulk-send")]
     public async Task<IActionResult> BulkSendEmail([FromBody] BulkEmailRequest req, CancellationToken ct = default)
     {
@@ -1169,6 +1197,8 @@ public class AdminController : ControllerBase
     }
 }
 
+public record TestEmailRequest(string? To);
+public record SendPasswordResetRequest(string? Email);
 public record EmailSettingsRequest(string? Host, int Port, string? User, string? Password, string? From, bool UseSsl = true, string[]? FromAddresses = null);
 public record EmailTemplateRequest(string? Subject, string? Body, string? From);
 public record BulkEmailRequest(List<string>? Emails, string? Subject, string? Body);

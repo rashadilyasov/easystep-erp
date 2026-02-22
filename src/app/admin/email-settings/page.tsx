@@ -30,6 +30,9 @@ export default function AdminEmailSettingsPage() {
   const [bulkSending, setBulkSending] = useState(false);
   const [bulkResult, setBulkResult] = useState<{ sent: number; failed: number } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [testEmail, setTestEmail] = useState("rashadilyasov@yahoo.com");
+  const [testSending, setTestSending] = useState(false);
+  const [testResult, setTestResult] = useState<{ sent: boolean; message: string } | null>(null);
 
   const loadSmtp = useCallback(() => {
     api.admin.emailSettings().then(setSmtp).catch(() => {}).finally(() => setLoading(false));
@@ -74,6 +77,34 @@ export default function AdminEmailSettingsPage() {
       await api.admin.putEmailTemplate(selectedTemplate, templateData);
     } finally {
       setTemplateSaving(false);
+    }
+  };
+
+  const runTestEmail = async () => {
+    if (!testEmail.trim()) return;
+    setTestSending(true);
+    setTestResult(null);
+    try {
+      const r = await api.admin.testEmail(testEmail.trim());
+      setTestResult({ sent: r.sent ?? false, message: r.message ?? "" });
+    } catch (e) {
+      setTestResult({ sent: false, message: e instanceof Error ? e.message : "Xəta baş verdi" });
+    } finally {
+      setTestSending(false);
+    }
+  };
+
+  const runSendPasswordReset = async () => {
+    if (!testEmail.trim()) return;
+    setTestSending(true);
+    setTestResult(null);
+    try {
+      const r = await api.admin.sendPasswordReset(testEmail.trim());
+      setTestResult({ sent: r.sent ?? false, message: r.message ?? "" });
+    } catch (e) {
+      setTestResult({ sent: false, message: e instanceof Error ? e.message : "Xəta baş verdi" });
+    } finally {
+      setTestSending(false);
     }
   };
 
@@ -149,6 +180,31 @@ export default function AdminEmailSettingsPage() {
           <button onClick={saveSmtp} disabled={smtpSaving} className="mt-4 px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50">
             {smtpSaving ? "Saxlanılır..." : "Yadda saxla"}
           </button>
+
+          <div className="mt-8 pt-6 border-t border-slate-200">
+            <h3 className="font-semibold text-slate-900 mb-3">SMTP test</h3>
+            <p className="text-sm text-slate-500 mb-3">SMTP saxlandıqdan sonra test edin. Şifrə sıfırlama üçün bu e-poçtla qeydiyyatda istifadəçi olmalıdır.</p>
+            <div className="flex gap-2 items-center flex-wrap">
+              <input
+                type="email"
+                value={testEmail}
+                onChange={(e) => setTestEmail(e.target.value)}
+                placeholder="test@example.com"
+                className="px-4 py-2 border border-slate-300 rounded-lg w-64"
+              />
+              <button onClick={runTestEmail} disabled={testSending} className="px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 disabled:opacity-50">
+                {testSending ? "…" : "Test e-poçt"}
+              </button>
+              <button onClick={runSendPasswordReset} disabled={testSending} className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50">
+                {testSending ? "…" : "Şifrə sıfırlama göndər"}
+              </button>
+            </div>
+            {testResult && (
+              <div className={`mt-3 p-3 rounded-lg text-sm ${testResult.sent ? "bg-green-50 text-green-800" : "bg-red-50 text-red-700"}`}>
+                {testResult.message}
+              </div>
+            )}
+          </div>
         </div>
       )}
 

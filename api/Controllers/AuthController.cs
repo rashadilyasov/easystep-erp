@@ -50,17 +50,19 @@ public class AuthController : ControllerBase
                 var verifyUrl = $"{baseUrl}/verify-email?token={Uri.EscapeDataString(token)}";
                 var to = req.Email;
                 var userName = req.ContactPerson?.Trim() ?? "Müştəri";
-                try
+                var scopeFactory = _scopeFactory;
+                var logger = _logger;
+                _ = Task.Run(async () =>
                 {
-                    var sent = await _templatedEmail.SendTemplatedAsync(to, EmailTemplateKeys.Verification, new Dictionary<string, string> { ["verifyUrl"] = verifyUrl, ["userName"] = userName }, ct);
-                    if (!sent)
-                        return StatusCode(500, new { message = "Təsdiq e-poçtu göndərilə bilmədi. E-poçt ayarlarını yoxlayın (Admin → E-poçt ayarları)." });
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Verification email failed for {To}", to);
-                    return StatusCode(500, new { message = "Təsdiq e-poçtu göndərilə bilmədi. E-poçt ayarlarını yoxlayın." });
-                }
+                    try
+                    {
+                        await using var scope = scopeFactory.CreateAsyncScope();
+                        var svc = scope.ServiceProvider.GetRequiredService<ITemplatedEmailService>();
+                        var sent = await svc.SendTemplatedAsync(to, EmailTemplateKeys.Verification, new Dictionary<string, string> { ["verifyUrl"] = verifyUrl, ["userName"] = userName }, CancellationToken.None);
+                        if (!sent) logger.LogWarning("Verification email to {To} returned false (SMTP?)", to);
+                    }
+                    catch (Exception ex) { logger.LogError(ex, "Verification email failed for {To}", to); }
+                });
             }
 
             return Ok(new { message = "Qeydiyyat uğurla tamamlandı. E-poçtunuzu yoxlayın və təsdiq linkinə keçid edin." });
@@ -103,17 +105,19 @@ public class AuthController : ControllerBase
                 var verifyUrl = $"{baseUrl}/verify-email?token={Uri.EscapeDataString(token)}";
                 var to = req.Email;
                 var userName = req.FullName?.Trim() ?? "Partnyor";
-                try
+                var scopeFactory = _scopeFactory;
+                var logger = _logger;
+                _ = Task.Run(async () =>
                 {
-                    var sent = await _templatedEmail.SendTemplatedAsync(to, EmailTemplateKeys.AffiliateVerification, new Dictionary<string, string> { ["verifyUrl"] = verifyUrl, ["userName"] = userName }, ct);
-                    if (!sent)
-                        return StatusCode(500, new { message = "Təsdiq e-poçtu göndərilə bilmədi. E-poçt ayarlarını yoxlayın (Admin → E-poçt ayarları)." });
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Affiliate verification email failed for {To}", to);
-                    return StatusCode(500, new { message = "Təsdiq e-poçtu göndərilə bilmədi. E-poçt ayarlarını yoxlayın." });
-                }
+                    try
+                    {
+                        await using var scope = scopeFactory.CreateAsyncScope();
+                        var svc = scope.ServiceProvider.GetRequiredService<ITemplatedEmailService>();
+                        var sent = await svc.SendTemplatedAsync(to, EmailTemplateKeys.AffiliateVerification, new Dictionary<string, string> { ["verifyUrl"] = verifyUrl, ["userName"] = userName }, CancellationToken.None);
+                        if (!sent) logger.LogWarning("Affiliate verification email to {To} returned false (SMTP?)", to);
+                    }
+                    catch (Exception ex) { logger.LogError(ex, "Affiliate verification email failed for {To}", to); }
+                });
             }
 
             return Ok(new { message = "Satış partnyoru qeydiyyatı uğurla tamamlandı. E-poçtunuzu yoxlayın və təsdiq linkinə keçid edin." });

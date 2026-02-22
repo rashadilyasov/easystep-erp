@@ -1,5 +1,6 @@
 using System.Net;
 using System.Security.Claims;
+using Microsoft.Extensions.DependencyInjection;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -357,13 +358,26 @@ table{{width:100%;border-collapse:collapse}} td{{padding:8px;border-bottom:1px s
                 {
                     var userName = (tenant?.ContactPerson ?? "").Trim();
                     if (string.IsNullOrEmpty(userName)) userName = tenant?.Name ?? "Müştəri";
-                    await _templatedEmail.SendTemplatedAsync(toEmail, EmailTemplateKeys.PaymentConfirm, new Dictionary<string, string>
+                    var amount = payment.Amount.ToString("F2");
+                    var currency = payment.Currency ?? "AZN";
+                    var planName = plan?.Name ?? "—";
+                    var scopeFactory = HttpContext.RequestServices.GetRequiredService<IServiceScopeFactory>();
+                    _ = Task.Run(async () =>
                     {
-                        ["userName"] = userName,
-                        ["amount"] = payment.Amount.ToString("F2"),
-                        ["currency"] = payment.Currency ?? "AZN",
-                        ["planName"] = plan?.Name ?? "—",
-                    }, ct);
+                        try
+                        {
+                            await using var scope = scopeFactory.CreateAsyncScope();
+                            var svc = scope.ServiceProvider.GetRequiredService<ITemplatedEmailService>();
+                            await svc.SendTemplatedAsync(toEmail, EmailTemplateKeys.PaymentConfirm, new Dictionary<string, string>
+                            {
+                                ["userName"] = userName,
+                                ["amount"] = amount,
+                                ["currency"] = currency,
+                                ["planName"] = planName,
+                            }, CancellationToken.None);
+                        }
+                        catch { /* email failed – log in production */ }
+                    });
                 }
             }
             catch { /* email failed – don't fail webhook */ }

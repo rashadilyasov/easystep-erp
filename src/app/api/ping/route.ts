@@ -81,8 +81,8 @@ export async function GET() {
   if (accessToken) {
     try {
       const directRes = await fetch(`${base}/api/admin/tenants`, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-        signal: AbortSignal.timeout(10000),
+        headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+        signal: AbortSignal.timeout(15000),
         cache: "no-store",
       });
       const directBody = await directRes.text().catch(() => "");
@@ -96,11 +96,16 @@ export async function GET() {
     }
     try {
       const proxyRes = await fetch(`${origin}/api/admin/tenants`, {
-        headers: { Authorization: `Bearer ${accessToken}` },
+        headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
         signal: AbortSignal.timeout(15000),
         cache: "no-store",
       });
-      results.adminTenantsViaProxy = { status: proxyRes.status, ok: proxyRes.ok };
+      const proxyBody = await proxyRes.text().catch(() => "");
+      results.adminTenantsViaProxy = {
+        status: proxyRes.status,
+        ok: proxyRes.ok,
+        ...(proxyRes.status === 401 && proxyBody ? { body401: proxyBody.slice(0, 300) } : {}),
+      };
     } catch (e) {
       results.adminTenantsViaProxy = { error: e instanceof Error ? e.message : String(e) };
     }

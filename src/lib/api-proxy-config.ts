@@ -20,10 +20,10 @@ export function getApiBases(): string[] {
     if (!full.startsWith("http")) full = "https://" + full;
     if (full && !bases.some((b) => norm(b) === norm(full))) bases.push(full);
   };
-  add(process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || "");
-  add(API_CUSTOM_DOMAIN);
   add(process.env.RAILWAY_PUBLIC_URL || process.env.API_FALLBACK_URL || "");
   add(RAILWAY_FALLBACK);
+  add(process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || "");
+  add(API_CUSTOM_DOMAIN);
   if (bases.length === 0) bases.push("http://localhost:5000");
   return bases;
 }

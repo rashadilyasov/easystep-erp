@@ -33,6 +33,91 @@ function AdminAttachmentLink({ id, fileName }: { id: string; fileName: string })
 
 type Announcement = { id: string; title: string; body: string; publishedAt: string; active?: boolean };
 type Contact = { id: string; name: string; email: string; message: string; date: string };
+
+function ContactMessageCard({ contact, onDeleted }: { contact: Contact; onDeleted: () => void }) {
+  const [deleting, setDeleting] = useState(false);
+  const [forwarding, setForwarding] = useState(false);
+  const [forwardModal, setForwardModal] = useState(false);
+  const [forwardTo, setForwardTo] = useState("info@easysteperp.com");
+
+  const handleDelete = async () => {
+    if (!confirm("Bu mesajı silmək istədiyinizə əminsiniz?")) return;
+    setDeleting(true);
+    try {
+      await api.admin.deleteContact(contact.id);
+      onDeleted();
+    } catch {
+      alert("Silinə bilmədi");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleForward = async () => {
+    setForwarding(true);
+    try {
+      const res = await api.admin.forwardContact(contact.id, forwardTo.trim() || undefined);
+      alert((res as { message?: string }).message ?? "Göndərildi");
+      setForwardModal(false);
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Göndərilə bilmədi");
+    } finally {
+      setForwarding(false);
+    }
+  };
+
+  return (
+    <>
+      <div className="p-3 bg-slate-50 rounded-lg text-sm flex flex-wrap items-start justify-between gap-2 border border-slate-100">
+        <div className="flex-1 min-w-0">
+          <div className="font-medium text-slate-900">{contact.name} &lt;{contact.email}&gt;</div>
+          <p className="text-slate-600 mt-1 whitespace-pre-wrap">{contact.message}</p>
+          <span className="text-slate-400 text-xs">{contact.date}</span>
+        </div>
+        <div className="flex gap-1 shrink-0">
+          <button
+            type="button"
+            onClick={() => setForwardModal(true)}
+            disabled={forwarding}
+            className="px-2 py-1 text-xs bg-primary-100 text-primary-700 rounded hover:bg-primary-200 disabled:opacity-50"
+          >
+            📧 E-poçta göndər
+          </button>
+          <button
+            type="button"
+            onClick={handleDelete}
+            disabled={deleting}
+            className="px-2 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200 disabled:opacity-50"
+          >
+            {deleting ? "..." : "Sil"}
+          </button>
+        </div>
+      </div>
+      {forwardModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setForwardModal(false)}>
+          <div className="bg-white rounded-xl p-4 w-full max-w-sm shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <h4 className="font-medium text-slate-900 mb-2">E-poçta göndər</h4>
+            <input
+              type="email"
+              value={forwardTo}
+              onChange={(e) => setForwardTo(e.target.value)}
+              placeholder="info@easysteperp.com"
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm mb-3"
+            />
+            <div className="flex gap-2">
+              <button onClick={handleForward} disabled={forwarding} className="px-3 py-1.5 bg-primary-600 text-white rounded-lg text-sm disabled:opacity-50">
+                {forwarding ? "Göndərilir..." : "Göndər"}
+              </button>
+              <button onClick={() => setForwardModal(false)} className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm hover:bg-slate-50">
+                Ləğv
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
 type Ticket = { id: string; subject: string; status: string; date: string; tenantName: string; body?: string };
 
 function AcademyMaterialsSection() {
@@ -361,12 +446,8 @@ export default function Content() {
             <p className="text-slate-500 text-sm">Mesaj yoxdur</p>
           ) : (
             <div className="space-y-3">
-              {contacts.slice(0, 10).map((c) => (
-                <div key={c.id} className="p-3 bg-slate-50 rounded-lg text-sm">
-                  <div className="font-medium text-slate-900">{c.name} &lt;{c.email}&gt;</div>
-                  <p className="text-slate-600 mt-1">{c.message}</p>
-                  <span className="text-slate-400 text-xs">{c.date}</span>
-                </div>
+              {contacts.slice(0, 20).map((c) => (
+                <ContactMessageCard key={c.id} contact={c} onDeleted={() => load()} />
               ))}
             </div>
           )}

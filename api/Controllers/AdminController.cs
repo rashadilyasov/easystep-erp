@@ -488,6 +488,40 @@ public class AdminController : ControllerBase
         return Ok(list.Select(c => new { c.Id, c.Name, c.Email, c.Message, date = c.CreatedAt.ToString("dd.MM.yyyy HH:mm") }));
     }
 
+    [HttpDelete("contacts/{id:guid}")]
+    public async Task<IActionResult> DeleteContact(Guid id, CancellationToken ct)
+    {
+        var msg = await _db.ContactMessages.FindAsync(new object[] { id }, ct);
+        if (msg == null) return NotFound(new { message = "Mesaj tapılmadı" });
+        _db.ContactMessages.Remove(msg);
+        await _db.SaveChangesAsync(ct);
+        return Ok(new { message = "Mesaj silindi" });
+    }
+
+    [HttpPost("contacts/{id:guid}/forward")]
+    public async Task<IActionResult> ForwardContact(Guid id, [FromBody] ForwardContactRequest? req, CancellationToken ct)
+    {
+        var msg = await _db.ContactMessages.FindAsync(new object[] { id }, ct);
+        if (msg == null) return NotFound(new { message = "Mesaj tapılmadı" });
+
+        var to = req?.To?.Trim();
+        if (string.IsNullOrEmpty(to)) to = _config["App:AdminEmail"] ?? "info@easysteperp.com";
+
+        var html = $@"
+<!DOCTYPE html>
+<html><body style='font-family:Arial,sans-serif'>
+<h2>Əlaqə mesajı (forward)</h2>
+<p><strong>Ad:</strong> {System.Net.WebUtility.HtmlEncode(msg.Name)}</p>
+<p><strong>E-poçt:</strong> {System.Net.WebUtility.HtmlEncode(msg.Email)}</p>
+<p><strong>Tarix:</strong> {msg.CreatedAt:dd.MM.yyyy HH:mm}</p>
+<p><strong>Mesaj:</strong></p>
+<p>{System.Net.WebUtility.HtmlEncode(msg.Message).Replace("\n", "<br/>")}</p>
+<p>— Easy Step ERP Admin</p>
+</body></html>";
+        var sent = await _email.SendAsync(to, "Easy Step ERP - Əlaqə mesajı (forward)", html, from: null, ct);
+        return Ok(new { message = sent ? $"Mesaj {to} ünvanına göndərildi" : "E-poçt göndərilə bilmədi" });
+    }
+
     [HttpGet("announcements")]
     public async Task<IActionResult> GetAnnouncements(CancellationToken ct)
     {
@@ -1463,3 +1497,4 @@ public record PromoDefaultsRequest(decimal? DiscountPercent, decimal? Commission
 public record UpdatePromoCodeRequest(decimal? DiscountPercent, decimal? CommissionPercent);
 public record CreateAnnouncementRequest(string? Title, string? Body);
 public record CreateAcademyMaterialRequest(string? Title, string? Url);
+public record ForwardContactRequest(string? To);

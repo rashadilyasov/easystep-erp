@@ -404,6 +404,12 @@ export const api = {
         body: JSON.stringify({ status }),
       }),
     contacts: () => apiFetch<{ id: string; name: string; email: string; message: string; date: string }[]>("/api/admin/contacts"),
+    deleteContact: (id: string) => apiFetch<{ message: string }>(`/api/admin/contacts/${id}`, { method: "DELETE" }),
+    forwardContact: (id: string, to?: string) =>
+      apiFetch<{ message: string }>(`/api/admin/contacts/${id}/forward`, {
+        method: "POST",
+        body: JSON.stringify({ to: to || undefined }),
+      }),
     tenants: () =>
       apiFetch<
         {

@@ -100,6 +100,18 @@ Bu xəta əsasən proxy timeout-dan yaranır: e-poçt göndərmə yavaş olduqda
 
 ---
 
+## Dəstək bileti «Xəta baş verdi» — Yeni bilet / fayl əlavə et
+
+Əgər "Yeni bilet aç" və ya fayl əlavə edərkən "Xəta baş verdi" mesajı alırsınızsa:
+
+1. **Ətraflı xəta:** Kod yeniləməsindən sonra alert-də konkret xəta mesajı görünəcək (məs: "Bilet yaradıla bilmədi. Xəta: ..."). Bu mesajı nəzərdən keçirin.
+2. **Giriş:** Bilet yalnız kabinet istifadəçiləri (tenant) üçündür. Dəstək səhifəsinə **Kabinet → Dəstək** vasitəsilə daxil olun; login olmalısınız.
+3. **Railway Logs:** Deployments → son deployment → View Logs. `Unhandled exception` və ya `Support` axtarın — DB/şəbəkə problemləri orada görünür.
+4. **Migration:** `Tickets` və `TicketAttachments` cədvəlləri mövcuddursa migration işləyib. Əgər migration işləməyibsə — Railway deploy-da avtomatik çalışır; loglarda `Applying migration` yoxlayın.
+5. **Fayl həddi:** Maks. 3 fayl, hər biri 5MB; icazəli formatlar: `.pdf`, `.png`, `.jpg`, `.jpeg`, `.gif`, `.doc`, `.docx`, `.xls`, `.xlsx`.
+
+---
+
 ## Railway «Not Found» / «The train has not arrived» / «Failed to fetch»
 
 **Düzəliş deploy edildi:** Repo root-a `Dockerfile` və `railway.toml` əlavə edildi. Root Directory boş olsa belə API düzgün build olacaq. **[RAILWAY-NOT-FOUND-FIX.md](./RAILWAY-NOT-FOUND-FIX.md)** — ətraflı addımlar.

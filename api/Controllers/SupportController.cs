@@ -42,29 +42,41 @@ public class SupportController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateTicketRequest req, CancellationToken ct)
     {
-        var tenantId = GetTenantId();
-        var userId = GetUserId();
-        if (tenantId == null || userId == null) return Unauthorized();
-        if (string.IsNullOrWhiteSpace(req?.Subject) || string.IsNullOrWhiteSpace(req?.Body))
-            return BadRequest(new { message = "Mövzu və təsvir vacibdir" });
-        if ((req.Subject?.Length ?? 0) > 500 || (req.Body?.Length ?? 0) > 10000)
-            return BadRequest(new { message = "Mətn həddindən artıq uzundur" });
-
-        var ticket = new Ticket
+        try
         {
-            Id = Guid.NewGuid(),
-            TenantId = tenantId.Value,
-            CreatedByUserId = userId.Value,
-            Subject = req.Subject ?? "",
-            Body = req.Body ?? "",
-            Status = TicketStatus.Open,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow,
-        };
-        _db.Tickets.Add(ticket);
-        await _db.SaveChangesAsync(ct);
+            var tenantId = GetTenantId();
+            var userId = GetUserId();
+            if (tenantId == null || userId == null)
+                return Unauthorized(new { message = "Giriş tələb olunur. Zəhmət olmasa yenidən daxil olun." });
+            if (req == null)
+                return BadRequest(new { message = "Mövzu və təsvir daxil edin" });
+            var subj = req.Subject?.Trim() ?? "";
+            var body = req.Body?.Trim() ?? "";
+            if (string.IsNullOrEmpty(subj) || string.IsNullOrEmpty(body))
+                return BadRequest(new { message = "Mövzu və təsvir vacibdir" });
+            if (subj.Length > 500 || body.Length > 10000)
+                return BadRequest(new { message = "Mətn həddindən artıq uzundur" });
 
-        return Ok(new { id = ticket.Id, message = "Bilet açıldı" });
+            var ticket = new Ticket
+            {
+                Id = Guid.NewGuid(),
+                TenantId = tenantId.Value,
+                CreatedByUserId = userId.Value,
+                Subject = subj,
+                Body = body,
+                Status = TicketStatus.Open,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+            };
+            _db.Tickets.Add(ticket);
+            await _db.SaveChangesAsync(ct);
+
+            return Ok(new { id = ticket.Id, message = "Bilet açıldı" });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Bilet yaradıla bilmədi. Xəta: " + (ex.InnerException?.Message ?? ex.Message) });
+        }
     }
 
     private static readonly HashSet<string> AllowedExtensions = new(StringComparer.OrdinalIgnoreCase)
@@ -84,49 +96,56 @@ public class SupportController : ControllerBase
     }
 
     [HttpPost("tickets/{ticketId:guid}/attachments")]
-    public async Task<IActionResult> AddAttachment(Guid ticketId, IFormFileCollection files, CancellationToken ct)
+    public async Task<IActionResult> AddAttachment(Guid ticketId, IFormFileCollection? files, CancellationToken ct)
     {
-        var tenantId = GetTenantId();
-        if (tenantId == null) return Unauthorized();
-
-        var ticket = await _db.Tickets.FirstOrDefaultAsync(t => t.Id == ticketId && t.TenantId == tenantId.Value, ct);
-        if (ticket == null) return NotFound(new { message = "Bilet tapılmadı" });
-
-        const int maxFileSize = 5 * 1024 * 1024; // 5MB
-        const int maxFiles = 3;
-
-        if (files == null || files.Count == 0)
-            return BadRequest(new { message = "Fayl seçin" });
-        if (files.Count > maxFiles)
-            return BadRequest(new { message = $"Maksimum {maxFiles} fayl əlavə edə bilərsiniz" });
-
-        foreach (var f in files)
+        try
         {
-            if (f.Length == 0 || f.Length > maxFileSize)
-                return BadRequest(new { message = "Hər fayl 5MB-dan kiçik olmalıdır" });
+            var tenantId = GetTenantId();
+            if (tenantId == null) return Unauthorized(new { message = "Giriş tələb olunur" });
 
-            var ext = Path.GetExtension(f.FileName ?? "");
-            if (string.IsNullOrEmpty(ext) || !AllowedExtensions.Contains(ext))
-                return BadRequest(new { message = $"Fayl tipi icazə verilmir. İcazəli: {string.Join(", ", AllowedExtensions)}" });
+            var ticket = await _db.Tickets.FirstOrDefaultAsync(t => t.Id == ticketId && t.TenantId == tenantId.Value, ct);
+            if (ticket == null) return NotFound(new { message = "Bilet tapılmadı" });
 
-            using var ms = new MemoryStream();
-            await f.CopyToAsync(ms, ct);
-            var content = ms.ToArray();
+            const int maxFileSize = 5 * 1024 * 1024; // 5MB
+            const int maxFiles = 3;
 
-            var safeName = SanitizeFileName(f.FileName);
+            if (files == null || files.Count == 0)
+                return BadRequest(new { message = "Fayl seçin" });
+            if (files.Count > maxFiles)
+                return BadRequest(new { message = $"Maksimum {maxFiles} fayl əlavə edə bilərsiniz" });
 
-            _db.TicketAttachments.Add(new TicketAttachment
+            foreach (var f in files)
             {
-                Id = Guid.NewGuid(),
-                TicketId = ticketId,
-                FileName = safeName,
-                ContentType = f.ContentType ?? "application/octet-stream",
-                Content = content,
-                CreatedAt = DateTime.UtcNow,
-            });
+                if (f.Length == 0 || f.Length > maxFileSize)
+                    return BadRequest(new { message = "Hər fayl 5MB-dan kiçik olmalıdır" });
+
+                var ext = Path.GetExtension(f.FileName ?? "");
+                if (string.IsNullOrEmpty(ext) || !AllowedExtensions.Contains(ext))
+                    return BadRequest(new { message = $"Fayl tipi icazə verilmir. İcazəli: {string.Join(", ", AllowedExtensions)}" });
+
+                using var ms = new MemoryStream();
+                await f.CopyToAsync(ms, ct);
+                var content = ms.ToArray();
+
+                var safeName = SanitizeFileName(f.FileName);
+
+                _db.TicketAttachments.Add(new TicketAttachment
+                {
+                    Id = Guid.NewGuid(),
+                    TicketId = ticketId,
+                    FileName = safeName,
+                    ContentType = f.ContentType ?? "application/octet-stream",
+                    Content = content,
+                    CreatedAt = DateTime.UtcNow,
+                });
+            }
+            await _db.SaveChangesAsync(ct);
+            return Ok(new { message = "Fayl(lar) əlavə edildi" });
         }
-        await _db.SaveChangesAsync(ct);
-        return Ok(new { message = "Fayl(lar) əlavə edildi" });
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Fayl əlavə edilə bilmədi. Xəta: " + (ex.InnerException?.Message ?? ex.Message) });
+        }
     }
 
     [HttpGet("tickets/{ticketId:guid}/attachments")]

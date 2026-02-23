@@ -25,7 +25,6 @@ type FetchOptions = RequestInit & {
   params?: Record<string, string>;
   skipAuth?: boolean;
   _retrying?: boolean;
-  _directFallback?: boolean;
   timeoutMs?: number;
 };
 
@@ -63,57 +62,31 @@ export async function apiFetchForm<T>(path: string, files: FileList | File[]): P
 }
 
 export async function apiFetch<T>(path: string, options: FetchOptions = {}): Promise<T> {
-  const { params, skipAuth, _retrying, _directFallback, timeoutMs, ...init } = options;
-  const base = getApiBase();
-  let url = path.startsWith("http") ? path : `${base}${path}`;
-  if (params) {
-    const search = new URLSearchParams(params).toString();
-    url += (url.includes("?") ? "&" : "?") + search;
-  }
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    ...(init.headers as Record<string, string>),
-  };
-  if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("debug") === "1") {
-    headers["X-Debug"] = "1";
-  }
-  if (!skipAuth) {
-    const token = getAccessToken();
-    if (token) headers["Authorization"] = `Bearer ${token}`;
-  }
-  const controller = new AbortController();
-  const timeout = timeoutMs ?? FETCH_TIMEOUT_MS;
-  const timeoutId = setTimeout(() => controller.abort(), timeout);
-
-  const doFetch = async (targetUrl: string): Promise<Response> => {
-    return fetch(targetUrl, { ...init, headers, method: init.method ?? "GET", signal: controller.signal }).finally(
-      () => clearTimeout(timeoutId)
-    );
-  };
-
   try {
-    let res = await doFetch(url);
-    const tryDirect =
-      typeof window !== "undefined" &&
-      !_directFallback &&
-      (res.status === 502 || res.status === 503) &&
-      path.startsWith("/api/") &&
-      !path.startsWith("http");
-    if (tryDirect) {
-      const q = params && Object.keys(params).length ? new URLSearchParams(params).toString() : "";
-      const directUrl = `${DIRECT_API_BASE}${path}${q ? (path.includes("?") ? "&" : "?") + q : ""}`;
-      try {
-        res = await fetch(directUrl, {
-          ...init,
-          headers,
-          method: (init.method as string) ?? "GET",
-          body: init.body,
-          signal: AbortSignal.timeout(timeout),
-        });
-      } catch {
-        /* keep original res */
-      }
+    const { params, skipAuth, _retrying, timeoutMs, ...init } = options;
+    const base = getApiBase();
+    let url = path.startsWith("http") ? path : `${base}${path}`;
+    if (params) {
+      const search = new URLSearchParams(params).toString();
+      url += (url.includes("?") ? "&" : "?") + search;
     }
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      ...(init.headers as Record<string, string>),
+    };
+    if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("debug") === "1") {
+      headers["X-Debug"] = "1";
+    }
+    if (!skipAuth) {
+      const token = getAccessToken();
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+    }
+    const controller = new AbortController();
+    const timeout = timeoutMs ?? FETCH_TIMEOUT_MS;
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+    const res = await fetch(url, { ...init, headers, signal: controller.signal }).finally(() =>
+      clearTimeout(timeoutId)
+    );
     if (res.status === 401 && !skipAuth && !_retrying) {
       const refresh = getRefreshToken();
       if (refresh) {
@@ -172,95 +145,19 @@ export async function apiFetch<T>(path: string, options: FetchOptions = {}): Pro
   }
 }
 
-const DIRECT_API_BASE = "https://api.easysteperp.com";
-
-async function loginWithFallback(
-  email: string,
-  password: string
-): Promise<{
-  accessToken?: string;
-  refreshToken?: string;
-  expiresIn?: number;
-  requires2FA?: boolean;
-  pendingToken?: string;
-  message?: string;
-  viaEmail?: boolean;
-}> {
-  const body = JSON.stringify({ email, password });
-  const mkOpts = () => ({
-    method: "POST" as const,
-    headers: { "Content-Type": "application/json" },
-    body,
-    signal: AbortSignal.timeout(60000),
-  });
-  try {
-    const res = await fetch("/api/auth/login", mkOpts());
-    const text = await res.text();
-    if (res.ok) return text ? (JSON.parse(text) as any) : {};
-    if (res.status >= 400) {
-      let msg = res.statusText;
-      try {
-        const j = JSON.parse(text) as { message?: string };
-        if (j.message) msg = j.message;
-      } catch { /* ignore */ }
-      throw new Error(msg?.slice(0, 300) || `API xətası (${res.status})`);
-    }
-  } catch (proxyErr) {
-    try {
-      const direct = await fetch(`${DIRECT_API_BASE}/api/auth/login`, mkOpts());
-      const directText = await direct.text();
-      if (direct.ok) return directText ? (JSON.parse(directText) as any) : {};
-      if (direct.status >= 400) {
-        let msg = direct.statusText;
-        try {
-          const j = JSON.parse(directText) as { message?: string };
-          if (j.message) msg = j.message;
-        } catch { /* ignore */ }
-        throw new Error(msg?.slice(0, 300) || `API xətası (${direct.status})`);
-      }
-    } catch (directErr) {
-      throw proxyErr;
-    }
-  }
-  return {};
-}
-
 export const api = {
   auth: {
-    login: (email: string, password: string) => loginWithFallback(email, password),
-    complete2FA: async (pendingToken: string, code: string) => {
-      const body = JSON.stringify({ pendingToken, code });
-      const mkOpts = () => ({
-        method: "POST" as const,
-        headers: { "Content-Type": "application/json" },
-        body,
-        signal: AbortSignal.timeout(30000),
-      });
-      try {
-        const r = await fetch("/api/auth/2fa/complete", mkOpts());
-        const t = await r.text();
-        if (r.ok) return t ? (JSON.parse(t) as any) : ({} as any);
-        if (r.status >= 400) {
-          let msg = r.statusText;
-          try { const j = JSON.parse(t) as { message?: string }; if (j?.message) msg = j.message; } catch { if (t?.trim()) msg = t.slice(0, 300); }
-          throw new Error(msg);
-        }
-      } catch (e) {
-        try {
-          const d = await fetch(`${DIRECT_API_BASE}/api/auth/2fa/complete`, mkOpts());
-          const dt = await d.text();
-          if (d.ok) return dt ? (JSON.parse(dt) as any) : ({} as any);
-          if (d.status >= 400) {
-            let msg = d.statusText;
-            try { const j = JSON.parse(dt) as { message?: string }; if (j?.message) msg = j.message; } catch { if (dt?.trim()) msg = dt.slice(0, 300); }
-            throw new Error(msg);
-          }
-        } catch {
-          throw e;
-        }
-      }
-      return {} as any;
-    },
+    login: (email: string, password: string) =>
+      apiFetch<{ accessToken?: string; refreshToken?: string; expiresIn?: number; requires2FA?: boolean; pendingToken?: string; message?: string; viaEmail?: boolean }>(
+        "/api/auth/login",
+        { method: "POST", body: JSON.stringify({ email, password }), skipAuth: true }
+      ),
+    complete2FA: (pendingToken: string, code: string) =>
+      apiFetch<{ accessToken: string; refreshToken: string; expiresIn: number }>("/api/auth/2fa/complete", {
+        method: "POST",
+        body: JSON.stringify({ pendingToken, code }),
+        skipAuth: true,
+      }),
     twoFactorSetup: (viaEmail?: boolean) =>
       apiFetch<{ secret?: string; qrCodeUrl?: string; message: string; viaEmail?: boolean }>("/api/auth/2fa/setup", {
         method: "POST",

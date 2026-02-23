@@ -4,10 +4,7 @@
  */
 const API_CUSTOM_DOMAIN = "https://api.easysteperp.com";
 
-/** api.easysteperp.com ENOTFOUND verdikdə istifadə olunan fallback (Railway native URL) */
-const RAILWAY_FALLBACK = "https://2qz1te51.up.railway.app";
-
-/** EXCLUDED: Application not found qaytaran URL-lər (API burada deyil) */
+/** 404/qeyri-funksional olduğu məlum olan base-lər — siyahıdan çıxarılır */
 const EXCLUDED_BASES = ["2qz1te51.up.railway.app"];
 
 export function getApiBases(): string[] {
@@ -22,8 +19,7 @@ export function getApiBases(): string[] {
   };
   add(process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || "");
   add(API_CUSTOM_DOMAIN);
-  add(process.env.RAILWAY_PUBLIC_URL || process.env.API_FALLBACK_URL || "");
-  add(RAILWAY_FALLBACK);
+  add(process.env.RAILWAY_PUBLIC_URL || "");
   if (bases.length === 0) bases.push("http://localhost:5000");
   return bases;
 }

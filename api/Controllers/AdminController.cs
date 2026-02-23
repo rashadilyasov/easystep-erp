@@ -372,7 +372,7 @@ public class AdminController : ControllerBase
             actor = a.ActorEmail ?? "—",
             a.IpAddress,
             a.Metadata,
-            date = a.CreatedAt.ToString("dd.MM.yyyy HH:mm"),
+            createdAt = (a.CreatedAt.Kind == DateTimeKind.Utc ? a.CreatedAt : DateTime.SpecifyKind(a.CreatedAt, DateTimeKind.Utc)).ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
         }));
     }
 
@@ -718,6 +718,7 @@ public class AdminController : ControllerBase
                     a.Id,
                     a.UserId,
                     email = a.User.Email,
+                    phone = a.User.Phone,
                     emailVerified = a.User.EmailVerified,
                     a.IsApproved,
                     a.BalanceTotal,
@@ -739,6 +740,7 @@ public class AdminController : ControllerBase
             a.Id,
             a.UserId,
             a.email,
+            phone = a.phone ?? "",
             emailVerified = a.emailVerified,
             isApproved = a.IsApproved,
             balanceTotal = a.BalanceTotal,
@@ -898,7 +900,7 @@ public class AdminController : ControllerBase
         {
         var query = _db.AffiliateCommissions
             .Include(c => c.Affiliate).ThenInclude(a => a.User)
-            .Include(c => c.Tenant)
+            .Include(c => c.Tenant).ThenInclude(t => t!.PromoCode)
             .AsQueryable();
         if (affiliateId.HasValue)
             query = query.Where(c => c.AffiliateId == affiliateId.Value);
@@ -920,6 +922,7 @@ public class AdminController : ControllerBase
                 c.PaidAt,
                 affiliateEmail = c.Affiliate.User.Email,
                 tenantName = c.Tenant.Name,
+                promoCode = c.Tenant != null && c.Tenant.PromoCode != null ? c.Tenant.PromoCode.Code : (string?)null,
             })
             .ToListAsync(ct);
 
@@ -935,6 +938,7 @@ public class AdminController : ControllerBase
             paidAt = c.PaidAt?.ToString("dd.MM.yyyy"),
             c.affiliateEmail,
             c.tenantName,
+            promoCode = c.promoCode ?? "—",
         }));
         }
         catch (Exception ex)

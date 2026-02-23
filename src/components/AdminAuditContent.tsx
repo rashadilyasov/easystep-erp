@@ -9,8 +9,22 @@ type AuditEntry = {
   actor: string;
   ipAddress: string | null;
   metadata?: string | null;
-  date: string;
+  createdAt: string; // ISO 8601 UTC
 };
+
+function formatLocalDate(isoUtc: string): string {
+  try {
+    const d = new Date(isoUtc);
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const year = d.getFullYear();
+    const h = String(d.getHours()).padStart(2, "0");
+    const m = String(d.getMinutes()).padStart(2, "0");
+    return `${day}.${month}.${year} ${h}:${m}`;
+  } catch {
+    return isoUtc;
+  }
+}
 
 export default function AdminAuditContent() {
   const [logs, setLogs] = useState<AuditEntry[]>([]);
@@ -66,7 +80,7 @@ export default function AdminAuditContent() {
           ) : (
             logs.map((l) => (
               <tr key={l.id} className={`border-t border-slate-200 ${(typeof l.action === "string" && l.action.startsWith("AbuseSuspected")) ? "bg-amber-50" : ""}`}>
-                <td className="px-4 py-3">{l.date}</td>
+                <td className="px-4 py-3">{formatLocalDate(l.createdAt)}</td>
                 <td className="px-4 py-3">{l.actor}</td>
                 <td className="px-4 py-3">{l.action}</td>
                 <td className="px-4 py-3 text-slate-600 max-w-xs truncate" title={l.metadata ?? ""}>{l.metadata ?? "-"}</td>

@@ -346,7 +346,7 @@ export const api = {
         "/api/admin/stats"
       ),
     audit: (params?: { abuseOnly?: boolean }) =>
-      apiFetch<{ id: string; action: string; actor: string; ipAddress: string | null; metadata?: string | null; date: string }[]>(
+      apiFetch<{ id: string; action: string; actor: string; ipAddress: string | null; metadata?: string | null; createdAt: string }[]>(
         `/api/admin/audit${params?.abuseOnly ? "?abuseOnly=true" : ""}`
       ),
     tickets: () => apiFetch<{ id: string; subject: string; body: string; status: string; date: string; tenantName: string }[]>("/api/admin/tickets"),
@@ -519,6 +519,8 @@ export const api = {
           id: string;
           userId: string;
           email: string;
+          phone?: string;
+          emailVerified?: boolean;
           isApproved: boolean;
           balanceTotal: number;
           balancePending: number;

@@ -7,6 +7,7 @@ type Affiliate = {
   id: string;
   userId: string;
   email: string;
+  phone?: string;
   emailVerified: boolean;
   isApproved: boolean;
   balanceTotal: number;
@@ -53,6 +54,7 @@ type Commission = {
   date: string;
   affiliateEmail: string;
   tenantName: string;
+  promoCode?: string;
 };
 
 type Stats = {
@@ -87,6 +89,9 @@ export default function AdminAffiliatesPage() {
   const [createPromoSaving, setCreatePromoSaving] = useState(false);
   const [promoDefaults, setPromoDefaults] = useState({ discountPercent: 5, commissionPercent: 5 });
   const [promoDefaultsSaving, setPromoDefaultsSaving] = useState(false);
+  const [editingAffiliate, setEditingAffiliate] = useState<Affiliate | null>(null);
+  const [affiliateEditPhone, setAffiliateEditPhone] = useState("");
+  const [affiliateEditSaving, setAffiliateEditSaving] = useState(false);
 
   const now = new Date();
   const prevMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
@@ -235,6 +240,25 @@ export default function AdminAffiliatesPage() {
       load();
     } catch {
       alert("Xəta baş verdi");
+    }
+  };
+
+  const handleEditAffiliate = (a: Affiliate) => {
+    setEditingAffiliate(a);
+    setAffiliateEditPhone(a.phone ?? "");
+  };
+
+  const handleSaveAffiliateEdit = async () => {
+    if (!editingAffiliate) return;
+    setAffiliateEditSaving(true);
+    try {
+      await api.admin.updateUser(editingAffiliate.userId, { phone: affiliateEditPhone.trim() || undefined });
+      setEditingAffiliate(null);
+      load();
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Xəta baş verdi");
+    } finally {
+      setAffiliateEditSaving(false);
     }
   };
 
@@ -425,8 +449,8 @@ export default function AdminAffiliatesPage() {
         </div>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-2 mb-8">
-        {/* Satış partnyoru siyahısı */}
+      <div className="flex flex-col gap-6 mb-8">
+        {/* Satış partnyoru siyahısı — alt alta daha aydın */}
         <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
           <div className="px-6 py-4 border-b border-slate-100 flex flex-wrap items-center gap-3">
             <h2 className="font-semibold text-slate-900">Satış partnyoru siyahısı</h2>
@@ -460,6 +484,7 @@ export default function AdminAffiliatesPage() {
                 <thead className="bg-slate-50 sticky top-0">
                   <tr>
                     <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">E-poçt</th>
+                    <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">Telefon</th>
                     <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">E-poçt təsdiqi</th>
                     <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">Vəziyyət</th>
                     <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">Müştərilər</th>
@@ -478,6 +503,7 @@ export default function AdminAffiliatesPage() {
                       onClick={() => setAffiliateFilter(affiliateFilter === a.id ? "" : a.id)}
                     >
                       <td className="px-6 py-3 text-sm">{a.email}</td>
+                      <td className="px-6 py-3 text-sm text-slate-600">{a.phone || "—"}</td>
                       <td className="px-6 py-3 text-sm">
                         {a.emailVerified ? (
                           <span className="text-green-600">Təsdiqlənib</span>
@@ -523,6 +549,13 @@ export default function AdminAffiliatesPage() {
                             Təsdiqlə
                           </button>
                         )}
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); handleEditAffiliate(a); }}
+                          className="text-xs px-2 py-1 ml-1 bg-slate-100 text-slate-700 rounded hover:bg-slate-200"
+                        >
+                          Redaktə
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -599,7 +632,8 @@ export default function AdminAffiliatesPage() {
                     </th>
                     <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">Tarix</th>
                     <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">Satış partnyoru</th>
-                    <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">Müştəri</th>
+                    <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">Müştəri (şirkət)</th>
+                    <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">Promo kod</th>
                     <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">Məbləğ</th>
                     <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">Əməliyyat</th>
                   </tr>
@@ -621,6 +655,7 @@ export default function AdminAffiliatesPage() {
                       <td className="px-6 py-3 text-sm">{c.date}</td>
                       <td className="px-6 py-3 text-sm">{c.affiliateEmail}</td>
                       <td className="px-6 py-3 text-sm">{c.tenantName}</td>
+                      <td className="px-6 py-3 text-sm font-mono">{c.promoCode ?? "—"}</td>
                       <td className="px-6 py-3 font-medium">{c.amount.toFixed(2)} ₼</td>
                       <td className="px-6 py-3">
                         {c.status === "Pending" && (
@@ -856,6 +891,45 @@ export default function AdminAffiliatesPage() {
                 type="button"
                 onClick={() => setShowCreatePromoModal(false)}
                 disabled={createPromoSaving}
+                className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200"
+              >
+                Ləğv et
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {editingAffiliate && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => !affiliateEditSaving && setEditingAffiliate(null)}>
+          <div className="bg-white rounded-xl p-6 max-w-sm w-full mx-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <h3 className="font-semibold text-slate-900 mb-4">Partnyor redaktəsi</h3>
+            <p className="text-sm text-slate-600 mb-2">E-poçt: {editingAffiliate.email}</p>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Telefon</label>
+                <input
+                  type="tel"
+                  value={affiliateEditPhone}
+                  onChange={(e) => setAffiliateEditPhone(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                  placeholder="+994..."
+                />
+              </div>
+            </div>
+            <div className="flex gap-2 mt-6">
+              <button
+                type="button"
+                onClick={handleSaveAffiliateEdit}
+                disabled={affiliateEditSaving}
+                className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50"
+              >
+                {affiliateEditSaving ? "Saxlanır..." : "Saxla"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setEditingAffiliate(null)}
+                disabled={affiliateEditSaving}
                 className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200"
               >
                 Ləğv et

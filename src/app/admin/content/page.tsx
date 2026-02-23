@@ -35,17 +35,20 @@ type Announcement = { id: string; title: string; body: string; publishedAt: stri
 type Contact = { id: string; name: string; email: string; message: string; date: string };
 
 function ContactMessageCard({ contact, onDeleted }: { contact: Contact; onDeleted: () => void }) {
+  const [open, setOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [forwarding, setForwarding] = useState(false);
   const [forwardModal, setForwardModal] = useState(false);
   const [forwardTo, setForwardTo] = useState("info@easysteperp.com");
 
-  const handleDelete = async () => {
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (!confirm("Bu mesajı silmək istədiyinizə əminsiniz?")) return;
     setDeleting(true);
     try {
       await api.admin.deleteContact(contact.id);
       onDeleted();
+      setOpen(false);
     } catch {
       alert("Silinə bilmədi");
     } finally {
@@ -68,31 +71,49 @@ function ContactMessageCard({ contact, onDeleted }: { contact: Contact; onDelete
 
   return (
     <>
-      <div className="p-3 bg-slate-50 rounded-lg text-sm flex flex-wrap items-start justify-between gap-2 border border-slate-100">
+      <div
+        onClick={() => setOpen(true)}
+        className="p-3 bg-slate-50 rounded-lg text-sm flex items-center justify-between gap-3 border border-slate-100 cursor-pointer hover:bg-slate-100 transition-colors"
+      >
         <div className="flex-1 min-w-0">
-          <div className="font-medium text-slate-900">{contact.name} &lt;{contact.email}&gt;</div>
-          <p className="text-slate-600 mt-1 whitespace-pre-wrap">{contact.message}</p>
+          <div className="font-medium text-slate-900 truncate">{contact.name} &lt;{contact.email}&gt;</div>
           <span className="text-slate-400 text-xs">{contact.date}</span>
         </div>
-        <div className="flex gap-1 shrink-0">
-          <button
-            type="button"
-            onClick={() => setForwardModal(true)}
-            disabled={forwarding}
-            className="px-2 py-1 text-xs bg-primary-100 text-primary-700 rounded hover:bg-primary-200 disabled:opacity-50"
-          >
-            📧 E-poçta göndər
-          </button>
-          <button
-            type="button"
-            onClick={handleDelete}
-            disabled={deleting}
-            className="px-2 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200 disabled:opacity-50"
-          >
-            {deleting ? "..." : "Sil"}
-          </button>
-        </div>
+        <span className="text-slate-400 text-xs shrink-0">Bax</span>
       </div>
+      {open && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setOpen(false)}>
+          <div className="bg-white rounded-xl p-6 w-full max-w-lg shadow-xl max-h-[85vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-start mb-4">
+              <h4 className="font-semibold text-slate-900">{contact.name} &lt;{contact.email}&gt;</h4>
+              <button onClick={() => setOpen(false)} className="text-slate-400 hover:text-slate-600 text-xl leading-none">×</button>
+            </div>
+            <p className="text-slate-500 text-xs mb-3">{contact.date}</p>
+            <p className="text-slate-700 text-sm whitespace-pre-wrap mb-6 border-t border-slate-200 pt-4">{contact.message}</p>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setForwardModal(true)}
+                disabled={forwarding}
+                className="px-3 py-2 text-sm bg-primary-100 text-primary-700 rounded-lg hover:bg-primary-200 disabled:opacity-50"
+              >
+                📧 E-poçta göndər
+              </button>
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={deleting}
+                className="px-3 py-2 text-sm bg-red-100 text-red-700 rounded-lg hover:bg-red-200 disabled:opacity-50"
+              >
+                {deleting ? "..." : "Sil"}
+              </button>
+              <button onClick={() => setOpen(false)} className="px-3 py-2 border border-slate-300 rounded-lg text-sm hover:bg-slate-50">
+                Bağla
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {forwardModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setForwardModal(false)}>
           <div className="bg-white rounded-xl p-4 w-full max-w-sm shadow-xl" onClick={(e) => e.stopPropagation()}>

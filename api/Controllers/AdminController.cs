@@ -519,7 +519,10 @@ public class AdminController : ControllerBase
 <p>— Easy Step ERP Admin</p>
 </body></html>";
         var sent = await _email.SendAsync(to, "Easy Step ERP - Əlaqə mesajı (forward)", html, from: null, ct);
-        return Ok(new { message = sent ? $"Mesaj {to} ünvanına göndərildi" : "E-poçt göndərilə bilmədi" });
+        return Ok(new {
+            message = sent ? $"Mesaj {to} ünvanına göndərildi" : "E-poçt göndərilə bilmədi. Admin panel → E-poçt ayarları → Resend API key əlavə edin. Railway Hobby-da SMTP bloklanır.",
+            sent,
+        });
     }
 
     [HttpGet("announcements")]

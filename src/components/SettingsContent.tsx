@@ -24,9 +24,6 @@ export default function SettingsContent() {
     country: "Azərbaycan",
     city: "",
   });
-  const [autoRenew, setAutoRenew] = useState(true);
-  const [autoRenewLoading, setAutoRenewLoading] = useState(false);
-
   useEffect(() => {
     api
       .tenant()
@@ -44,10 +41,6 @@ export default function SettingsContent() {
       .finally(() => setLoading(false));
   }, []);
 
-  useEffect(() => {
-    api.billing().then((b: { autoRenew?: boolean }) => setAutoRenew(b.autoRenew ?? true)).catch(() => {});
-  }, []);
-
   const handleSave = async () => {
     setSaving(true);
     setSaved(false);
@@ -62,23 +55,11 @@ export default function SettingsContent() {
     }
   };
 
-  const handleAutoRenewChange = async (checked: boolean) => {
-    setAutoRenewLoading(true);
-    try {
-      await api.setAutoRenew(checked);
-      setAutoRenew(checked);
-    } catch {
-      alert("Xəta baş verdi");
-    } finally {
-      setAutoRenewLoading(false);
-    }
-  };
-
   if (loading) {
     return (
       <div className="space-y-8 animate-pulse">
         <div className="h-48 bg-slate-100 rounded-2xl" />
-        <div className="h-24 bg-slate-100 rounded-2xl" />
+        <div className="h-20 bg-slate-100 rounded-2xl" />
       </div>
     );
   }
@@ -148,20 +129,6 @@ export default function SettingsContent() {
             {saved && <span className="text-green-600 text-sm">Uğurla saxlanıldı</span>}
           </div>
         </div>
-      </section>
-
-      <section className="p-6 bg-white rounded-2xl border border-slate-200">
-        <h3 className="font-semibold text-slate-900 mb-4">Abunə</h3>
-        <label className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            checked={autoRenew}
-            onChange={(e) => handleAutoRenewChange(e.target.checked)}
-            disabled={autoRenewLoading}
-            className="rounded"
-          />
-          <span className="text-slate-600">Avtomatik yeniləmə</span>
-        </label>
       </section>
 
       <section className="p-6 bg-white rounded-2xl border border-slate-200">

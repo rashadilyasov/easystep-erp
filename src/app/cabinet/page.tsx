@@ -1,3 +1,4 @@
+import Link from "next/link";
 import DashboardStats from "@/components/DashboardStats";
 import CabinetAnnouncements from "@/components/CabinetAnnouncements";
 
@@ -10,10 +11,22 @@ export default function CabinetDashboard() {
       <div className="mt-8 grid gap-4 md:grid-cols-2">
         <div className="p-6 bg-slate-50 border border-slate-200 rounded-2xl">
           <h3 className="font-semibold text-slate-900 mb-2">Sürətli keçidlər</h3>
-          <ul className="text-sm text-slate-600 space-y-1">
-            <li>• Yükləmə — masaüstü ERP quraşdırıcısı</li>
-            <li>• Ödənişlər - Plan və faktura</li>
-            <li>• Akademiya - Video təlimatlar</li>
+          <ul className="text-sm text-slate-600 space-y-2">
+            <li>
+              <Link href="/cabinet/downloads" className="text-primary-600 hover:text-primary-700 hover:underline">
+                Yükləmə — masaüstü ERP quraşdırıcısı
+              </Link>
+            </li>
+            <li>
+              <Link href="/cabinet/billing" className="text-primary-600 hover:text-primary-700 hover:underline">
+                Ödənişlər - Plan və faktura
+              </Link>
+            </li>
+            <li>
+              <Link href="/cabinet/academy" className="text-primary-600 hover:text-primary-700 hover:underline">
+                Akademiya - Video təlimatlar
+              </Link>
+            </li>
           </ul>
         </div>
         <div className="p-6 bg-amber-50 border border-amber-200 rounded-2xl">

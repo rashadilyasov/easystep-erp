@@ -73,13 +73,12 @@ function ContactMessageCard({ contact, onDeleted }: { contact: Contact; onDelete
     <>
       <div
         onClick={() => setOpen(true)}
-        className="p-3 bg-slate-50 rounded-lg text-sm flex items-center justify-between gap-3 border border-slate-100 cursor-pointer hover:bg-slate-100 transition-colors"
+        className="px-3 py-2 bg-slate-50 rounded-lg text-sm flex items-center gap-4 border border-slate-100 cursor-pointer hover:bg-slate-100 transition-colors"
       >
-        <div className="flex-1 min-w-0">
-          <div className="font-medium text-slate-900 truncate">{contact.name} &lt;{contact.email}&gt;</div>
-          <span className="text-slate-400 text-xs">{contact.date}</span>
-        </div>
-        <span className="text-slate-400 text-xs shrink-0">Bax</span>
+        <span className="font-medium text-slate-900 truncate shrink-0 max-w-[140px]">{contact.name}</span>
+        <span className="text-slate-600 truncate flex-1 min-w-0">{contact.email}</span>
+        <span className="text-slate-400 text-xs shrink-0">{contact.date}</span>
+        <span className="text-slate-400 text-xs shrink-0">›</span>
       </div>
       {open && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setOpen(false)}>
@@ -466,7 +465,12 @@ export default function Content() {
           ) : contacts.length === 0 ? (
             <p className="text-slate-500 text-sm">Mesaj yoxdur</p>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-1">
+              <div className="px-3 py-2 text-xs text-slate-500 flex items-center gap-4 border-b border-slate-200">
+                <span className="shrink-0 max-w-[140px]">Göndərən</span>
+                <span className="flex-1 min-w-0">E-poçt</span>
+                <span className="shrink-0">Tarix</span>
+              </div>
               {contacts.slice(0, 20).map((c) => (
                 <ContactMessageCard key={c.id} contact={c} onDeleted={() => load()} />
               ))}

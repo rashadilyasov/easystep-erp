@@ -22,7 +22,7 @@ export default function AuthModalFromUrl() {
 
     if (auth === "login") {
       const redirect = searchParams.get("redirect");
-      openLogin(redirect || undefined);
+      openLogin(typeof redirect === "string" ? redirect : undefined);
     } else if (auth === "affiliate") {
       openRegisterAffiliate();
     } else {

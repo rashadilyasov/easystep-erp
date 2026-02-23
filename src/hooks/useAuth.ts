@@ -26,7 +26,8 @@ export function useAuth() {
           localStorage.setItem("accessToken", res.accessToken);
           if (res.refreshToken) localStorage.setItem("refreshToken", res.refreshToken);
           if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("auth-changed"));
-          router.push(redirectTo.startsWith("/") ? redirectTo : "/cabinet");
+          const target = typeof redirectTo === "string" && redirectTo.startsWith("/") ? redirectTo : "/cabinet";
+          router.push(target);
           return { success: true };
         }
       } catch (e) {
@@ -56,7 +57,8 @@ export function useAuth() {
         localStorage.setItem("accessToken", res.accessToken);
         if (res.refreshToken) localStorage.setItem("refreshToken", res.refreshToken);
         if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("auth-changed"));
-        router.push(redirectTo.startsWith("/") ? redirectTo : "/admin");
+        const target = typeof redirectTo === "string" && redirectTo.startsWith("/") ? redirectTo : "/admin";
+        router.push(target);
         return true;
       } catch (e) {
         const msg = e instanceof Error ? e.message : "Xəta baş verdi";

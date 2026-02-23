@@ -65,7 +65,7 @@ export default function AdminAuditContent() {
             </tr>
           ) : (
             logs.map((l) => (
-              <tr key={l.id} className={`border-t border-slate-200 ${l.action.startsWith("AbuseSuspected") ? "bg-amber-50" : ""}`}>
+              <tr key={l.id} className={`border-t border-slate-200 ${(typeof l.action === "string" && l.action.startsWith("AbuseSuspected")) ? "bg-amber-50" : ""}`}>
                 <td className="px-4 py-3">{l.date}</td>
                 <td className="px-4 py-3">{l.actor}</td>
                 <td className="px-4 py-3">{l.action}</td>

@@ -10,7 +10,8 @@ function LoginFormInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { close, loginRedirect, openForgotPassword } = useAuthModal();
-  const redirect = loginRedirect || searchParams.get("redirect") || "/cabinet";
+  const redirectRaw = loginRedirect ?? searchParams.get("redirect") ?? "/cabinet";
+  const redirect = typeof redirectRaw === "string" ? redirectRaw : "/cabinet";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [step, setStep] = useState<"credentials" | "2fa">("credentials");

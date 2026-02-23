@@ -496,7 +496,25 @@ export const api = {
       }),
     deleteAcademyMaterial: (index: number) =>
       apiFetch<{ message: string }>(`/api/admin/academy-materials/${index}`, { method: "DELETE" }),
-    plans: () =>
+    uploadPresentation: (file: File) => {
+      const form = new FormData();
+      form.append("file", file);
+      const token = getAccessToken();
+      const headers: Record<string, string> = {};
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+      return fetch("/api/admin/presentation", { method: "POST", body: form, headers }).then(async (res) => {
+        const text = await res.text();
+        if (!res.ok) {
+          let msg = "Yükləmə uğursuz";
+          try {
+            const body = JSON.parse(text) as { message?: string };
+            msg = body.message || msg;
+          } catch { /* ignore */ }
+          throw new Error(msg);
+        }
+        return text ? (JSON.parse(text) as { message: string }) : { message: "Yadda saxlanıldı" };
+      });
+    },
       apiFetch<{ id: string; name: string; durationMonths: number; price: number; currency: string; maxDevices: number | null; isActive: boolean; createdAt: string }[]>(
         "/api/admin/plans"
       ),

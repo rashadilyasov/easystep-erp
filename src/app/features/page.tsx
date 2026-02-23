@@ -77,11 +77,31 @@ export default function Features() {
 
       <section className="pt-32 pb-20 px-4">
         <div className="max-w-6xl mx-auto">
-          <h1 className="text-4xl font-bold text-slate-900 mb-4">Funksiyalar</h1>
-          <p className="text-xl text-slate-600 mb-12">
-            Anbar uçotu proqramı kimi real qalıqlar, aydın ödənişlər, təchizat və borc nəzarəti - təchizatçı şirkətləri üçün.
+          <h1 className="text-4xl font-bold text-slate-900 mb-4">Proqram haqqında</h1>
+          <p className="text-xl text-slate-600 mb-6">
+            Easy Step ERP — kiçik və orta müəssisələr üçün tam funksionallığa malik ERP proqramıdır. Satışdan anbara, mədaxildən məxaricə, hesabatdan təsdiqə qədər bütün biznes proseslərini vahid interfeysdə birləşdirir.
           </p>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="p-6 rounded-2xl bg-gradient-to-r from-primary-50 to-primary-100/50 border border-primary-200 mb-12 flex flex-wrap items-center justify-between gap-4">
+            <div className="flex flex-wrap gap-6 text-slate-700">
+              <span><strong>8+</strong> Əsas modul</span>
+              <span><strong>40+</strong> Ekran</span>
+              <span><strong>15+</strong> Hesabat</span>
+              <span><strong>24/7</strong> Dəstək</span>
+            </div>
+            <a
+              href="/api/content/presentation"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-6 py-3 bg-primary-600 text-white rounded-xl font-medium hover:bg-primary-700 transition-colors inline-flex items-center gap-2"
+            >
+              📄 Prezentasiyanı yüklə
+            </a>
+          </div>
+          <h2 className="text-2xl font-bold text-slate-900 mb-6">Funksiyalar</h2>
+          <p className="text-slate-600 mb-12">
+            Anbar uçotu, real qalıqlar, aydın ödənişlər, təchizat və borc nəzarəti — təchizatçı və paylama şirkətləri üçün.
+          </p>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
             {features.map((f, i) => (
               <div
                 key={f.title}
@@ -94,6 +114,18 @@ export default function Features() {
                 <p className="text-slate-600">{f.desc}</p>
               </div>
             ))}
+          </div>
+          <div className="p-8 rounded-2xl bg-slate-50 border border-slate-200">
+            <h3 className="text-xl font-bold text-slate-900 mb-4">Proqramın prezentasiyasını əldə edin</h3>
+            <p className="text-slate-600 mb-4">Easy Step ERP-nin əsas imkanları, modulları və texniki spesifikasiyası haqqında ətraflı PDF təqdimatı.</p>
+            <a
+              href="/api/content/presentation"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-xl font-medium hover:bg-primary-700 transition-colors"
+            >
+              📄 Prezentasiyanı yüklə (PDF)
+            </a>
           </div>
         </div>
       </section>

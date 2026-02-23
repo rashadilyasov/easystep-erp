@@ -353,6 +353,44 @@ function AnnouncementsSection() {
   );
 }
 
+function PresentationSection() {
+  const [uploading, setUploading] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
+
+  const handleUpload = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!file) return;
+    setUploading(true);
+    try {
+      await api.admin.uploadPresentation(file);
+      alert("Prezentasiya PDF yükləndi");
+      setFile(null);
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Yükləmə uğursuz");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div className="mt-4 pt-4 border-t border-slate-200">
+      <h4 className="font-medium text-slate-800 mb-2">Proqram prezentasiyası (PDF)</h4>
+      <p className="text-slate-600 text-sm mb-3">Saytda «Prezentasiyanı yüklə» bölməsində görünəcək.</p>
+      <form onSubmit={handleUpload} className="flex flex-wrap items-center gap-3">
+        <input
+          type="file"
+          accept=".pdf"
+          onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+          className="text-sm text-slate-600"
+        />
+        <button type="submit" disabled={uploading || !file} className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 text-sm">
+          {uploading ? "Yüklənir..." : "PDF yüklə"}
+        </button>
+      </form>
+    </div>
+  );
+}
+
 const TICKET_STATUSES: { value: string; label: string }[] = [
   { value: "Open", label: "Gözləyir" },
   { value: "InProgress", label: "Həll edilir" },
@@ -424,6 +462,7 @@ export default function Content() {
             YouTube playlist: Railway Variables-da <code className="bg-slate-100 px-1 rounded">App__AcademyYoutubePlaylistId</code> əlavə edin (məs: PLxxxxxxxx). Sonra Redeploy edin.
           </p>
           <AcademyMaterialsSection />
+          <PresentationSection />
         </div>
         <div className="p-6 bg-white rounded-2xl border border-slate-200">
           <h3 className="font-semibold text-slate-900 mb-4">Biletlər</h3>

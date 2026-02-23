@@ -11,11 +11,19 @@ async function proxyReq(request: NextRequest, segment: string[], method: string)
   const pathSegment = segment?.join("/") ?? "";
   const path = `/api/admin/${pathSegment}${request.nextUrl.search}`;
   const headers = new Headers();
-  headers.set("Content-Type", "application/json");
+  const contentType = request.headers.get("content-type") || "";
+  if (contentType.includes("multipart/form-data")) {
+    headers.set("Content-Type", contentType);
+  } else {
+    headers.set("Content-Type", "application/json");
+  }
   const auth = request.headers.get("Authorization");
   if (auth) headers.set("Authorization", auth);
 
-  const body = method !== "GET" && method !== "HEAD" ? await request.text() : undefined;
+  let body: string | ArrayBuffer | undefined;
+  if (method !== "GET" && method !== "HEAD") {
+    body = contentType.includes("multipart/form-data") ? await request.arrayBuffer() : await request.text();
+  }
 
   const bases = getApiBases();
   const MAX_RETRIES = 2; // fetch failed üçün təkrar cəhd
@@ -27,7 +35,7 @@ async function proxyReq(request: NextRequest, segment: string[], method: string)
         const res = await fetch(`${base}${path}`, {
           method,
           headers,
-          body: body ?? undefined,
+          body: body != null && (typeof body === "string" ? body.length > 0 : body.byteLength > 0) ? body : undefined,
           signal: AbortSignal.timeout(PROXY_TIMEOUT_MS),
           cache: "no-store",
         });

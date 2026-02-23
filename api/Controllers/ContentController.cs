@@ -42,6 +42,23 @@ public class ContentController : ControllerBase
         catch { return Ok(Array.Empty<object>()); }
     }
 
+    [HttpGet("presentation")]
+    [ResponseCache(NoStore = true)]
+    public async Task<IActionResult> GetPresentation(CancellationToken ct)
+    {
+        var sc = await _db.SiteContents.FirstOrDefaultAsync(c => c.Key == "content:presentationPdf", ct);
+        if (sc == null || string.IsNullOrEmpty(sc.Value))
+            return NotFound();
+        try
+        {
+            var obj = JsonSerializer.Deserialize<PresentationDto>(sc.Value);
+            if (obj?.ContentBase64 == null) return NotFound();
+            var bytes = Convert.FromBase64String(obj.ContentBase64);
+            return File(bytes, "application/pdf", obj.FileName ?? "presentation.pdf");
+        }
+        catch { return NotFound(); }
+    }
+
     [HttpGet("announcements")]
     [Authorize]
     public async Task<IActionResult> GetAnnouncements(CancellationToken ct)
@@ -60,3 +77,4 @@ public class ContentController : ControllerBase
 
 public record AnnouncementDto(string id, string title, string body, string publishedAt, bool active);
 public record AcademyMaterialDto(string title, string url);
+public record PresentationDto(string FileName, string ContentBase64);

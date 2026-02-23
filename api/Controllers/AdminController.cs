@@ -52,6 +52,37 @@ public class AdminController : ControllerBase
     [HttpGet("ping")]
     public IActionResult AdminPing() => Ok(new { ok = true, route = "admin/ping", ts = DateTime.UtcNow });
 
+    [HttpPost("presentation")]
+    public async Task<IActionResult> UploadPresentation(IFormFile? file, CancellationToken ct)
+    {
+        if (file == null || file.Length == 0)
+            return BadRequest(new { message = "PDF faylı seçin" });
+        if (file.ContentType != "application/pdf" && !(file.FileName ?? "").EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
+            return BadRequest(new { message = "Yalnız PDF faylı qəbul olunur" });
+        if (file.Length > 10 * 1024 * 1024) // 10MB
+            return BadRequest(new { message = "Fayl 10MB-dan böyük ola bilməz" });
+
+        using var ms = new MemoryStream();
+        await file.CopyToAsync(ms, ct);
+        var bytes = ms.ToArray();
+        var base64 = Convert.ToBase64String(bytes);
+        var fileName = string.IsNullOrWhiteSpace(file.FileName) ? "presentation.pdf" : Path.GetFileName(file.FileName);
+
+        var json = System.Text.Json.JsonSerializer.Serialize(new { FileName = fileName, ContentBase64 = base64 });
+        var sc = await _db.SiteContents.FirstOrDefaultAsync(c => c.Key == "content:presentationPdf", ct);
+        if (sc != null)
+        {
+            sc.Value = json;
+            sc.UpdatedAt = DateTime.UtcNow;
+        }
+        else
+        {
+            _db.SiteContents.Add(new SiteContent { Id = Guid.NewGuid(), Key = "content:presentationPdf", Value = json, UpdatedAt = DateTime.UtcNow });
+        }
+        await _db.SaveChangesAsync(ct);
+        return Ok(new { message = "Prezentasiya PDF yükləndi" });
+    }
+
     [HttpGet("stats")]
     public async Task<IActionResult> GetStats(CancellationToken ct = default)
     {

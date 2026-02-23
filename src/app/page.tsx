@@ -31,6 +31,9 @@ export default function Home() {
             <Link href="/contact" className="btn-secondary text-lg px-8 py-4">
               Demo istə
             </Link>
+            <a href="/api/content/presentation" target="_blank" rel="noopener noreferrer" className="btn-secondary text-lg px-8 py-4 inline-flex items-center justify-center gap-2">
+              📄 Prezentasiya
+            </a>
           </div>
         </div>
       </section>

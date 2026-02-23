@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
 
 export default function AdminSecurity() {
@@ -12,15 +12,28 @@ export default function AdminSecurity() {
   const [disableOtpSent, setDisableOtpSent] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [twoFactorEnabled, setTwoFactorEnabled] = useState<boolean | null>(null);
+  const [twoFactorViaEmail, setTwoFactorViaEmail] = useState<boolean | null>(null);
 
   const load2FAStatus = async () => {
     try {
       const me = await api.me();
-      setTwoFactorEnabled(me.role === "SuperAdmin" ? null : false);
+      if (me.role !== "SuperAdmin") {
+        setTwoFactorEnabled(false);
+        setTwoFactorViaEmail(false);
+        return;
+      }
+      const status = await api.auth.twoFactorStatus();
+      setTwoFactorEnabled(status.twoFactorEnabled);
+      setTwoFactorViaEmail(status.twoFactorViaEmail);
     } catch {
       setTwoFactorEnabled(false);
+      setTwoFactorViaEmail(null);
     }
   };
+
+  useEffect(() => {
+    load2FAStatus();
+  }, []);
 
   const handleSetup = async (viaEmail = false) => {
     setLoading(true);
@@ -56,8 +69,8 @@ export default function AdminSecurity() {
     setLoading(true);
     setMessage(null);
     try {
-      await api.auth.twoFactorSendDisableOtp();
-      setMessage({ type: "success", text: "Kod e-poçtunuza göndərildi." });
+      const res = await api.auth.twoFactorSendDisableOtp();
+      setMessage({ type: "success", text: res.message ?? "Kod e-poçtunuza göndərildi." });
       setDisableOtpSent(true);
     } catch (e) {
       setMessage({ type: "error", text: e instanceof Error ? e.message : "Xəta" });
@@ -208,7 +221,11 @@ export default function AdminSecurity() {
         <div className="p-6 bg-white rounded-2xl border border-slate-200">
           <h3 className="font-semibold text-slate-900 mb-2">2FA deaktivləşdir</h3>
           <p className="text-slate-600 text-sm mb-4">
-            Şifrə və 2FA kodunu daxil edin. E-poçt 2FA istifadə edirsinizsə, əvvəlcə &quot;Kod göndər&quot; düyməsinə basın.
+            {twoFactorViaEmail === true
+              ? "Şifrə və 2FA kodunu daxil edin. Əvvəlcə \"Kod göndər\" düyməsinə basın."
+              : twoFactorViaEmail === false && twoFactorEnabled
+                ? "Şifrə və Authenticator (Google Authenticator və s.) tətbiqindən 6 rəqəmli kodu daxil edin."
+                : "Şifrə və 2FA kodunu daxil edin. E-poçt 2FA istifadə edirsinizsə, əvvəlcə \"Kod göndər\" düyməsinə basın."}
           </p>
           <form onSubmit={handleDisable} className="space-y-3 max-w-xs">
             <input
@@ -228,14 +245,16 @@ export default function AdminSecurity() {
                 placeholder="2FA kodu"
                 className="flex-1 border border-slate-300 rounded-lg px-3 py-2"
               />
-              <button
-                type="button"
-                onClick={handleSendDisableOtp}
-                disabled={loading || disableOtpSent}
-                className="px-3 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50 whitespace-nowrap"
-              >
-                {disableOtpSent ? "Göndərildi" : "Kod göndər"}
-              </button>
+              {twoFactorViaEmail === true && (
+                <button
+                  type="button"
+                  onClick={handleSendDisableOtp}
+                  disabled={loading || disableOtpSent}
+                  className="px-3 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50 whitespace-nowrap"
+                >
+                  {disableOtpSent ? "Göndərildi" : "Kod göndər"}
+                </button>
+              )}
             </div>
             <button
               type="submit"

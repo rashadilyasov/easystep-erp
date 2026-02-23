@@ -303,6 +303,19 @@ public class AuthController : ControllerBase
         return Ok(new { message = "2FA aktivləşdirildi" });
     }
 
+    /// <summary>2FA status — frontend "Kod göndər" göstərsin/yox.</summary>
+    [HttpGet("2fa/status")]
+    [Authorize]
+    public async Task<IActionResult> Get2FAStatus(CancellationToken ct)
+    {
+        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userId) || !Guid.TryParse(userId, out var id))
+            return Unauthorized();
+        var user = await _auth.GetUserByIdAsync(id, ct);
+        if (user == null) return Unauthorized();
+        return Ok(new { twoFactorEnabled = user.TwoFactorEnabled, twoFactorViaEmail = user.TwoFactorViaEmail });
+    }
+
     [HttpPost("2fa/send-disable-otp")]
     [Authorize]
     public async Task<IActionResult> SendDisableOtp(CancellationToken ct)

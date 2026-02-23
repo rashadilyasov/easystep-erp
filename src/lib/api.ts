@@ -169,6 +169,8 @@ export const api = {
         body: JSON.stringify({ pendingToken }),
         skipAuth: true,
       }),
+    twoFactorStatus: () =>
+      apiFetch<{ twoFactorEnabled: boolean; twoFactorViaEmail: boolean }>("/api/auth/2fa/status"),
     twoFactorSendDisableOtp: () =>
       apiFetch<{ message: string }>("/api/auth/2fa/send-disable-otp", { method: "POST" }),
     twoFactorVerify: (code: string) =>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
 
 export default function CabinetSecurityPage() {
@@ -11,6 +11,11 @@ export default function CabinetSecurityPage() {
   const [loading, setLoading] = useState(false);
   const [disableOtpSent, setDisableOtpSent] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [twoFactorViaEmail, setTwoFactorViaEmail] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    api.auth.twoFactorStatus().then((s) => setTwoFactorViaEmail(s.twoFactorViaEmail)).catch(() => setTwoFactorViaEmail(null));
+  }, []);
 
   const handleSetup = async (viaEmail = false) => {
     setLoading(true);
@@ -46,8 +51,8 @@ export default function CabinetSecurityPage() {
     setLoading(true);
     setMessage(null);
     try {
-      await api.auth.twoFactorSendDisableOtp();
-      setMessage({ type: "success", text: "Kod e-poçtunuza göndərildi." });
+      const res = await api.auth.twoFactorSendDisableOtp();
+      setMessage({ type: "success", text: res.message ?? "Kod e-poçtunuza göndərildi." });
       setDisableOtpSent(true);
     } catch (e) {
       setMessage({ type: "error", text: e instanceof Error ? e.message : "Xəta" });
@@ -198,7 +203,11 @@ export default function CabinetSecurityPage() {
         <div className="p-6 bg-white rounded-2xl border border-slate-200">
           <h3 className="font-semibold text-slate-900 mb-2">2FA deaktivləşdir</h3>
           <p className="text-slate-600 text-sm mb-4">
-            Şifrə və 2FA kodunu daxil edin. E-poçt 2FA istifadə edirsinizsə, əvvəlcə &quot;Kod göndər&quot; düyməsinə basın.
+            {twoFactorViaEmail === true
+              ? "Şifrə və 2FA kodunu daxil edin. Əvvəlcə \"Kod göndər\" düyməsinə basın."
+              : twoFactorViaEmail === false
+                ? "Şifrə və Authenticator tətbiqindən 6 rəqəmli kodu daxil edin."
+                : "Şifrə və 2FA kodunu daxil edin. E-poçt 2FA istifadə edirsinizsə, əvvəlcə \"Kod göndər\" düyməsinə basın."}
           </p>
           <form onSubmit={handleDisable} className="space-y-3 max-w-xs">
             <input
@@ -218,14 +227,16 @@ export default function CabinetSecurityPage() {
                 placeholder="2FA kodu"
                 className="flex-1 border border-slate-300 rounded-lg px-3 py-2"
               />
-              <button
-                type="button"
-                onClick={handleSendDisableOtp}
-                disabled={loading || disableOtpSent}
-                className="px-3 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50 whitespace-nowrap"
-              >
-                {disableOtpSent ? "Göndərildi" : "Kod göndər"}
-              </button>
+              {twoFactorViaEmail === true && (
+                <button
+                  type="button"
+                  onClick={handleSendDisableOtp}
+                  disabled={loading || disableOtpSent}
+                  className="px-3 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50 whitespace-nowrap"
+                >
+                  {disableOtpSent ? "Göndərildi" : "Kod göndər"}
+                </button>
+              )}
             </div>
             <button
               type="submit"

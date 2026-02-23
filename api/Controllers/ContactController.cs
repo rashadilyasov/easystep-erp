@@ -31,22 +31,34 @@ public class ContactController : ControllerBase
     [EnableRateLimiting("contact")]
     public async Task<IActionResult> Submit([FromBody] ContactRequest req, CancellationToken ct)
     {
-        if (string.IsNullOrWhiteSpace(req?.Name) || string.IsNullOrWhiteSpace(req?.Email))
-            return BadRequest(new { message = "Ad və e-poçt vacibdir" });
+        if (string.IsNullOrWhiteSpace(req?.Name))
+            return BadRequest(new { message = "Ad və ya şirkət adı vacibdir" });
+        if (string.IsNullOrWhiteSpace(req?.Email))
+            return BadRequest(new { message = "E-poçt vacibdir" });
+        if (string.IsNullOrWhiteSpace(req?.Message))
+            return BadRequest(new { message = "Mesaj vacibdir" });
         if ((req.Name?.Length ?? 0) > 200 || (req.Email?.Length ?? 0) > 256 || (req.Message?.Length ?? 0) > 5000)
             return BadRequest(new { message = "Mətn həddindən artıq uzundur" });
 
-        _db.ContactMessages.Add(new ContactMessage
+        try
         {
-            Id = Guid.NewGuid(),
-            Name = req.Name ?? "",
-            Email = req.Email ?? "",
-            Message = req.Message ?? "",
-            CreatedAt = DateTime.UtcNow,
-        });
-        await _db.SaveChangesAsync(ct);
+            _db.ContactMessages.Add(new ContactMessage
+            {
+                Id = Guid.NewGuid(),
+                Name = req.Name.Trim(),
+                Email = req.Email.Trim(),
+                Message = req.Message.Trim(),
+                CreatedAt = DateTime.UtcNow,
+            });
+            await _db.SaveChangesAsync(ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Contact form save failed");
+            return StatusCode(500, new { message = "Mesaj saxlanıla bilmədi. Zəhmət olmasa bir az sonra yenidən cəhd edin." });
+        }
 
-        var adminEmail = _config["App:AdminEmail"] ?? _config["Smtp:AdminNotify"];
+        var adminEmail = _config["App:AdminEmail"] ?? _config["Smtp:AdminNotify"] ?? "info@easysteperp.com";
         if (!string.IsNullOrEmpty(adminEmail))
         {
             var name = req.Name;

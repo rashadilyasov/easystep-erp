@@ -16,8 +16,11 @@ export default function Contact() {
       <section className="pt-32 pb-20 px-4">
         <div className="max-w-2xl mx-auto">
           <h1 className="text-4xl font-bold text-slate-900 mb-4">Əlaqə</h1>
-          <p className="text-xl text-slate-600 mb-8">
+          <p className="text-xl text-slate-600 mb-4">
             Demo təqdimatı və ya Easy Step ERP haqqında suallarınız üçün bizimlə əlaqə saxlayın.
+          </p>
+          <p className="text-sm text-slate-500 mb-8">
+            Mesajınız Admin panelində saxlanılır və <strong>info@easysteperp.com</strong> ünvanına e-poçt göndərilir. Tezliklə cavab alacaqsınız.
           </p>
           <ContactForm />
         </div>

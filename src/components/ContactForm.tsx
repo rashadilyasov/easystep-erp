@@ -64,9 +64,10 @@ export default function ContactForm() {
         </div>
       )}
       <div>
-        <label className="block text-sm font-medium text-slate-700 mb-2">Ad, Soyad və ya şirkət adı</label>
+        <label className="block text-sm font-medium text-slate-700 mb-2">Ad, Soyad və ya şirkət adı <span className="text-red-500">*</span></label>
         <input
           type="text"
+          required
           value={form.name}
           onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
           className={`w-full px-4 py-3 rounded-xl border input-focus ${
@@ -77,9 +78,10 @@ export default function ContactForm() {
         {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
       </div>
       <div>
-        <label className="block text-sm font-medium text-slate-700 mb-2">E-poçt</label>
+        <label className="block text-sm font-medium text-slate-700 mb-2">E-poçt <span className="text-red-500">*</span></label>
         <input
           type="email"
+          required
           value={form.email}
           onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
           className={`w-full px-4 py-3 rounded-xl border input-focus ${
@@ -90,9 +92,10 @@ export default function ContactForm() {
         {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
       </div>
       <div>
-        <label className="block text-sm font-medium text-slate-700 mb-2">Mesaj</label>
+        <label className="block text-sm font-medium text-slate-700 mb-2">Mesaj <span className="text-red-500">*</span></label>
         <textarea
           rows={5}
+          required
           value={form.message}
           onChange={(e) => setForm((f) => ({ ...f, message: e.target.value }))}
           className={`w-full px-4 py-3 rounded-xl border input-focus ${

@@ -211,6 +211,143 @@ public class AffiliateController : ControllerBase
         var (discount, commission) = await _affiliate.GetPromoDefaultsFromDbAsync(ct);
         return Ok(new { defaultDiscountPercent = discount, defaultCommissionPercent = commission });
     }
+
+    [HttpGet("profile")]
+    public async Task<IActionResult> GetProfile(CancellationToken ct)
+    {
+        var aff = await GetAffiliateAsync(ct);
+        if (aff == null) return Unauthorized();
+
+        return Ok(new
+        {
+            email = aff.User?.Email ?? "",
+            phone = aff.User?.Phone ?? "",
+            bankIban = aff.BankIban ?? "",
+            bankName = aff.BankName ?? "",
+            bankAccountHolder = aff.BankAccountHolder ?? "",
+            payriffInfo = aff.PayriffInfo ?? "",
+            commissionReceiveMethod = (int)aff.CommissionReceiveMethod,
+            commissionAccountNote = aff.CommissionAccountNote ?? "",
+        });
+    }
+
+    [HttpPut("profile")]
+    public async Task<IActionResult> UpdateProfile([FromBody] AffiliateProfileUpdateRequest? req, CancellationToken ct)
+    {
+        var aff = await GetAffiliateAsync(ct);
+        if (aff == null) return Unauthorized();
+        if (req == null) return BadRequest(new { message = "Məlumat göndərilmədi" });
+
+        if (req.Phone != null)
+        {
+            var user = await _db.Users.FindAsync(new object[] { aff.UserId }, ct);
+            if (user != null)
+            {
+                user.Phone = string.IsNullOrWhiteSpace(req.Phone) ? null : req.Phone.Trim();
+            }
+        }
+        if (req.BankIban != null) aff.BankIban = string.IsNullOrWhiteSpace(req.BankIban) ? null : req.BankIban.Trim();
+        if (req.BankName != null) aff.BankName = string.IsNullOrWhiteSpace(req.BankName) ? null : req.BankName.Trim();
+        if (req.BankAccountHolder != null) aff.BankAccountHolder = string.IsNullOrWhiteSpace(req.BankAccountHolder) ? null : req.BankAccountHolder.Trim();
+        if (req.PayriffInfo != null) aff.PayriffInfo = string.IsNullOrWhiteSpace(req.PayriffInfo) ? null : req.PayriffInfo.Trim();
+        if (req.CommissionReceiveMethod.HasValue) aff.CommissionReceiveMethod = (CommissionReceiveMethod)Math.Clamp(req.CommissionReceiveMethod.Value, 0, 3);
+        if (req.CommissionAccountNote != null) aff.CommissionAccountNote = string.IsNullOrWhiteSpace(req.CommissionAccountNote) ? null : req.CommissionAccountNote.Trim();
+
+        aff.UpdatedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync(ct);
+        await _audit.LogAsync("AffiliateProfileUpdated", aff.UserId, aff.User?.Email, metadata: $"affiliateId={aff.Id}", ct: ct);
+        return Ok(new { message = "Profil yeniləndi" });
+    }
+
+    [HttpGet("reports/commissions")]
+    public async Task<IActionResult> GetCommissionReports([FromQuery] int? year, [FromQuery] int? month, [FromQuery] int limit = 100, CancellationToken ct = default)
+    {
+        var aff = await GetAffiliateAsync(ct);
+        if (aff == null) return Unauthorized();
+
+        var query = _db.AffiliateCommissions
+            .Include(c => c.Tenant).ThenInclude(t => t!.PromoCode)
+            .Where(c => c.AffiliateId == aff.Id);
+
+        if (year.HasValue) query = query.Where(c => c.CreatedAt.Year == year.Value);
+        if (month.HasValue) query = query.Where(c => c.CreatedAt.Month == month.Value);
+
+        var list = await query
+            .OrderByDescending(c => c.CreatedAt)
+            .Take(limit)
+            .Select(c => new
+            {
+                c.Id,
+                c.Amount,
+                c.PaymentAmount,
+                c.CommissionPercent,
+                status = c.Status.ToString(),
+                date = c.CreatedAt,
+                paidAt = c.PaidAt,
+                tenantName = c.Tenant.Name,
+                promoCode = c.Tenant != null && c.Tenant.PromoCode != null ? c.Tenant.PromoCode.Code : (string?)null,
+            })
+            .ToListAsync(ct);
+
+        return Ok(list.Select(c => new
+        {
+            c.Id,
+            c.Amount,
+            c.PaymentAmount,
+            c.CommissionPercent,
+            c.status,
+            date = c.date.ToString("dd.MM.yyyy HH:mm"),
+            paidAt = c.paidAt?.ToString("dd.MM.yyyy"),
+            c.tenantName,
+            promoCode = c.promoCode ?? "—",
+        }));
+    }
+
+    [HttpGet("reports/payments")]
+    public async Task<IActionResult> GetPaymentHistory([FromQuery] int limit = 50, CancellationToken ct = default)
+    {
+        var aff = await GetAffiliateAsync(ct);
+        if (aff == null) return Unauthorized();
+
+        var list = await _db.AffiliateCommissions
+            .Where(c => c.AffiliateId == aff.Id && c.Status == AffiliateCommissionStatus.Paid)
+            .OrderByDescending(c => c.PaidAt ?? c.CreatedAt)
+            .Take(limit)
+            .Select(c => new
+            {
+                c.Id,
+                c.Amount,
+                date = c.PaidAt ?? c.CreatedAt,
+                tenantName = c.Tenant.Name,
+                source = "Commission",
+            })
+            .ToListAsync(ct);
+
+        var bonusPayments = await _db.AffiliateBonuses
+            .Where(b => b.AffiliateId == aff.Id && b.Status == AffiliateBonusStatus.Paid)
+            .OrderByDescending(b => b.PaidAt)
+            .Take(limit)
+            .Select(b => new { b.Id, b.BonusAmount, b.PaidAt, b.Year, b.Month })
+            .ToListAsync(ct);
+
+        var commissionItems = list.Select(c => new PaymentHistoryItem(c.Id.ToString(), c.Amount, c.date.ToString("dd.MM.yyyy"), c.tenantName, "Komissiya")).ToList();
+        var bonusItems = bonusPayments.Select(b => new PaymentHistoryItem(b.Id.ToString(), b.BonusAmount, (b.PaidAt ?? DateTime.UtcNow).ToString("dd.MM.yyyy"), $"{b.Year}-{b.Month:00} bonus", "Bonus")).ToList();
+        var combined = commissionItems.Concat(bonusItems).OrderByDescending(x => x.Date).Take(limit).ToList();
+        return Ok(combined);
+    }
 }
 
 public record CreatePromoCodeRequest(decimal? DiscountPercent, decimal? CommissionPercent);
+
+public class AffiliateProfileUpdateRequest
+{
+    public string? Phone { get; set; }
+    public string? BankIban { get; set; }
+    public string? BankName { get; set; }
+    public string? BankAccountHolder { get; set; }
+    public string? PayriffInfo { get; set; }
+    public int? CommissionReceiveMethod { get; set; }
+    public string? CommissionAccountNote { get; set; }
+}
+
+internal record PaymentHistoryItem(string Id, decimal Amount, string Date, string TenantName, string Source);

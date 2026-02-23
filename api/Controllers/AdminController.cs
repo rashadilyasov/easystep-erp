@@ -757,6 +757,52 @@ public class AdminController : ControllerBase
         }
     }
 
+    [HttpPost("affiliates/{id:guid}/deactivate")]
+    public async Task<IActionResult> DeactivateAffiliate(Guid id, CancellationToken ct)
+    {
+        var aff = await _db.Affiliates.Include(a => a.User).FirstOrDefaultAsync(a => a.Id == id, ct);
+        if (aff == null) return NotFound(new { message = "Partnyor tapılmadı" });
+        if (!aff.IsApproved) return BadRequest(new { message = "Partnyor artıq deaktivdir" });
+
+        aff.IsApproved = false;
+        aff.UpdatedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync(ct);
+        await _audit.LogAsync("AffiliateDeactivated", GetAdminUserId(), User.Identity?.Name, metadata: $"affiliateId={id}", ct: ct);
+        return Ok(new { message = "Partnyor deaktiv edildi" });
+    }
+
+    [HttpDelete("affiliates/{id:guid}")]
+    public async Task<IActionResult> DeleteAffiliate(Guid id, CancellationToken ct)
+    {
+        var aff = await _db.Affiliates
+            .Include(a => a.User)
+            .FirstOrDefaultAsync(a => a.Id == id, ct);
+        if (aff == null) return NotFound(new { message = "Partnyor tapılmadı" });
+
+        if (aff.BalanceTotal != 0 || aff.BalancePending != 0 || aff.BalanceBonus != 0)
+            return BadRequest(new { message = "Balansı sıfır olmayan partnyor silinə bilməz" });
+
+        var hasCommissions = await _db.AffiliateCommissions.AnyAsync(c => c.AffiliateId == id, ct);
+        if (hasCommissions) return BadRequest(new { message = "Komissiyası olan partnyor silinə bilməz" });
+
+        var hasBonuses = await _db.AffiliateBonuses.AnyAsync(b => b.AffiliateId == id, ct);
+        if (hasBonuses) return BadRequest(new { message = "Bonusu olan partnyor silinə bilməz" });
+
+        var hasUsedPromos = await _db.PromoCodes.AnyAsync(p => p.AffiliateId == id && p.Status == PromoCodeStatus.Used, ct);
+        if (hasUsedPromos) return BadRequest(new { message = "İstifadə olunmuş promo kodu olan partnyor silinə bilməz" });
+
+        var promosToDelete = await _db.PromoCodes.Where(p => p.AffiliateId == id).ToListAsync(ct);
+        foreach (var p in promosToDelete)
+        {
+            await _db.Tenants.Where(t => t.PromoCodeId == p.Id).ExecuteUpdateAsync(s => s.SetProperty(t => t.PromoCodeId, (Guid?)null), ct);
+        }
+        _db.PromoCodes.RemoveRange(promosToDelete);
+        _db.Affiliates.Remove(aff);
+        await _db.SaveChangesAsync(ct);
+        await _audit.LogAsync("AffiliateDeleted", GetAdminUserId(), User.Identity?.Name, metadata: $"affiliateId={id} email={aff.User?.Email}", ct: ct);
+        return Ok(new { message = "Partnyor silindi" });
+    }
+
     [HttpPost("affiliates/{id:guid}/approve")]
     public async Task<IActionResult> ApproveAffiliate(Guid id, CancellationToken ct)
     {
@@ -822,6 +868,21 @@ public class AdminController : ControllerBase
         await _db.SaveChangesAsync(ct);
         await _audit.LogAsync("PromoCodeUpdated", GetAdminUserId(), User.Identity?.Name, metadata: $"promoId={id} discountPercent={promo.DiscountPercent} commissionPercent={promo.CommissionPercent}", ct: ct);
         return Ok(new { message = "Promo kod yeniləndi" });
+    }
+
+    [HttpDelete("promo-codes/{id:guid}")]
+    public async Task<IActionResult> DeletePromoCode(Guid id, CancellationToken ct)
+    {
+        var promo = await _db.PromoCodes.FindAsync(new object[] { id }, ct);
+        if (promo == null) return NotFound(new { message = "Promo kod tapılmadı" });
+        if (promo.Status == PromoCodeStatus.Used)
+            return BadRequest(new { message = "İstifadə olunmuş promo kod silinə bilməz" });
+
+        await _db.Tenants.Where(t => t.PromoCodeId == id).ExecuteUpdateAsync(s => s.SetProperty(t => t.PromoCodeId, (Guid?)null), ct);
+        _db.PromoCodes.Remove(promo);
+        await _db.SaveChangesAsync(ct);
+        await _audit.LogAsync("PromoCodeDeleted", GetAdminUserId(), User.Identity?.Name, metadata: $"promoId={id} code={promo.Code}", ct: ct);
+        return Ok(new { message = "Promo kod silindi" });
     }
 
     [HttpGet("promo-defaults")]
@@ -1218,24 +1279,133 @@ public class AdminController : ControllerBase
         return Ok(new { sent, message = sent ? "Şifrə sıfırlama linki göndərildi" : "SMTP göndərmə uğursuz oldu. Admin panel → E-poçt ayarları → SMTP parolunu yoxlayın." });
     }
 
+    [HttpGet("email-recipients-preview")]
+    public async Task<IActionResult> GetEmailRecipientsPreview([FromQuery] string type, CancellationToken ct = default)
+    {
+        var emails = await GetEmailsByRecipientTypeAsync(type, ct);
+        return Ok(new { type, count = emails.Count });
+    }
+
     [HttpPost("email-bulk-send")]
     public async Task<IActionResult> BulkSendEmail([FromBody] BulkEmailRequest req, CancellationToken ct = default)
     {
-        if (req?.Emails == null || req.Emails.Count == 0)
-            return BadRequest(new { message = "Ən azı bir e-poçt daxil edin" });
         if (string.IsNullOrWhiteSpace(req.Subject))
             return BadRequest(new { message = "Mövzu tələb olunur" });
         if (string.IsNullOrWhiteSpace(req.Body))
             return BadRequest(new { message = "Mətn tələb olunur" });
 
+        List<string> emails;
+        if (!string.IsNullOrWhiteSpace(req.RecipientType))
+        {
+            emails = await GetEmailsByRecipientTypeAsync(req.RecipientType, ct);
+        }
+        else if (req?.Emails != null && req.Emails.Count > 0)
+        {
+            emails = req.Emails.Where(e => !string.IsNullOrWhiteSpace(e)).Select(e => e!.Trim()).Distinct().ToList();
+        }
+        else
+        {
+            return BadRequest(new { message = "Ən azı bir alıcı tipi seçin və ya e-poçt siyahısı daxil edin" });
+        }
+
+        if (emails.Count == 0)
+            return BadRequest(new { message = "Seçilmiş tip üçün heç bir e-poçt tapılmadı" });
+
         var sent = 0;
         var failed = 0;
-        foreach (var to in req.Emails.Where(e => !string.IsNullOrWhiteSpace(e)).Select(e => e!.Trim()).Distinct())
+        foreach (var to in emails)
         {
             var ok = await _email.SendAsync(to, req.Subject.Trim(), req.Body, from: null, ct);
             if (ok) sent++; else failed++;
         }
         return Ok(new { message = $"{sent} e-poçt göndərildi", sent, failed });
+    }
+
+    private async Task<List<string>> GetEmailsByRecipientTypeAsync(string type, CancellationToken ct)
+    {
+        var now = DateTime.UtcNow;
+        var realTenants = _db.Tenants.Where(t => t.Id != SystemTenantId && t.Id != AffiliatesTenantId);
+        var activeSubTenantIds = _db.Subscriptions
+            .Where(s => s.Status == SubscriptionStatus.Active && s.EndDate > now)
+            .Select(s => s.TenantId)
+            .Distinct();
+        var result = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        switch (type?.Trim())
+        {
+            case "ActiveTenants":
+                var activeTenantIds = await activeSubTenantIds.ToListAsync(ct);
+                var activeEmails = await _db.Users
+                    .Where(u => activeTenantIds.Contains(u.TenantId) && !string.IsNullOrEmpty(u.Email))
+                    .Select(u => u.Email!)
+                    .ToListAsync(ct);
+                foreach (var e in activeEmails) result.Add(e.Trim());
+                break;
+
+            case "InactiveTenants":
+                var activeIdsList = await activeSubTenantIds.ToListAsync(ct);
+                var allTenantIds = await realTenants.Select(t => t.Id).ToListAsync(ct);
+                var inactiveTenantIds = allTenantIds.Except(activeIdsList).ToList();
+                var inactiveEmails = await _db.Users
+                    .Where(u => inactiveTenantIds.Contains(u.TenantId) && !string.IsNullOrEmpty(u.Email))
+                    .Select(u => u.Email!)
+                    .ToListAsync(ct);
+                foreach (var e in inactiveEmails) result.Add(e.Trim());
+                break;
+
+            case "Affiliates":
+                var affEmails = await _db.Affiliates
+                    .Where(a => a.IsApproved)
+                    .Select(a => a.User.Email)
+                    .Where(e => e != null)
+                    .ToListAsync(ct);
+                foreach (var e in affEmails) result.Add(e!.Trim());
+                break;
+
+            case "AffiliatesWithBonusThisMonth":
+                var bonusAffIds = await _db.AffiliateBonuses
+                    .Where(b => b.Year == now.Year && b.Month == now.Month)
+                    .Select(b => b.AffiliateId)
+                    .Distinct()
+                    .ToListAsync(ct);
+                var bonusAffEmails = await _db.Affiliates
+                    .Where(a => bonusAffIds.Contains(a.Id))
+                    .Select(a => a.User.Email)
+                    .Where(e => e != null)
+                    .ToListAsync(ct);
+                foreach (var e in bonusAffEmails) result.Add(e!.Trim());
+                break;
+
+            case "AffiliatesWithoutBonus":
+                var allAffIds = await _db.Affiliates.Select(a => a.Id).ToListAsync(ct);
+                var withBonusIds = await _db.AffiliateBonuses.Select(b => b.AffiliateId).Distinct().ToListAsync(ct);
+                var noBonusIds = allAffIds.Where(id => !withBonusIds.Contains(id)).ToList();
+                var noBonusEmails = await _db.Affiliates
+                    .Where(a => noBonusIds.Contains(a.Id))
+                    .Select(a => a.User.Email)
+                    .Where(e => e != null)
+                    .ToListAsync(ct);
+                foreach (var e in noBonusEmails) result.Add(e!.Trim());
+                break;
+
+            case "All":
+                var tenantUserEmails = await _db.Users
+                    .Where(u => u.TenantId != SystemTenantId && u.TenantId != AffiliatesTenantId && !string.IsNullOrEmpty(u.Email))
+                    .Select(u => u.Email!)
+                    .ToListAsync(ct);
+                var allAffEmails = await _db.Affiliates
+                    .Where(a => a.IsApproved)
+                    .Select(a => a.User.Email)
+                    .Where(e => e != null)
+                    .ToListAsync(ct);
+                foreach (var e in tenantUserEmails.Concat(allAffEmails!)) result.Add(e.Trim());
+                break;
+
+            default:
+                return new List<string>();
+        }
+
+        return result.Where(e => e.Contains("@")).ToList();
     }
 }
 
@@ -1243,7 +1413,7 @@ public record TestEmailRequest(string? To);
 public record SendPasswordResetRequest(string? Email);
 public record EmailSettingsRequest(string? Host, int Port, string? User, string? Password, string? From, bool UseSsl = true, string[]? FromAddresses = null, string? ResendApiKey = null, bool? ClearResend = false);
 public record EmailTemplateRequest(string? Subject, string? Body, string? From);
-public record BulkEmailRequest(List<string>? Emails, string? Subject, string? Body);
+public record BulkEmailRequest(List<string>? Emails, string? Subject, string? Body, string? RecipientType);
 
 public record DeleteTenantRequest(Guid? TenantId);
 public record PayoutBatchRequest(Guid[]? CommissionIds);

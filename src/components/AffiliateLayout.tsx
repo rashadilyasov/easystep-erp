@@ -7,8 +7,10 @@ import Logo from "./Logo";
 
 const affiliateNav = [
   { href: "/affiliate", label: "Panel" },
+  { href: "/affiliate/profile", label: "Profil və rekvizitlər" },
   { href: "/affiliate/promo-codes", label: "Promo kodlar" },
   { href: "/affiliate/commissions", label: "Komissiyalar" },
+  { href: "/affiliate/reports", label: "Hesabatlar" },
 ];
 
 export default function AffiliateLayout({ children }: { children: React.ReactNode }) {
@@ -46,7 +48,9 @@ export default function AffiliateLayout({ children }: { children: React.ReactNod
                   key={item.href}
                   href={item.href}
                   className={`block px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${
-                    pathname === item.href ? "bg-slate-700 text-white" : "text-slate-600 hover:bg-slate-100"
+                    pathname === item.href || (item.href !== "/affiliate" && pathname.startsWith(item.href))
+                      ? "bg-slate-700 text-white"
+                      : "text-slate-600 hover:bg-slate-100"
                   }`}
                 >
                   {item.label}

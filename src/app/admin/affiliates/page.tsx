@@ -262,6 +262,44 @@ export default function AdminAffiliatesPage() {
     }
   };
 
+  const canDeleteAffiliate = (a: Affiliate) =>
+    a.balanceTotal === 0 && a.balancePending === 0 && a.balanceBonus === 0 && a.activeCustomers === 0;
+
+  const handleDeactivateAffiliate = async (a: Affiliate) => {
+    if (!confirm(`${a.email} partnyorunu deaktiv etmək istədiyinizdən əminsiniz?`)) return;
+    try {
+      await api.admin.deactivateAffiliate(a.id);
+      load();
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Xəta baş verdi");
+    }
+  };
+
+  const handleDeleteAffiliate = async (a: Affiliate) => {
+    if (!confirm(`${a.email} partnyorunu silmək istədiyinizdən əminsiniz? Bu əməliyyat geri alına bilməz.`)) return;
+    try {
+      await api.admin.deleteAffiliate(a.id);
+      setAffiliateFilter((f) => (f === a.id ? "" : f));
+      load();
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Xəta baş verdi");
+    }
+  };
+
+  const handleDeletePromoCode = async (p: PromoCode) => {
+    if (p.status === "Used") {
+      alert("İstifadə olunmuş promo kod silinə bilməz");
+      return;
+    }
+    if (!confirm(`"${p.code}" promo kodunu silmək istədiyinizdən əminsiniz?`)) return;
+    try {
+      await api.admin.deletePromoCode(p.id);
+      load();
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Xəta baş verdi");
+    }
+  };
+
   const handleCalculateBonuses = async () => {
     setCalcBonusLoading(true);
     try {
@@ -556,6 +594,24 @@ export default function AdminAffiliatesPage() {
                         >
                           Redaktə
                         </button>
+                        {a.isApproved && (
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); handleDeactivateAffiliate(a); }}
+                            className="text-xs px-2 py-1 ml-1 bg-amber-100 text-amber-800 rounded hover:bg-amber-200"
+                          >
+                            Deaktiv et
+                          </button>
+                        )}
+                        {canDeleteAffiliate(a) && (
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); handleDeleteAffiliate(a); }}
+                            className="text-xs px-2 py-1 ml-1 bg-red-100 text-red-800 rounded hover:bg-red-200"
+                          >
+                            Sil
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -838,6 +894,15 @@ export default function AdminAffiliatesPage() {
                       >
                         Dəyiş
                       </button>
+                      {p.status !== "Used" && (
+                        <button
+                          type="button"
+                          onClick={() => handleDeletePromoCode(p)}
+                          className="text-xs px-2 py-1 ml-1 bg-red-100 text-red-800 rounded hover:bg-red-200"
+                        >
+                          Sil
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}

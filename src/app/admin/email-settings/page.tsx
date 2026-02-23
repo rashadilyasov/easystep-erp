@@ -26,11 +26,22 @@ export default function AdminEmailSettingsPage() {
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [templateData, setTemplateData] = useState({ subject: "", body: "", from: "" });
   const [templateSaving, setTemplateSaving] = useState(false);
+  const BULK_RECIPIENT_TYPES = [
+    { value: "ActiveTenants", label: "Abunəliyi Aktiv şirkətlər" },
+    { value: "InactiveTenants", label: "Aktiv olmayan Şirkətlər" },
+    { value: "Affiliates", label: "Satış Partnyorları" },
+    { value: "AffiliatesWithBonusThisMonth", label: "Bu ay bonus hesablanmış Satış Partnyorları" },
+    { value: "AffiliatesWithoutBonus", label: "Bonus almayan Satış Partnyorları" },
+    { value: "All", label: "Hamısı" },
+    { value: "manual", label: "Əl ilə (e-poçt siyahısı)" },
+  ] as const;
+  const [bulkRecipientType, setBulkRecipientType] = useState<string>("ActiveTenants");
   const [bulkEmails, setBulkEmails] = useState("");
   const [bulkSubject, setBulkSubject] = useState("");
   const [bulkBody, setBulkBody] = useState("");
   const [bulkSending, setBulkSending] = useState(false);
   const [bulkResult, setBulkResult] = useState<{ sent: number; failed: number } | null>(null);
+  const [bulkPreviewCount, setBulkPreviewCount] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [testEmail, setTestEmail] = useState("rashadilyasov@yahoo.com");
   const [testSending, setTestSending] = useState(false);
@@ -52,6 +63,22 @@ export default function AdminEmailSettingsPage() {
       loadSmtp(); // Şablonlar combobox üçün göndərən siyahısı
     }
   }, [tab, loadSmtp, loadTemplates]);
+
+  const loadBulkPreview = useCallback(() => {
+    if (bulkRecipientType === "manual") {
+      setBulkPreviewCount(null);
+      return;
+    }
+    api.admin
+      .emailRecipientsPreview(bulkRecipientType)
+      .then((r) => setBulkPreviewCount(r.count ?? 0))
+      .catch(() => setBulkPreviewCount(null));
+  }, [bulkRecipientType]);
+
+  useEffect(() => {
+    if (tab === "bulk" && bulkRecipientType !== "manual") loadBulkPreview();
+    else if (bulkRecipientType === "manual") setBulkPreviewCount(null);
+  }, [tab, bulkRecipientType, loadBulkPreview]);
 
   const loadTemplate = useCallback((key: string) => {
     setSelectedTemplate(key);
@@ -215,12 +242,19 @@ export default function AdminEmailSettingsPage() {
   };
 
   const sendBulk = async () => {
-    const emails = bulkEmails.split(/[\n,;]+/).map((e) => e.trim()).filter(Boolean);
-    if (emails.length === 0 || !bulkSubject.trim() || !bulkBody.trim()) return;
+    if (!bulkSubject.trim() || !bulkBody.trim()) return;
+    if (bulkRecipientType === "manual") {
+      const emails = bulkEmails.split(/[\n,;]+/).map((e) => e.trim()).filter(Boolean);
+      if (emails.length === 0) return;
+    } else if ((bulkPreviewCount ?? 0) === 0) return;
     setBulkSending(true);
     setBulkResult(null);
     try {
-      const r = await api.admin.bulkSendEmail({ emails, subject: bulkSubject, body: bulkBody });
+      const payload =
+        bulkRecipientType === "manual"
+          ? { emails: bulkEmails.split(/[\n,;]+/).map((e) => e.trim()).filter(Boolean), subject: bulkSubject, body: bulkBody }
+          : { subject: bulkSubject, body: bulkBody, recipientType: bulkRecipientType };
+      const r = await api.admin.bulkSendEmail(payload);
       setBulkResult({ sent: r.sent ?? 0, failed: r.failed ?? 0 });
     } finally {
       setBulkSending(false);
@@ -398,9 +432,33 @@ export default function AdminEmailSettingsPage() {
           <h2 className="font-semibold text-slate-900 mb-4">Toplu e-poçt göndərmə</h2>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">E-poçtlar (vergüllü, nöqtəvergüllü və ya sətirə görə ayrılmış)</label>
-              <textarea value={bulkEmails} onChange={(e) => setBulkEmails(e.target.value)} rows={4} className="w-full px-4 py-2 border border-slate-300 rounded-lg" placeholder="email1@example.com, email2@example.com" />
+              <label className="block text-sm font-medium text-slate-700 mb-1">Alıcılar</label>
+              <select
+                value={bulkRecipientType}
+                onChange={(e) => setBulkRecipientType(e.target.value)}
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg bg-white"
+              >
+                {BULK_RECIPIENT_TYPES.map((t) => (
+                  <option key={t.value} value={t.value}>
+                    {t.label}
+                  </option>
+                ))}
+              </select>
+              {bulkRecipientType !== "manual" && bulkPreviewCount !== null && (
+                <p className="text-sm text-slate-600 mt-1">
+                  Alıcı sayı: <strong>{bulkPreviewCount}</strong>
+                  <button type="button" onClick={loadBulkPreview} className="ml-2 text-primary-600 hover:underline">
+                    Yenilə
+                  </button>
+                </p>
+              )}
             </div>
+            {bulkRecipientType === "manual" && (
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">E-poçtlar (vergüllü, nöqtəvergüllü və ya sətirə görə ayrılmış)</label>
+                <textarea value={bulkEmails} onChange={(e) => setBulkEmails(e.target.value)} rows={4} className="w-full px-4 py-2 border border-slate-300 rounded-lg" placeholder="email1@example.com, email2@example.com" />
+              </div>
+            )}
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Mövzu</label>
               <input type="text" value={bulkSubject} onChange={(e) => setBulkSubject(e.target.value)} className="w-full px-4 py-2 border border-slate-300 rounded-lg" />
@@ -410,7 +468,16 @@ export default function AdminEmailSettingsPage() {
               <textarea value={bulkBody} onChange={(e) => setBulkBody(e.target.value)} rows={8} className="w-full px-4 py-2 border border-slate-300 rounded-lg font-mono text-sm" />
             </div>
             {bulkResult && <p className="text-green-600">{bulkResult.sent} göndərildi, {bulkResult.failed} uğursuz</p>}
-            <button onClick={sendBulk} disabled={bulkSending} className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50">
+            <button
+              onClick={sendBulk}
+              disabled={
+                bulkSending ||
+                !bulkSubject.trim() ||
+                !bulkBody.trim() ||
+                (bulkRecipientType === "manual" ? bulkEmails.split(/[\n,;]+/).map((e) => e.trim()).filter(Boolean).length === 0 : (bulkPreviewCount ?? 0) === 0)
+              }
+              className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
               {bulkSending ? "Göndərilir..." : "Göndər"}
             </button>
           </div>

@@ -337,6 +337,44 @@ export const api = {
       apiFetch<
         { id: string; amount: number; paymentAmount: number; commissionPercent: number; status: string; date: string; paidAt: string | null; tenantName: string }[]
       >(`/api/affiliate/commissions${limit ? `?limit=${limit}` : ""}`),
+    profile: () =>
+      apiFetch<{
+        email: string;
+        phone: string;
+        bankIban: string;
+        bankName: string;
+        bankAccountHolder: string;
+        payriffInfo: string;
+        commissionReceiveMethod: number;
+        commissionAccountNote: string;
+      }>("/api/affiliate/profile"),
+    updateProfile: (data: {
+      phone?: string;
+      bankIban?: string;
+      bankName?: string;
+      bankAccountHolder?: string;
+      payriffInfo?: string;
+      commissionReceiveMethod?: number;
+      commissionAccountNote?: string;
+    }) =>
+      apiFetch<{ message: string }>("/api/affiliate/profile", {
+        method: "PUT",
+        body: JSON.stringify(data),
+      }),
+    commissionReports: (params?: { year?: number; month?: number; limit?: number }) => {
+      const sp = new URLSearchParams();
+      if (params?.year) sp.set("year", String(params.year));
+      if (params?.month) sp.set("month", String(params.month));
+      if (params?.limit) sp.set("limit", String(params.limit));
+      const q = sp.toString();
+      return apiFetch<
+        { id: string; amount: number; paymentAmount: number; commissionPercent: number; status: string; date: string; paidAt: string | null; tenantName: string; promoCode: string }[]
+      >(`/api/affiliate/reports/commissions${q ? `?${q}` : ""}`);
+    },
+    paymentHistory: (limit?: number) =>
+      apiFetch<
+        { id: string; amount: number; date: string; tenantName: string; source: string }[]
+      >(`/api/affiliate/reports/payments${limit ? `?limit=${limit}` : ""}`),
     settings: () =>
       apiFetch<{ defaultDiscountPercent: number; defaultCommissionPercent: number }>("/api/affiliate/settings"),
   },
@@ -491,7 +529,9 @@ export const api = {
         method: "PUT",
         body: JSON.stringify(data),
       }),
-    bulkSendEmail: (data: { emails: string[]; subject: string; body: string }) =>
+    emailRecipientsPreview: (type: string) =>
+      apiFetch<{ type: string; count: number }>(`/api/admin/email-recipients-preview?type=${encodeURIComponent(type)}`),
+    bulkSendEmail: (data: { emails?: string[]; subject: string; body: string; recipientType?: string }) =>
       apiFetch<{ message: string; sent: number; failed: number }>("/api/admin/email-bulk-send", {
         method: "POST",
         body: JSON.stringify(data),
@@ -531,6 +571,10 @@ export const api = {
       >("/api/admin/affiliates"),
     approveAffiliate: (id: string) =>
       apiFetch<{ message: string }>(`/api/admin/affiliates/${id}/approve`, { method: "POST" }),
+    deactivateAffiliate: (id: string) =>
+      apiFetch<{ message: string }>(`/api/admin/affiliates/${id}/deactivate`, { method: "POST" }),
+    deleteAffiliate: (id: string) =>
+      apiFetch<{ message: string }>(`/api/admin/affiliates/${id}`, { method: "DELETE" }),
     promoCodes: (params?: { affiliateId?: string; status?: string }) => {
       const sp = new URLSearchParams();
       if (params?.affiliateId) sp.set("affiliateId", params.affiliateId);
@@ -554,6 +598,8 @@ export const api = {
         method: "PATCH",
         body: JSON.stringify(data),
       }),
+    deletePromoCode: (id: string) =>
+      apiFetch<{ message: string }>(`/api/admin/promo-codes/${id}`, { method: "DELETE" }),
     affiliateCommissions: (params?: { status?: string; affiliateId?: string }) => {
       const sp = new URLSearchParams();
       if (params?.status) sp.set("status", params.status);

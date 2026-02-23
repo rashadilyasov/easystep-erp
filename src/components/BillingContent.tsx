@@ -43,18 +43,6 @@ export default function BillingContent() {
     payments: [],
   };
 
-  const handleAutoRenewChange = useCallback(
-    async (checked: boolean) => {
-      try {
-        await api.setAutoRenew(checked);
-        setData((prev) => (prev ? { ...prev, autoRenew: checked } : null));
-      } catch {
-        alert("Xəta baş verdi");
-      }
-    },
-    []
-  );
-
   if (loading) {
     return (
       <div className="space-y-6 animate-pulse">
@@ -110,15 +98,6 @@ export default function BillingContent() {
                 </span>
               )}
             </p>
-            <label className="flex items-center gap-2 mt-4">
-              <input
-                type="checkbox"
-                checked={d.autoRenew}
-                onChange={(e) => handleAutoRenewChange(e.target.checked)}
-                className="rounded"
-              />
-              <span className="text-sm text-slate-600">Avtomatik yeniləmə</span>
-            </label>
           </>
         ) : (
           <p className="text-slate-600">Aktiv plan yoxdur</p>

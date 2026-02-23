@@ -433,6 +433,11 @@ public class AdminController : ControllerBase
             .Select(x => x.Name)
             .FirstOrDefaultAsync(ct);
 
+        var attachments = await _db.TicketAttachments
+            .Where(a => a.TicketId == id)
+            .Select(a => new { a.Id, a.FileName, a.ContentType, a.CreatedAt })
+            .ToListAsync(ct);
+
         return Ok(new
         {
             ticket.Id,
@@ -441,7 +446,18 @@ public class AdminController : ControllerBase
             status = ticket.Status.ToString(),
             date = ticket.CreatedAt.ToString("dd.MM.yyyy HH:mm"),
             tenantName = tenant ?? "—",
+            attachments = attachments.Select(a => new { a.Id, a.FileName, a.ContentType, createdAt = a.CreatedAt.ToString("dd.MM.yyyy HH:mm") }),
         });
+    }
+
+    [HttpGet("attachments/{id:guid}")]
+    public async Task<IActionResult> DownloadAttachment(Guid id, CancellationToken ct)
+    {
+        var att = await _db.TicketAttachments
+            .Include(a => a.Ticket)
+            .FirstOrDefaultAsync(a => a.Id == id, ct);
+        if (att == null) return NotFound();
+        return File(att.Content, att.ContentType, att.FileName);
     }
 
     [HttpPatch("tickets/{id:guid}/status")]

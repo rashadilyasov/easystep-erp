@@ -395,7 +395,7 @@ export const api = {
       ),
     tickets: () => apiFetch<{ id: string; subject: string; body: string; status: string; date: string; tenantName: string }[]>("/api/admin/tickets"),
     ticket: (ticketId: string) =>
-      apiFetch<{ id: string; subject: string; body: string; status: string; date: string; tenantName: string }>(
+      apiFetch<{ id: string; subject: string; body: string; status: string; date: string; tenantName: string; attachments?: { id: string; fileName: string; contentType: string; createdAt: string }[] }>(
         `/api/admin/tickets/${ticketId}`
       ),
     updateTicketStatus: (ticketId: string, status: string) =>

@@ -3,6 +3,34 @@
 import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/api";
 
+function AdminAttachmentLink({ id, fileName }: { id: string; fileName: string }) {
+  const [loading, setLoading] = useState(false);
+  const onClick = async () => {
+    setLoading(true);
+    try {
+      const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
+      const res = await fetch(`/api/admin/attachments/${id}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+      if (!res.ok) throw new Error("Yükləmə uğursuz");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      alert("Fayl yüklənə bilmədi");
+    } finally {
+      setLoading(false);
+    }
+  };
+  return (
+    <button type="button" onClick={onClick} disabled={loading} className="flex items-center gap-2 text-primary-600 hover:underline text-sm text-left disabled:opacity-50">
+      📎 {fileName} {loading ? "(yüklənir...)" : ""}
+    </button>
+  );
+}
+
 type Announcement = { id: string; title: string; body: string; publishedAt: string; active?: boolean };
 type Contact = { id: string; name: string; email: string; message: string; date: string };
 type Ticket = { id: string; subject: string; status: string; date: string; tenantName: string; body?: string };
@@ -232,7 +260,7 @@ export default function Content() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
-  const [detailTicket, setDetailTicket] = useState<{ id: string; subject: string; body: string; status: string; date: string; tenantName: string } | null>(null);
+  const [detailTicket, setDetailTicket] = useState<{ id: string; subject: string; body: string; status: string; date: string; tenantName: string; attachments?: { id: string; fileName: string; contentType: string; createdAt: string }[] } | null>(null);
 
   const load = useCallback(() => {
     Promise.all([
@@ -353,6 +381,16 @@ export default function Content() {
             <h3 className="font-semibold text-slate-900 mb-2">{detailTicket.subject}</h3>
             <p className="text-slate-500 text-xs mb-3">{detailTicket.tenantName} • {detailTicket.date} • {TICKET_STATUSES.find((s) => s.value === detailTicket.status)?.label ?? detailTicket.status}</p>
             <p className="text-slate-700 text-sm whitespace-pre-wrap mb-4">{detailTicket.body}</p>
+            {detailTicket.attachments && detailTicket.attachments.length > 0 && (
+              <div className="mb-4">
+                <h4 className="text-sm font-medium text-slate-700 mb-2">Əlavə olunmuş fayllar</h4>
+                <div className="space-y-1">
+                  {detailTicket.attachments.map((a) => (
+                    <AdminAttachmentLink key={a.id} id={a.id} fileName={a.fileName} />
+                  ))}
+                </div>
+              </div>
+            )}
             <select
               value={detailTicket.status}
               disabled={!!updating}

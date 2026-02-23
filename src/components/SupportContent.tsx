@@ -241,14 +241,24 @@ export default function SupportContent() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">Fayl əlavə et (maks. 3 fayl, hər biri 5MB)</label>
-                <input
-                  type="file"
-                  multiple
-                  accept=".pdf,.doc,.docx,.txt,.log,.png,.jpg,.jpeg"
-                  onChange={(e) => setFiles(e.target.files ? Array.from(e.target.files) : [])}
-                  className="w-full text-sm text-slate-600"
-                />
-                {files.length > 0 && <p className="text-xs text-slate-500 mt-1">{files.length} fayl seçildi</p>}
+                <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-slate-300 rounded-lg cursor-pointer hover:border-primary-400 hover:bg-slate-50">
+                  <span className="text-slate-500 text-sm">📁 Fayl seç</span>
+                  <input
+                    type="file"
+                    multiple
+                    accept=".pdf,.doc,.docx,.txt,.log,.png,.jpg,.jpeg"
+                    onChange={(e) => setFiles(e.target.files ? Array.from(e.target.files) : [])}
+                    className="hidden"
+                  />
+                </label>
+                {files.length > 0 && (
+                  <div className="mt-2 p-2 bg-slate-50 rounded-lg border border-slate-200">
+                    <p className="text-xs text-slate-600 mb-1">{files.length} fayl seçildi:</p>
+                    {files.map((f, i) => (
+                      <p key={i} className="text-sm text-slate-700 truncate">📎 {f.name}</p>
+                    ))}
+                  </div>
+                )}
               </div>
               <div className="flex gap-3">
                 <button

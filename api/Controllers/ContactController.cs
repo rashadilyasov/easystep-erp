@@ -39,9 +39,9 @@ public class ContactController : ControllerBase
         _db.ContactMessages.Add(new ContactMessage
         {
             Id = Guid.NewGuid(),
-            Name = req.Name,
-            Email = req.Email,
-            Message = req.Message,
+            Name = req.Name ?? "",
+            Email = req.Email ?? "",
+            Message = req.Message ?? "",
             CreatedAt = DateTime.UtcNow,
         });
         await _db.SaveChangesAsync(ct);

@@ -7,8 +7,9 @@ Vercel → layihə → **Settings** → **Environment Variables**:
 | Name | Value |
 |------|-------|
 | `API_URL` | `https://api.easysteperp.com` |
+| `API_FALLBACK_URL` | `https://SIZIN-RAILWAY-URL.up.railway.app` (Railway → API servisi → Settings → Networking) |
 
-Sonunda `/` olmasın. **Redeploy** edin. `2qz1te51.up.railway.app` admin/tenants üçün 404 qaytarır — istifadə etməyin.
+**Vacib:** `api.easysteperp.com` Vercel-də ENOTFOUND (DNS) verəndə proxy avtomatik `API_FALLBACK_URL`-ə keçir. Railway native URL (xxx.up.railway.app) DNS-də stabildir.
 
 ---
 

@@ -61,13 +61,15 @@ export async function GET(req: NextRequest) {
     results.authPing = { error: e instanceof Error ? e.message : String(e) };
   }
 
-  // 3. Login (admin@easysteperp.com)
+  // 3. Login diaqnostika (env: PING_TEST_EMAIL, PING_TEST_PASSWORD — default seed credentials)
   let accessToken: string | null = null;
+  const pingEmail = process.env.PING_TEST_EMAIL || "admin@easysteperp.com";
+  const pingPassword = process.env.PING_TEST_PASSWORD || "Admin123!";
   try {
     const loginRes = await fetch(`${base}/api/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: "admin@easysteperp.com", password: "Admin123!" }),
+      body: JSON.stringify({ email: pingEmail, password: pingPassword }),
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });
     const loginBody = await loginRes.text().catch(() => "(read failed)");

@@ -240,13 +240,21 @@ export const api = {
         const r = await fetch("/api/auth/2fa/complete", mkOpts());
         const t = await r.text();
         if (r.ok) return t ? (JSON.parse(t) as any) : ({} as any);
-        if (r.status >= 400) throw new Error(JSON.parse(t)?.message || t || r.statusText);
+        if (r.status >= 400) {
+          let msg = r.statusText;
+          try { const j = JSON.parse(t) as { message?: string }; if (j?.message) msg = j.message; } catch { if (t?.trim()) msg = t.slice(0, 300); }
+          throw new Error(msg);
+        }
       } catch (e) {
         try {
           const d = await fetch(`${DIRECT_API_BASE}/api/auth/2fa/complete`, mkOpts());
           const dt = await d.text();
           if (d.ok) return dt ? (JSON.parse(dt) as any) : ({} as any);
-          if (d.status >= 400) throw new Error(JSON.parse(dt)?.message || dt || d.statusText);
+          if (d.status >= 400) {
+            let msg = d.statusText;
+            try { const j = JSON.parse(dt) as { message?: string }; if (j?.message) msg = j.message; } catch { if (dt?.trim()) msg = dt.slice(0, 300); }
+            throw new Error(msg);
+          }
         } catch {
           throw e;
         }

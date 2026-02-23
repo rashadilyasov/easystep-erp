@@ -1,0 +1,43 @@
+Subject: Can I host my full-stack web application entirely on Bluehost?
+
+Hello,
+
+My goal is to host my entire website (easysteperp.com) on Bluehost in one place. I am currently using Vercel for the frontend and Railway for the backend, which has caused DNS and connectivity problems. I would like to move everything to Bluehost.
+
+Below are my technical requirements. Can Bluehost hosting meet all of these?
+
+---
+
+REQUIREMENTS
+
+1. SOFTWARE
+   - Node.js 18 or higher (for Next.js frontend)
+   - .NET 8 Runtime (for ASP.NET Core API backend)
+   - PostgreSQL 14 or higher (database)
+
+2. FRONTEND (Next.js)
+   - Run: npm install, npm run build, npm start
+   - Port: 3000 (or behind reverse proxy on 80/443)
+
+3. BACKEND (ASP.NET Core API)
+   - Run: dotnet publish -c Release -o out, then dotnet out/EasyStep.Erp.Api.dll
+   - Port: 5000 or 8080
+
+4. DATABASE
+   - PostgreSQL with connection string support
+   - Ability to run: dotnet ef database update (migrations)
+
+5. NETWORK
+   - HTTPS/SSL for my domain
+   - Two domains/subdomains: www.easysteperp.com (frontend) and api.easysteperp.com (API), or same host with path routing
+
+6. RESOURCES (minimum)
+   - 1 GB RAM
+   - 2 GB disk
+   - Ability to run two processes at the same time (Node.js + .NET)
+
+---
+
+Does Bluehost shared hosting support this? If not, which plan do I need (VPS, dedicated, etc.)? Do you offer managed setup or would I need to configure Node.js, .NET, and PostgreSQL myself?
+
+Thank you for your help.

@@ -153,11 +153,11 @@ table{{width:100%;border-collapse:collapse}} td{{padding:8px;border-bottom:1px s
 <h1>Easy Step ERP — Ödəniş çeki</h1>
 <table><tr><td>Çek/Faktura №</td><td>{enc(invNum)}</td></tr>
 <tr><td>Tarix</td><td>{payment.CreatedAt:dd.MM.yyyy HH:mm}</td></tr>
-<tr><td>Müştəri</td><td>{enc(payment.Tenant?.Name)}</td></tr>
+<tr><td>Müştəri</td><td>{enc(payment.Tenant?.Name ?? "")}</td></tr>
 <tr><td>Xidmət</td><td>{enc(planName)}</td></tr>
 <tr><td>Məbləğ</td><td>{enc(payment.Amount.ToString())} {enc(payment.Currency)}</td></tr>
 <tr><td>Status</td><td>Təsdiqləndi</td></tr>
-<tr><td>Trx ID</td><td>{enc(payment.TransactionId)}</td></tr></table>
+<tr><td>Trx ID</td><td>{enc(payment.TransactionId ?? "")}</td></tr></table>
 <p style=""margin-top:30px;color:#666;font-size:12px"">Bu çeki çap edə və ya PDF kimi yadda saxlay bilərsiniz (Ctrl+P → PDF olaraq saxla).</p>
 </body></html>";
 

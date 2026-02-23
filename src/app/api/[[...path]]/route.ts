@@ -42,15 +42,21 @@ async function proxy(request: NextRequest, params: Promise<{ path?: string[] }>,
           signal: AbortSignal.timeout(PROXY_TIMEOUT_MS),
           cache: "no-store",
         });
-        const data = await res.text();
         const contentType = res.headers.get("Content-Type") || "application/json";
+        const isBinary = contentType.startsWith("application/pdf") || contentType.startsWith("application/octet-stream");
+        const data = isBinary ? await res.arrayBuffer() : await res.text();
         const looksLikeError =
-          data.toLowerCase().includes("application not found") || data.toLowerCase().includes("dns_probe_finished_nxdomain");
+          !isBinary &&
+          typeof data === "string" &&
+          (data.toLowerCase().includes("application not found") || data.toLowerCase().includes("dns_probe_finished_nxdomain"));
+        const contentDisposition = res.headers.get("Content-Disposition");
+        const responseHeaders: Record<string, string> = { "Content-Type": contentType };
+        if (contentDisposition) responseHeaders["Content-Disposition"] = contentDisposition;
         if (res.ok && !looksLikeError) {
-          return new NextResponse(data, { status: res.status, headers: { "Content-Type": contentType } });
+          return new NextResponse(data, { status: res.status, headers: responseHeaders });
         }
         if (res.status === 404 || res.status === 502 || res.status === 503 || looksLikeError) break;
-        return new NextResponse(data, { status: res.status, headers: { "Content-Type": contentType } });
+        return new NextResponse(data, { status: res.status, headers: responseHeaders });
       } catch {
         if (attempt < MAX_RETRIES - 1) await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
       }

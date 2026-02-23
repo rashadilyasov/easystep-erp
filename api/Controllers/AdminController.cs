@@ -241,6 +241,25 @@ public class AdminController : ControllerBase
         });
     }
 
+    [HttpPatch("tenants/{tenantId:guid}")]
+    public async Task<IActionResult> UpdateTenant(Guid tenantId, [FromBody] AdminUpdateTenantRequest? req, CancellationToken ct)
+    {
+        var tenant = await _db.Tenants.FindAsync(new object[] { tenantId }, ct);
+        if (tenant == null) return NotFound(new { message = "Şirkət tapılmadı" });
+        if (req == null) return BadRequest(new { message = "Məlumat göndərilmədi" });
+
+        if (req.Name != null) tenant.Name = req.Name.Trim();
+        if (req.TaxId != null) tenant.TaxId = string.IsNullOrWhiteSpace(req.TaxId) ? null : req.TaxId.Trim();
+        if (req.ContactPerson != null) tenant.ContactPerson = req.ContactPerson.Trim();
+        if (req.Country != null) tenant.Country = string.IsNullOrWhiteSpace(req.Country) ? null : req.Country.Trim();
+        if (req.City != null) tenant.City = string.IsNullOrWhiteSpace(req.City) ? null : req.City.Trim();
+
+        tenant.UpdatedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync(ct);
+        await _audit.LogAsync("TenantUpdated", GetAdminUserId(), User.Identity?.Name, metadata: $"tenantId={tenantId} name={tenant.Name}", ct: ct);
+        return Ok(new { message = "Şirkət məlumatları yeniləndi" });
+    }
+
     [HttpPatch("users/{userId:guid}")]
     public async Task<IActionResult> UpdateUser(Guid userId, [FromBody] AdminUpdateUserRequest req, CancellationToken ct)
     {
@@ -1419,6 +1438,7 @@ public record DeleteTenantRequest(Guid? TenantId);
 public record PayoutBatchRequest(Guid[]? CommissionIds);
 public record ExtendRequest(int Months = 0, Guid? PlanId = null);
 public record AdminUpdateUserRequest(string? Email, string? Phone);
+public record AdminUpdateTenantRequest(string? Name, string? TaxId, string? ContactPerson, string? Country, string? City);
 public record UpdateTicketStatusRequest(string Status);
 public record CreatePlanRequest(string Name, int DurationMonths, decimal Price, string? Currency = "AZN", int? MaxDevices = null);
 public record UpdatePlanRequest(string? Name, int? DurationMonths, decimal? Price, string? Currency, int? MaxDevices, bool? IsActive);

@@ -447,6 +447,11 @@ export const api = {
         payments: { id: string; amount: number; currency: string; status: string; provider: string; date: string }[];
         tickets: { id: string; subject: string; status: string; date: string }[];
       }>(`/api/admin/tenants/${tenantId}`),
+    updateTenant: (tenantId: string, data: { name?: string; taxId?: string; contactPerson?: string; country?: string; city?: string }) =>
+      apiFetch<{ message: string }>(`/api/admin/tenants/${tenantId}`, {
+        method: "PATCH",
+        body: JSON.stringify(data),
+      }),
     updateUser: (userId: string, data: { email?: string; phone?: string }) =>
       apiFetch<{ message: string }>(`/api/admin/users/${userId}`, {
         method: "PATCH",

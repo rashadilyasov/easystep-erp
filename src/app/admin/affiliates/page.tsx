@@ -528,7 +528,7 @@ export default function AdminAffiliatesPage() {
                     <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">Müştərilər</th>
                     <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">Gözləyir</th>
                     <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">Ödənilən</th>
-                    <th className="text-left px-6 py-3 text-sm font-medium text-slate-700">Əməliyyat</th>
+                    <th className="text-left px-6 py-3 text-sm font-medium text-slate-700 min-w-[200px]">Əməliyyat</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -559,59 +559,61 @@ export default function AdminAffiliatesPage() {
                       <td className="px-6 py-3 text-sm">{a.activeCustomers}</td>
                       <td className="px-6 py-3 text-sm text-amber-700">{a.balancePending.toFixed(2)} ₼</td>
                       <td className="px-6 py-3 text-sm text-green-700">{a.balanceTotal.toFixed(2)} ₼</td>
-                      <td className="px-6 py-3" onClick={(e) => e.stopPropagation()}>
-                        {!a.emailVerified && (
-                          <>
+                      <td className="px-6 py-3 align-top" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex flex-wrap gap-1.5">
+                          {!a.emailVerified && (
+                            <>
+                              <button
+                                type="button"
+                                onClick={(e) => handleResendVerification(a.userId, e)}
+                                className="text-xs px-2.5 py-1.5 whitespace-nowrap bg-slate-100 text-slate-800 rounded-md hover:bg-slate-200 font-medium transition-colors"
+                              >
+                                Təsdiq göndər
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => handleVerifyEmail(a.userId, e)}
+                                className="text-xs px-2.5 py-1.5 whitespace-nowrap bg-green-100 text-green-800 rounded-md hover:bg-green-200 font-medium transition-colors"
+                              >
+                                Təsdiqlə
+                              </button>
+                            </>
+                          )}
+                          {a.emailVerified && !a.isApproved && (
                             <button
                               type="button"
-                              onClick={(e) => handleResendVerification(a.userId, e)}
-                              className="text-xs px-2 py-1 mr-1 bg-slate-100 text-slate-800 rounded hover:bg-slate-200"
-                            >
-                              Təsdiq göndər
-                            </button>
-                            <button
-                              type="button"
-                              onClick={(e) => handleVerifyEmail(a.userId, e)}
-                              className="text-xs px-2 py-1 bg-green-100 text-green-800 rounded hover:bg-green-200"
+                              onClick={() => handleApproveAffiliate(a.id)}
+                              className="text-xs px-2.5 py-1.5 whitespace-nowrap bg-blue-100 text-blue-800 rounded-md hover:bg-blue-200 font-medium transition-colors"
                             >
                               Təsdiqlə
                             </button>
-                          </>
-                        )}
-                        {a.emailVerified && !a.isApproved && (
+                          )}
                           <button
                             type="button"
-                            onClick={() => handleApproveAffiliate(a.id)}
-                            className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded hover:bg-blue-200"
+                            onClick={(e) => { e.stopPropagation(); handleEditAffiliate(a); }}
+                            className="text-xs px-2.5 py-1.5 whitespace-nowrap bg-slate-100 text-slate-700 rounded-md hover:bg-slate-200 font-medium transition-colors"
                           >
-                            Təsdiqlə
+                            Redaktə
                           </button>
-                        )}
-                        <button
-                          type="button"
-                          onClick={(e) => { e.stopPropagation(); handleEditAffiliate(a); }}
-                          className="text-xs px-2 py-1 ml-1 bg-slate-100 text-slate-700 rounded hover:bg-slate-200"
-                        >
-                          Redaktə
-                        </button>
-                        {a.isApproved && (
-                          <button
-                            type="button"
-                            onClick={(e) => { e.stopPropagation(); handleDeactivateAffiliate(a); }}
-                            className="text-xs px-2 py-1 ml-1 bg-amber-100 text-amber-800 rounded hover:bg-amber-200"
-                          >
-                            Deaktiv et
-                          </button>
-                        )}
-                        {canDeleteAffiliate(a) && (
-                          <button
-                            type="button"
-                            onClick={(e) => { e.stopPropagation(); handleDeleteAffiliate(a); }}
-                            className="text-xs px-2 py-1 ml-1 bg-red-100 text-red-800 rounded hover:bg-red-200"
-                          >
-                            Sil
-                          </button>
-                        )}
+                          {a.isApproved && (
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); handleDeactivateAffiliate(a); }}
+                              className="text-xs px-2.5 py-1.5 whitespace-nowrap bg-amber-100 text-amber-800 rounded-md hover:bg-amber-200 font-medium transition-colors"
+                            >
+                              Deaktiv et
+                            </button>
+                          )}
+                          {canDeleteAffiliate(a) && (
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); handleDeleteAffiliate(a); }}
+                              className="text-xs px-2.5 py-1.5 whitespace-nowrap bg-red-100 text-red-800 rounded-md hover:bg-red-200 font-medium transition-colors"
+                            >
+                              Sil
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}

@@ -39,6 +39,9 @@ export default function AdminTenantsContent() {
   const [editingUser, setEditingUser] = useState<{ id: string; email: string; phone?: string } | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [deletingTenant, setDeletingTenant] = useState(false);
+  const [editingTenant, setEditingTenant] = useState(false);
+  const [tenantEditForm, setTenantEditForm] = useState({ name: "", taxId: "", contactPerson: "", country: "", city: "" });
+  const [tenantSaving, setTenantSaving] = useState(false);
 
   const refreshTenants = useCallback(() => api.admin.tenants().then(setTenants), []);
 
@@ -69,14 +72,44 @@ export default function AdminTenantsContent() {
   const openDetailModal = async (tenantId: string) => {
     setDetailLoading(true);
     setDetailModal(null);
+    setEditingTenant(false);
     try {
       const d = await api.admin.tenantDetail(tenantId);
       setDetailModal(d);
+      setTenantEditForm({
+        name: d.tenant.name ?? "",
+        taxId: d.tenant.taxId ?? "",
+        contactPerson: d.tenant.contactPerson ?? "",
+        country: d.tenant.country ?? "",
+        city: d.tenant.city ?? "",
+      });
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Məlumat yüklənə bilmədi";
       alert(msg);
     } finally {
       setDetailLoading(false);
+    }
+  };
+
+  const handleSaveTenant = async () => {
+    if (!detailModal) return;
+    setTenantSaving(true);
+    try {
+      await api.admin.updateTenant(detailModal.tenant.id, {
+        name: tenantEditForm.name.trim() || undefined,
+        taxId: tenantEditForm.taxId.trim() || undefined,
+        contactPerson: tenantEditForm.contactPerson.trim() || undefined,
+        country: tenantEditForm.country.trim() || undefined,
+        city: tenantEditForm.city.trim() || undefined,
+      });
+      const d = await api.admin.tenantDetail(detailModal.tenant.id);
+      setDetailModal(d);
+      setTenantEditForm({ name: d.tenant.name ?? "", taxId: d.tenant.taxId ?? "", contactPerson: d.tenant.contactPerson ?? "", country: d.tenant.country ?? "", city: d.tenant.city ?? "" });
+      setEditingTenant(false);
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Xəta baş verdi");
+    } finally {
+      setTenantSaving(false);
     }
   };
 
@@ -326,7 +359,7 @@ export default function AdminTenantsContent() {
       )}
       {(detailLoading || detailModal) && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-auto shadow-xl">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-3xl max-h-[90vh] overflow-auto shadow-xl">
             {detailLoading ? (
               <div className="h-64 animate-pulse bg-slate-100 rounded-xl" />
             ) : detailModal ? (
@@ -335,17 +368,89 @@ export default function AdminTenantsContent() {
                   <h3 className="font-semibold text-slate-900 text-lg">{detailModal.tenant.name}</h3>
                   <div className="flex items-center gap-2">
                     {!detailModal.tenant.name.includes("System") && detailModal.tenant.name !== "Affiliates" && (
-                      <button
-                        onClick={handleDeleteTenant}
-                        disabled={deletingTenant}
-                        className="text-xs px-3 py-1.5 bg-red-100 text-red-800 rounded hover:bg-red-200 disabled:opacity-50"
-                      >
-                        {deletingTenant ? "..." : "Şirkəti sil"}
-                      </button>
+                      <>
+                        <button
+                          onClick={handleDeleteTenant}
+                          disabled={deletingTenant}
+                          className="text-xs px-3 py-1.5 bg-red-100 text-red-800 rounded hover:bg-red-200 disabled:opacity-50"
+                        >
+                          {deletingTenant ? "..." : "Şirkəti sil"}
+                        </button>
+                      </>
                     )}
-                    <button onClick={() => setDetailModal(null)} className="text-slate-500 hover:text-red-500">✕</button>
+                    <button onClick={() => setDetailModal(null)} className="text-slate-500 hover:text-red-500 p-1">✕</button>
                   </div>
                 </div>
+
+                {/* Şirkət məlumatları */}
+                <div className="mb-6 p-4 bg-slate-50 rounded-xl border border-slate-200">
+                  <div className="flex justify-between items-center mb-3">
+                    <h4 className="font-semibold text-slate-800">Şirkət məlumatları</h4>
+                    {!detailModal.tenant.name.includes("System") && detailModal.tenant.name !== "Affiliates" && (
+                      editingTenant ? (
+                        <div className="flex gap-2">
+                          <button
+                            onClick={handleSaveTenant}
+                            disabled={tenantSaving}
+                            className="text-xs px-3 py-1.5 bg-primary-600 text-white rounded hover:bg-primary-700 disabled:opacity-50"
+                          >
+                            {tenantSaving ? "Saxlanır..." : "Saxla"}
+                          </button>
+                          <button
+                            onClick={() => {
+                              setEditingTenant(false);
+                              setTenantEditForm({ name: detailModal.tenant.name ?? "", taxId: detailModal.tenant.taxId ?? "", contactPerson: detailModal.tenant.contactPerson ?? "", country: detailModal.tenant.country ?? "", city: detailModal.tenant.city ?? "" });
+                            }}
+                            className="text-xs px-3 py-1.5 border border-slate-300 rounded hover:bg-slate-100"
+                          >
+                            Ləğv
+                          </button>
+                        </div>
+                      ) : (
+                        <button onClick={() => setEditingTenant(true)} className="text-xs px-3 py-1.5 text-primary-600 hover:underline font-medium">
+                          Redaktə
+                        </button>
+                      )
+                    )}
+                  </div>
+                  <div className="grid gap-3 text-sm">
+                    {editingTenant ? (
+                      <>
+                        <div>
+                          <label className="block text-slate-600 mb-0.5">Şirkət adı</label>
+                          <input type="text" value={tenantEditForm.name} onChange={(e) => setTenantEditForm((f) => ({ ...f, name: e.target.value }))} className="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+                        </div>
+                        <div>
+                          <label className="block text-slate-600 mb-0.5">VÖEN</label>
+                          <input type="text" value={tenantEditForm.taxId} onChange={(e) => setTenantEditForm((f) => ({ ...f, taxId: e.target.value }))} className="w-full px-3 py-2 border border-slate-300 rounded-lg" placeholder="Vacib deyil" />
+                        </div>
+                        <div>
+                          <label className="block text-slate-600 mb-0.5">Əlaqədar şəxs</label>
+                          <input type="text" value={tenantEditForm.contactPerson} onChange={(e) => setTenantEditForm((f) => ({ ...f, contactPerson: e.target.value }))} className="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="block text-slate-600 mb-0.5">Ölkə</label>
+                            <input type="text" value={tenantEditForm.country} onChange={(e) => setTenantEditForm((f) => ({ ...f, country: e.target.value }))} className="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+                          </div>
+                          <div>
+                            <label className="block text-slate-600 mb-0.5">Şəhər</label>
+                            <input type="text" value={tenantEditForm.city} onChange={(e) => setTenantEditForm((f) => ({ ...f, city: e.target.value }))} className="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div><span className="text-slate-500">Şirkət adı:</span> <span className="font-medium text-slate-800">{detailModal.tenant.name || "—"}</span></div>
+                        <div><span className="text-slate-500">VÖEN:</span> {detailModal.tenant.taxId || "—"}</div>
+                        <div><span className="text-slate-500">Əlaqədar şəxs:</span> {detailModal.tenant.contactPerson || "—"}</div>
+                        <div><span className="text-slate-500">Ölkə / Şəhər:</span> {[detailModal.tenant.country, detailModal.tenant.city].filter(Boolean).join(", ") || "—"}</div>
+                        <div><span className="text-slate-500">Qeydiyyat:</span> {new Date(detailModal.tenant.createdAt).toLocaleDateString("az-AZ")}</div>
+                      </>
+                    )}
+                  </div>
+                </div>
+
                 <div className="grid gap-4 text-sm">
                   <div>
                     <h4 className="font-medium text-slate-700 mb-2">İstifadəçilər</h4>
@@ -438,36 +543,49 @@ export default function AdminTenantsContent() {
                       </button>
                     </div>
                   )}
-                  {detailModal.payments.length > 0 && (
-                    <div>
-                      <h4 className="font-medium text-slate-700 mb-1">Ödənişlər (son 20)</h4>
-                      <div className="max-h-32 overflow-auto space-y-1 text-xs">
-                        {detailModal.payments.map((p) => (
-                          <div key={p.id} className="flex justify-between">
-                            <span>{p.date} — {p.amount} {p.currency}</span>
-                            <span className={p.status === "Succeeded" ? "text-green-600" : "text-slate-600"}>
-                              {p.status === "Succeeded" ? "Təsdiqləndi" : p.status === "Failed" ? "Uğursuz" : p.status === "Cancelled" ? "Ləğv edildi" : p.status}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {detailModal.tickets.length > 0 && (
-                    <div>
-                      <h4 className="font-medium text-slate-700 mb-1">Biletlər (son 10)</h4>
-                      <div className="space-y-1 text-xs">
-                        {detailModal.tickets.map((t) => (
-                          <div key={t.id} className="flex justify-between">
-                            <span>{t.subject}</span>
-                            <span>
-                              {t.status === "Open" ? "Gözləyir" : t.status === "InProgress" ? "Həll edilir" : t.status === "Resolved" ? "Həll edildi" : t.status === "Closed" ? "Bağlı" : t.status} — {t.date}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                  <div>
+                    <h4 className="font-medium text-slate-700 mb-2">Ödənişlər</h4>
+                    {detailModal.payments.length === 0 ? (
+                      <p className="text-slate-500 text-sm py-2">Ödəniş tarixçəsi yoxdur</p>
+                    ) : (
+                      <>
+                        <p className="text-xs text-slate-500 mb-2">
+                          {detailModal.payments.filter((p) => p.status === "Succeeded").length} uğurlu ödəniş (son 20)
+                        </p>
+                        <div className="max-h-36 overflow-auto space-y-1.5 text-xs border border-slate-200 rounded-lg p-2 bg-white">
+                          {detailModal.payments.map((p) => (
+                            <div key={p.id} className="flex justify-between items-center py-1 border-b border-slate-100 last:border-0">
+                              <span>{p.date}</span>
+                              <span className="font-medium">{p.amount} {p.currency}</span>
+                              <span className={p.status === "Succeeded" ? "text-green-600" : p.status === "Failed" ? "text-red-600" : "text-slate-600"}>
+                                {p.status === "Succeeded" ? "Təsdiqləndi" : p.status === "Failed" ? "Uğursuz" : p.status === "Cancelled" ? "Ləğv" : p.status}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-slate-700 mb-2">Dəstək biletləri</h4>
+                    {detailModal.tickets.length === 0 ? (
+                      <p className="text-slate-500 text-sm py-2">Bilet yoxdur</p>
+                    ) : (
+                      <>
+                        <p className="text-xs text-slate-500 mb-2">Son 10 bilet</p>
+                        <div className="space-y-1.5 text-xs border border-slate-200 rounded-lg p-2 bg-white max-h-32 overflow-auto">
+                          {detailModal.tickets.map((t) => (
+                            <div key={t.id} className="flex justify-between items-start py-1 border-b border-slate-100 last:border-0 gap-2">
+                              <span className="font-medium truncate flex-1 min-w-0">{t.subject}</span>
+                              <span className="shrink-0">
+                                {t.status === "Open" ? "Gözləyir" : t.status === "InProgress" ? "Həll edilir" : t.status === "Resolved" ? "Həll edildi" : t.status === "Closed" ? "Bağlı" : t.status} — {t.date}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </div>
               </>
             ) : null}

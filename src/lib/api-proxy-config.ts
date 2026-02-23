@@ -17,6 +17,8 @@ export function getApiBases(): string[] {
     if (!full.startsWith("http")) full = "https://" + full;
     if (full && !bases.some((b) => norm(b) === norm(full))) bases.push(full);
   };
+  // API_RAILWAY_URL / API_FALLBACK_URL: Vercel ENOTFOUND verdikdə — Railway native URL
+  add(process.env.API_RAILWAY_URL || process.env.API_FALLBACK_URL || "");
   add(process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || "");
   add(API_CUSTOM_DOMAIN);
   add(process.env.RAILWAY_PUBLIC_URL || "");

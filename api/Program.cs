@@ -45,9 +45,9 @@ if (conn.StartsWith("postgresql://", StringComparison.OrdinalIgnoreCase) || conn
 var useSqlite = conn.StartsWith("Data Source=", StringComparison.OrdinalIgnoreCase)
     || conn.EndsWith(".db", StringComparison.OrdinalIgnoreCase);
 
-// PostgreSQL: TCP_ABORT_O/D əleyhinə — Railway Hobby ~20 connection limit, pool kiçik saxla
+// PostgreSQL: TCP_ABORT_O/D əleyhinə — Railway Hobby ~20 connection limit
 if (!useSqlite && !conn.Contains("Connection Idle Lifetime", StringComparison.OrdinalIgnoreCase))
-    conn += ";Connection Idle Lifetime=60;Command Timeout=30;Maximum Pool Size=10";
+    conn += ";Connection Idle Lifetime=60;Command Timeout=30;Maximum Pool Size=10;Minimum Pool Size=0";
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {

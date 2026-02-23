@@ -7,9 +7,9 @@ Vercel → layihə → **Settings** → **Environment Variables**:
 | Name | Value |
 |------|-------|
 | `API_URL` | `https://api.easysteperp.com` |
-| `API_FALLBACK_URL` | `https://SIZIN-RAILWAY-URL.up.railway.app` (Railway → API servisi → Settings → Networking) |
+| `API_FALLBACK_URL` və ya `API_RAILWAY_URL` | `https://xxx.up.railway.app` — Railway → API servisi → **Settings** → **Networking** → **Domains** |
 
-**Vacib:** `api.easysteperp.com` Vercel-də ENOTFOUND (DNS) verəndə proxy avtomatik `API_FALLBACK_URL`-ə keçir. Railway native URL (xxx.up.railway.app) DNS-də stabildir.
+**Vacib:** `api.easysteperp.com` Vercel serverless-da ENOTFOUND (DNS) verdikdə proxy əvvəlcə `API_FALLBACK_URL`/`API_RAILWAY_URL` sınayır. Railway native domain (*.railway.app) DNS-də stabildir. 502 / fetch failed görəndə bu dəyişəni əlavə edib redeploy edin.
 
 ---
 
@@ -87,7 +87,7 @@ Bu xəta əsasən proxy timeout-dan yaranır: e-poçt göndərmə yavaş olduqda
 3. **Railway plan:** Hobby/Trial-da SMTP işləməz. Pro plan və ya Resend/SendGrid kimi API lazımdır.
 4. **SMTP diaqnostika** düyməsinə basın — real xəta mesajı görünəcək.
 5. **Parol mütləqdir:** İlk dəfə parol sahəsinə daxil edib saxlayın.
-6. **Spam:** E-poçt spam qovluğuna düşə bilər.
+6. **Spam:** E-poçt spam qovluğuna düşə bilər. Azaltmaq üçün: Resend istifadə edirsinizsə → Resend Dashboard → Domains → `easysteperp.com` əlavə edib **SPF və DKIM** DNS qeydlərini daxil edin (A record, TXT). Yeni domenlər üçün sender reputasiyası bir neçə həftə qurula bilər.
 
 ---
 

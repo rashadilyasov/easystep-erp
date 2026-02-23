@@ -322,9 +322,15 @@ public class AuthController : ControllerBase
         var userWithTenant = await _auth.GetUserWithTenantByIdAsync(id, ct);
         var userName = (userWithTenant?.tenant?.ContactPerson ?? "").Trim();
         if (string.IsNullOrEmpty(userName)) userName = "İstifadəçi";
-        await _templatedEmail.SendTemplatedAsync(user.Email, EmailTemplateKeys.TwoFaDisable, new Dictionary<string, string> { ["code"] = code, ["userName"] = userName }, ct);
+        else if (userName.Equals("Affiliate", StringComparison.OrdinalIgnoreCase)) userName = "Partnyor";
 
-        return Ok(new { message = "Kod e-poçtunuza göndərildi." });
+        var sent = await _templatedEmail.SendTemplatedAsync(user.Email, EmailTemplateKeys.TwoFaDisable, new Dictionary<string, string> { ["code"] = code, ["userName"] = userName }, ct);
+        if (!sent)
+        {
+            _logger.LogWarning("2FA disable OTP email failed to send for {Email}", user.Email);
+            return StatusCode(500, new { message = "E-poçt göndərilə bilmədi. Admin panel → E-poçt ayarları ilə Resend/SMTP konfiqurasiyasını yoxlayın. Spam qovluğuna baxın." });
+        }
+        return Ok(new { message = "Kod e-poçtunuza göndərildi. Spam qovluğunu da yoxlayın." });
     }
 
     [HttpPost("2fa/disable")]
@@ -451,7 +457,8 @@ public class AuthController : ControllerBase
             var to = email;
             var userWithTenant = await _auth.GetUserWithTenantByEmailAsync(email, ct);
             var userName = (userWithTenant?.tenant?.ContactPerson ?? "").Trim();
-            if (string.IsNullOrEmpty(userName)) userName = "Müştəri";
+            if (string.IsNullOrEmpty(userName)) userName = userWithTenant?.user?.Role == UserRole.Affiliate ? "Partnyor" : "Müştəri";
+            else if (userName.Equals("Affiliate", StringComparison.OrdinalIgnoreCase)) userName = "Partnyor";
 
             var scopeFactory = _scopeFactory;
             var logger = _logger;

@@ -1208,7 +1208,8 @@ public class AdminController : ControllerBase
         var resetUrl = $"{baseUrl}/reset-password?token={Uri.EscapeDataString(token)}";
         var userWithTenant = await _auth.GetUserWithTenantByEmailAsync(email, ct);
         var userName = (userWithTenant?.tenant?.ContactPerson ?? "").Trim();
-        if (string.IsNullOrEmpty(userName)) userName = "Müştəri";
+        if (string.IsNullOrEmpty(userName)) userName = userWithTenant?.user?.Role == UserRole.Affiliate ? "Partnyor" : "Müştəri";
+        else if (userName.Equals("Affiliate", StringComparison.OrdinalIgnoreCase)) userName = "Partnyor";
         var sent = await _templatedEmail.SendTemplatedAsync(email, EmailTemplateKeys.PasswordReset, new Dictionary<string, string> { ["resetUrl"] = resetUrl, ["userName"] = userName }, ct);
         return Ok(new { sent, message = sent ? "Şifrə sıfırlama linki göndərildi" : "SMTP göndərmə uğursuz oldu. Admin panel → E-poçt ayarları → SMTP parolunu yoxlayın." });
     }

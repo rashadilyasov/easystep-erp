@@ -1,0 +1,19 @@
+Thank you for the helpful reply.
+
+I understand that I need a VPS or Dedicated Server plan. A few clarifications:
+
+1. VPS with Linux is fine — my ASP.NET Core application (.NET 8) is designed to run on Linux (it currently runs on Railway Linux containers). .NET Core / ASP.NET Core has full Linux support, so there should be no compatibility issue.
+
+2. Could you confirm that your VPS plans allow:
+   - Installing Node.js 18+
+   - Installing .NET 8 Runtime
+   - Installing PostgreSQL 14+
+   - Running both Node.js and .NET processes at the same time
+   - Configuring nginx or Apache as reverse proxy
+   - SSL/HTTPS for my domain and subdomain (api.easysteperp.com)
+
+3. Do you offer managed VPS where you handle the initial setup (Node, .NET, PostgreSQL, reverse proxy), or would I need to configure everything myself via SSH?
+
+4. What is the approximate monthly cost for a VPS plan that meets these requirements?
+
+Thank you.

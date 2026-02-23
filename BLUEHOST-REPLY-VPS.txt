@@ -1,0 +1,10 @@
+Thank you for the VPS link.
+
+I am considering the Standard NVMe 4 plan ($31.99/month) — 2 GB RAM and 120 GB SSD should be enough for my application (Node.js, .NET 8, PostgreSQL).
+
+Before I proceed, could you confirm:
+1. Do I get full root/SSH access to install Node.js, .NET Runtime, and PostgreSQL myself?
+2. Is there a setup guide or documentation for installing these on your VPS?
+3. Can I point my existing domain (easysteperp.com) and subdomain (api.easysteperp.com) to this VPS after purchase?
+
+Thank you.

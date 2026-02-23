@@ -569,18 +569,18 @@ export default function AdminTenantsContent() {
                   <div>
                     <h4 className="font-medium text-slate-700 mb-2">Dəstək biletləri</h4>
                     {detailModal.tickets.length === 0 ? (
-                      <p className="text-slate-500 text-sm py-2">Bilet yoxdur</p>
+                      <p className="text-slate-500 text-sm py-2">Bu şirkətin bileti yoxdur. <a href="/admin/content" className="text-primary-600 hover:underline">Kontent</a> səhifəsində bütün biletlər görünür.</p>
                     ) : (
                       <>
-                        <p className="text-xs text-slate-500 mb-2">Son 10 bilet</p>
+                        <p className="text-xs text-slate-500 mb-2">Son 10 bilet · <a href="/admin/content" className="text-primary-600 hover:underline">Hamısına bax</a></p>
                         <div className="space-y-1.5 text-xs border border-slate-200 rounded-lg p-2 bg-white max-h-32 overflow-auto">
                           {detailModal.tickets.map((t) => (
-                            <div key={t.id} className="flex justify-between items-start py-1 border-b border-slate-100 last:border-0 gap-2">
+                            <a key={t.id} href={`/admin/content?ticketId=${t.id}`} className="flex justify-between items-start py-1 border-b border-slate-100 last:border-0 gap-2 hover:bg-slate-50 rounded px-1 -mx-1 block">
                               <span className="font-medium truncate flex-1 min-w-0">{t.subject}</span>
                               <span className="shrink-0">
                                 {t.status === "Open" ? "Gözləyir" : t.status === "InProgress" ? "Həll edilir" : t.status === "Resolved" ? "Həll edildi" : t.status === "Closed" ? "Bağlı" : t.status} — {t.date}
                               </span>
-                            </div>
+                            </a>
                           ))}
                         </div>
                       </>

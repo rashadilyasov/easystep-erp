@@ -248,6 +248,16 @@ export default function Content() {
     load();
   }, [load]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const ticketId = params.get("ticketId");
+    if (ticketId) {
+      api.admin.ticket(ticketId).then((t) => setDetailTicket(t)).catch(() => {});
+      window.history.replaceState({}, "", "/admin/content");
+    }
+  }, []);
+
   const openDetail = async (ticketId: string) => {
     try {
       const t = await api.admin.ticket(ticketId);

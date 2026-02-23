@@ -13,14 +13,18 @@ async function proxy(request: NextRequest, params: Promise<{ path?: string[] }>,
   const pathWithQuery = `/api/${pathSegment}${request.nextUrl.search}`;
 
   const headers = new Headers();
-  headers.set("Content-Type", "application/json");
+  const contentType = request.headers.get("content-type") || "";
+  if (contentType.includes("multipart/form-data")) {
+    headers.set("Content-Type", contentType);
+  } else {
+    headers.set("Content-Type", "application/json");
+  }
   const auth = request.headers.get("Authorization");
   if (auth) headers.set("Authorization", auth);
 
   let body: string | ArrayBuffer | undefined;
   if (method !== "GET" && method !== "HEAD") {
-    const ct = request.headers.get("content-type") || "";
-    body = ct.includes("multipart/form-data") ? await request.arrayBuffer() : await request.text();
+    body = contentType.includes("multipart/form-data") ? await request.arrayBuffer() : await request.text();
   }
   const hasBody = body != null && (typeof body === "string" ? body.length > 0 : body.byteLength > 0);
 

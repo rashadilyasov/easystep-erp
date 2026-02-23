@@ -237,6 +237,10 @@ export const api = {
   },
   tickets: {
     list: () => apiFetch<{ id: string; subject: string; status: string; date: string }[]>("/api/support"),
+    get: (ticketId: string) =>
+      apiFetch<{ id: string; subject: string; body: string; status: string; date: string; updatedAt: string }>(
+        `/api/support/tickets/${ticketId}`
+      ),
     create: (subject: string, body: string) =>
       apiFetch<{ id: string; message: string }>("/api/support", {
         method: "POST",
@@ -247,6 +251,8 @@ export const api = {
     listAttachments: (ticketId: string) =>
       apiFetch<{ id: string; fileName: string; contentType: string; createdAt: string }[]>(`/api/support/tickets/${ticketId}/attachments`),
     attachmentUrl: (id: string) => `/api/support/attachments/${id}`,
+    delete: (ticketId: string) =>
+      apiFetch<{ message: string }>(`/api/support/tickets/${ticketId}`, { method: "DELETE" }),
   },
   academy: () =>
     apiFetch<{ youtubePlaylistId: string }>("/api/content/academy"),

@@ -18,6 +18,43 @@ public class SupportController : ControllerBase
 
     public SupportController(ApplicationDbContext db) => _db = db;
 
+    [HttpGet("tickets/{ticketId:guid}")]
+    public async Task<IActionResult> GetTicket(Guid ticketId, CancellationToken ct)
+    {
+        var tenantId = GetTenantId();
+        if (tenantId == null) return Unauthorized();
+
+        var ticket = await _db.Tickets
+            .Where(t => t.Id == ticketId && t.TenantId == tenantId.Value)
+            .Select(t => new { t.Id, t.Subject, t.Body, t.Status, t.CreatedAt, t.UpdatedAt })
+            .FirstOrDefaultAsync(ct);
+        if (ticket == null) return NotFound(new { message = "Bilet tapılmadı" });
+
+        return Ok(new
+        {
+            ticket.Id,
+            ticket.Subject,
+            ticket.Body,
+            status = ticket.Status.ToString(),
+            date = ticket.CreatedAt.ToString("dd.MM.yyyy HH:mm"),
+            updatedAt = ticket.UpdatedAt.ToString("dd.MM.yyyy HH:mm"),
+        });
+    }
+
+    [HttpDelete("tickets/{ticketId:guid}")]
+    public async Task<IActionResult> DeleteTicket(Guid ticketId, CancellationToken ct)
+    {
+        var tenantId = GetTenantId();
+        if (tenantId == null) return Unauthorized();
+
+        var ticket = await _db.Tickets.FirstOrDefaultAsync(t => t.Id == ticketId && t.TenantId == tenantId.Value, ct);
+        if (ticket == null) return NotFound(new { message = "Bilet tapılmadı" });
+
+        _db.Tickets.Remove(ticket);
+        await _db.SaveChangesAsync(ct);
+        return Ok(new { message = "Bilet silindi" });
+    }
+
     [HttpGet]
     public async Task<IActionResult> List(CancellationToken ct)
     {

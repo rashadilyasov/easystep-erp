@@ -489,13 +489,6 @@ export const api = {
       }),
     deleteAcademyMaterial: (index: number) =>
       apiFetch<{ message: string }>(`/api/admin/academy-materials/${index}`, { method: "DELETE" }),
-    createAcademyMaterial: (title: string, url: string) =>
-      apiFetch<{ message: string }>("/api/admin/academy-materials", {
-        method: "POST",
-        body: JSON.stringify({ title, url }),
-      }),
-    deleteAcademyMaterial: (index: number) =>
-      apiFetch<{ message: string }>(`/api/admin/academy-materials/${index}`, { method: "DELETE" }),
     uploadPresentation: (file: File) => {
       const form = new FormData();
       form.append("file", file);
@@ -515,6 +508,7 @@ export const api = {
         return text ? (JSON.parse(text) as { message: string }) : { message: "Yadda saxlanıldı" };
       });
     },
+    plans: () =>
       apiFetch<{ id: string; name: string; durationMonths: number; price: number; currency: string; maxDevices: number | null; isActive: boolean; createdAt: string }[]>(
         "/api/admin/plans"
       ),

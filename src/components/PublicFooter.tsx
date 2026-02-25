@@ -9,7 +9,7 @@ export default function PublicFooter() {
           <Logo href="/" width={100} height={28} className="h-7" />
           <span className="text-slate-600">© Bütün hüquqlar qorunur.</span>
         </div>
-        <div className="flex gap-6">
+        <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-1">
           <Link href="/security" className="text-slate-600 hover:text-slate-900 transition-colors duration-200">
             Təhlükəsizlik
           </Link>
@@ -17,6 +17,9 @@ export default function PublicFooter() {
           <Link href="/privacy" className="text-slate-600 hover:text-slate-900 transition-colors duration-200">Məxfilik</Link>
           <Link href="/contact" className="text-slate-600 hover:text-slate-900 transition-colors duration-200">
             Əlaqə
+          </Link>
+          <Link href="/satis-partnyorlari" className="text-slate-500 hover:text-slate-700 transition-colors duration-200 text-sm">
+            Satış Partnyoru
           </Link>
         </div>
       </div>

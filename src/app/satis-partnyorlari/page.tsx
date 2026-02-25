@@ -10,7 +10,7 @@ export default function SatisPartnyorlariPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
-      <PublicHeader active="partners" />
+      <PublicHeader />
 
       <main className="pt-24 pb-16 px-4">
         <div className="max-w-3xl mx-auto">

@@ -17,8 +17,10 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
                 d.ServiceType == typeof(DbContextOptions<ApplicationDbContext>));
             if (descriptor != null) services.Remove(descriptor);
 
+            // Use a unique DB name per factory instance to prevent cross-test data pollution
+            var dbName = $"TestDb_{Guid.NewGuid():N}";
             services.AddDbContext<ApplicationDbContext>(options =>
-                options.UseInMemoryDatabase("TestDb"));
+                options.UseInMemoryDatabase(dbName));
         });
     }
 }

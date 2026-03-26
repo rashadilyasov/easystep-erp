@@ -281,9 +281,11 @@ table{{width:100%;border-collapse:collapse}} td{{padding:8px;border-bottom:1px s
         var status = json.TryGetProperty("paymentStatus", out var s) ? s.GetString() : null;
         if (string.IsNullOrEmpty(orderId))
         {
-            var payload = json.TryGetProperty("payload", out var p) ? p : default;
-            orderId = payload.TryGetProperty("orderId", out var o2) ? o2.GetString() : null;
-            status = payload.TryGetProperty("paymentStatus", out var s2) ? s2.GetString() : status;
+            if (json.TryGetProperty("payload", out var payload) && payload.ValueKind == JsonValueKind.Object)
+            {
+                orderId = payload.TryGetProperty("orderId", out var o2) ? o2.GetString() : null;
+                status = payload.TryGetProperty("paymentStatus", out var s2) ? s2.GetString() : status;
+            }
         }
 
         var payment = await _db.Payments.FirstOrDefaultAsync(

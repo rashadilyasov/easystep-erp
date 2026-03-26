@@ -1,0 +1,11 @@
+namespace EasyStep.Erp.Api.Entities;
+
+public class PurchaseFile
+{
+    public Guid Id { get; set; }
+    public Guid PurchaseId { get; set; }
+    public string FileName { get; set; } = string.Empty;
+    public string FilePath { get; set; } = string.Empty;
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public Purchase? Purchase { get; set; }
+}

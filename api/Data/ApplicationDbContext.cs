@@ -30,6 +30,9 @@ public class ApplicationDbContext : DbContext
     public DbSet<PromoCode> PromoCodes => Set<PromoCode>();
     public DbSet<AffiliateCommission> AffiliateCommissions => Set<AffiliateCommission>();
     public DbSet<AffiliateBonus> AffiliateBonuses => Set<AffiliateBonus>();
+    public DbSet<Purchase> Purchases => Set<Purchase>();
+    public DbSet<PurchaseFile> PurchaseFiles => Set<PurchaseFile>();
+    public DbSet<InventoryItem> InventoryItems => Set<InventoryItem>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -194,6 +197,25 @@ public class ApplicationDbContext : DbContext
             e.HasIndex(x => x.AffiliateId);
             e.HasIndex(x => new { x.AffiliateId, x.Year, x.Month }).IsUnique();
             e.HasOne(x => x.Affiliate).WithMany().HasForeignKey(x => x.AffiliateId);
+        });
+
+        modelBuilder.Entity<Purchase>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => x.CreatedAt);
+        });
+
+        modelBuilder.Entity<PurchaseFile>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => x.PurchaseId);
+            e.HasOne(x => x.Purchase).WithMany(p => p.Files).HasForeignKey(x => x.PurchaseId);
+        });
+
+        modelBuilder.Entity<InventoryItem>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => x.Name);
         });
     }
 }

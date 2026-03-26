@@ -236,6 +236,8 @@ using (var scope = app.Services.CreateScope())
         if (useSqlite)
         {
             await db.Database.EnsureCreatedAsync();
+            if (db.Database.IsRelational())
+            {
             await db.Database.ExecuteSqlRawAsync(
                 "CREATE TABLE IF NOT EXISTS SiteContents (Id TEXT PRIMARY KEY, [Key] TEXT UNIQUE NOT NULL, Value TEXT NOT NULL, UpdatedAt TEXT NOT NULL)");
             try
@@ -268,6 +270,7 @@ using (var scope = app.Services.CreateScope())
                 await db.Database.ExecuteSqlRawAsync("CREATE UNIQUE INDEX IF NOT EXISTS IX_AffiliateBonuses_Affiliate_Year_Month ON AffiliateBonuses(AffiliateId, Year, Month)");
             }
             catch { }
+            } // end IsRelational
             await DbInitializer.SeedAsync(db);
             await DbInitializer.MigratePlanPricesAsync(db);
             var emailTemplatesSqlite = scope.ServiceProvider.GetRequiredService<EmailTemplateService>();
@@ -275,6 +278,8 @@ using (var scope = app.Services.CreateScope())
         }
         else
         {
+            if (db.Database.IsRelational())
+            {
             await db.Database.MigrateAsync();
             try { await db.Database.ExecuteSqlRawAsync(@"CREATE TABLE IF NOT EXISTS ""Tickets"" (""Id"" uuid NOT NULL, ""TenantId"" uuid NOT NULL, ""CreatedByUserId"" uuid NOT NULL, ""Subject"" text NOT NULL, ""Body"" text NOT NULL, ""Status"" integer NOT NULL, ""CreatedAt"" timestamp with time zone NOT NULL, ""UpdatedAt"" timestamp with time zone NOT NULL, CONSTRAINT ""PK_Tickets"" PRIMARY KEY (""Id""), CONSTRAINT ""FK_Tickets_Tenants_TenantId"" FOREIGN KEY (""TenantId"") REFERENCES ""Tenants"" (""Id"") ON DELETE CASCADE)"); } catch { }
             try { await db.Database.ExecuteSqlRawAsync(@"CREATE INDEX IF NOT EXISTS ""IX_Tickets_TenantId"" ON ""Tickets"" (""TenantId"")"); } catch { }
@@ -325,6 +330,7 @@ using (var scope = app.Services.CreateScope())
                 try { await db.Database.ExecuteSqlRawAsync(@"DO $$ BEGIN ALTER TABLE ""Tenants"" ADD CONSTRAINT ""FK_Tenants_PromoCodes_PromoCodeId"" FOREIGN KEY (""PromoCodeId"") REFERENCES ""PromoCodes"" (""Id"") ON DELETE SET NULL; EXCEPTION WHEN duplicate_object THEN NULL; END $$"); } catch { }
             }
             catch { }
+            } // end IsRelational
             await DbInitializer.SeedAsync(db);
             await DbInitializer.MigratePlanPricesAsync(db);
             var emailTemplatesPg = scope.ServiceProvider.GetRequiredService<EmailTemplateService>();
